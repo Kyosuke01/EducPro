@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────
+# 🐍 Python / Flask
+# ─────────────────────────────────────────
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/.env
+backend/instance/
+
+# ─────────────────────────────────────────
+# ⚛️ Next.js (frontend & admin)
+# ─────────────────────────────────────────
+frontend/.next/
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+admin/.next/
+admin/node_modules/
+admin/.env
+admin/.env.local
+admin/.env.production
+
+# ─────────────────────────────────────────
+# 🐳 Docker
+# ─────────────────────────────────────────
+*.log
+docker-compose.override.yml
+
+# ─────────────────────────────────────────
+# 💻 OS & Éditeurs
+# ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

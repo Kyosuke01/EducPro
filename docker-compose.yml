@@ -1,0 +1,129 @@
+version: "3.9"
+
+services:
+
+  # ─────────────────────────────────────────
+  # 🗄️ MySQL
+  # ─────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: educpro_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: educpro_db
+      MYSQL_USER: educpro_user
+      MYSQL_PASSWORD: educpro_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - educpro_network
+
+  # ─────────────────────────────────────────
+  # 🐍 Backend Flask
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile_inline: |
+        FROM python:3.12-slim
+        WORKDIR /app
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
+        COPY . .
+        EXPOSE 5000
+        CMD ["python", "app.py"]
+    container_name: educpro_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - educpro_network
+
+  # ─────────────────────────────────────────
+  # ⚛️ Frontend Next.js
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile_inline: |
+        FROM node:22-alpine
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci
+        COPY . .
+        EXPOSE 3000
+        CMD ["npm", "run", "dev"]
+    container_name: educpro_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - educpro_network
+
+  # ─────────────────────────────────────────
+  # 🛠️ Admin Next.js
+  # ─────────────────────────────────────────
+  admin:
+    build:
+      context: ./admin
+      dockerfile_inline: |
+        FROM node:22-alpine
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci
+        COPY . .
+        EXPOSE 3001
+        CMD ["npm", "run", "dev", "--", "-p", "3001"]
+    container_name: educpro_admin
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    volumes:
+      - ./admin:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - educpro_network
+
+# ─────────────────────────────────────────
+# 🔗 Réseau partagé
+# ─────────────────────────────────────────
+networks:
+  educpro_network:
+    driver: bridge
+
+# ─────────────────────────────────────────
+# 💾 Persistance MySQL
+# ─────────────────────────────────────────
+volumes:
+  mysql_data:
