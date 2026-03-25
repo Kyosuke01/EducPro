@@ -1,78 +1,56 @@
-\# EducPro
+# EducPro
+
+## Prérequis
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installé et lancé
 
 
-
-\## Prérequis
-
-
-
-\- \[Docker Desktop](https://www.docker.com/products/docker-desktop/) installé et lancé
-
-
-
-\## Installation
-
-
+## Installation
 
 ```bash
-
 git clone https://github.com/ton-repo/EducPro.git
-
 cd EducPro
-
 ```
-
-
 
 Copie les fichiers d'environnement et remplis les variables :
 
-
-
 ```bash
-
 cp backend/.env.example backend/.env
-
 ```
 
-
-
-\## Lancer le projet
-
-
+## Lancer le projet
 
 ```bash
-
 docker compose up -d --build
-
 ```
 
+## Accéder au projet
 
+<table>
+  <tr>
+    <th>Service</th>
+    <th>URL</th>
+  </tr>
+  <tr>
+    <td>⚛️ Frontend</td>
+    <td>http://localhost:3000</td>
+  </tr>
+  <tr>
+    <td>🛠️ Admin</td>
+    <td>http://localhost:3001</td>
+  </tr>
+  <tr>
+    <td>🐍 Backend API</td>
+    <td>http://localhost:5000</td>
+  </tr>
+  <tr>
+    <td>🗄️ MySQL</td>
+    <td>localhost:3306</td>
+  </tr>
+</table>
 
-\## Accéder au projet
-
-
-
-| Service | URL |
-
-|---|---|
-
-| ⚛️ Frontend | http://localhost:3000 |
-
-| 🛠️ Admin | http://localhost:3001 |
-
-| 🐍 Backend API | http://localhost:5000 |
-
-| 🗄️ MySQL | localhost:3306 |
-
-
-
-\## Arrêter le projet
-
-
+## Arrêter le projet
 
 ```bash
-
 docker compose down
-
 ```
-
