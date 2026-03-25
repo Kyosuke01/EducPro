@@ -19,6 +19,10 @@ def create_app():
 
     db.init_app(app)
 
+    from app.models.user import User
+    from app.models.course import Course
+    from app.models.lesson import Lesson
+
     from app.routes.users import users_bp
     app.register_blueprint(users_bp, url_prefix="/api/users")
 
