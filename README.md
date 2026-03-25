@@ -33,19 +33,19 @@ docker compose up -d --build
   </tr>
   <tr>
     <td>⚛️ Frontend</td>
-    <td>[http://localhost:3000](http://localhost:3000)</td>
+    <td><a href="http://localhost:3000">http://localhost:3000</a></td>
   </tr>
   <tr>
     <td>🛠️ Admin</td>
-    <td>[http://localhost:3001](http://localhost:3001)</td>
+    <td><a href="http://localhost:3001">http://localhost:3001</a></td>
   </tr>
   <tr>
     <td>🐍 Backend API</td>
-    <td>[http://localhost:5000](http://localhost:5000)</td>
+    <td><a href="http://localhost:5000">http://localhost:5000</a></td>
   </tr>
   <tr>
     <td>🗄️ MySQL</td>
-    <td>[localhost:3306](http://localhost:3306)</td>
+    <td><a href="http://localhost:3306">http://localhost:3306</a></td>
   </tr>
 </table>
 
