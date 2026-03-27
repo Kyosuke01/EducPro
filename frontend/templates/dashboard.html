@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EducPro - Tableau de Bord</title>
+  <link rel="icon" type="image/png" href="/static/assets/images/favicon.png" sizes="16x16">
+  
+  <!-- CSS Libraries -->
+  <link rel="stylesheet" href="/static/assets/css/remixicon.css">
+  <link rel="stylesheet" href="/static/assets/css/lib/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/assets/css/lib/apexcharts.css">
+  <link rel="stylesheet" href="/static/assets/css/lib/dataTables.min.css">
+  <link rel="stylesheet" href="/static/assets/css/lib/flatpickr.min.css">
+  <link rel="stylesheet" href="/static/assets/css/lib/calendar.css">
+  <link rel="stylesheet" href="/static/assets/css/style.css">
+  
+  <style>
+    /* Override logo display */
+    .logo-icon { display: none !important; }
+    .light-logo { display: block; }
+    .dark-logo { display: none; }
+    
+    html[data-theme="dark"] .light-logo { display: none; }
+    html[data-theme="dark"] .dark-logo { display: block; }
+  </style>
+</head>
+
+<body>
+  <!-- Theme Customization Start -->
+  <div class="body-overlay"></div>
+  <button type="button" class="theme-customization__button w-48-px h-48-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center position-fixed end-0 bottom-0 mb-40 me-40 text-2xxl bg-hover-primary-700" aria-label="Theme Customization Button">
+    <i class="ri-settings-3-line animate-spin"></i>
+  </button>
+
+  <div class="theme-customization-sidebar w-100 bg-base h-100vh overflow-y-auto position-fixed end-0 top-0">
+    <div class="d-flex align-items-center gap-3 py-16 px-24 justify-content-between border-bottom">
+      <div>
+        <h6 class="text-sm dark:text-white">Paramètres du Thème</h6>
+        <p class="text-xs mb-0 text-neutral-500 dark:text-neutral-200">Personnalisez et prévisualisez instantanément</p>
+      </div>
+      <button data-slot="button" class="theme-customization-sidebar__close text-neutral-900 bg-transparent text-hover-primary-600 d-flex text-xl">
+        <i class="ri-close-fill"></i>
+      </button>
+    </div>
+
+    <div class="d-flex flex-column gap-48 p-24 overflow-y-auto flex-grow-1">
+      <div class="theme-setting-item">
+        <h6 class="fw-medium text-primary-light text-md mb-3">Mode Thème</h6>
+        <div class="d-grid grid-cols-3 gap-3 dark-light-mode">
+          <button type="button" class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl active" data-theme="light" aria-label="light">
+            <i class="ri-sun-line"></i>
+          </button>
+          <button type="button" class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl" data-theme="dark" aria-label="dark">
+            <i class="ri-moon-line"></i>
+          </button>
+          <button type="button" class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl" data-theme="system" aria-label="system">
+            <i class="ri-computer-line"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <button type="button" class="sidebar-close-btn">
+      <i class="ri-close-2-line"></i>
+    </button>
+    
+    <div class="sidebar-logo d-flex align-items-center justify-content-between">
+      <a href="#" class="">
+        <img src="/static/assets/images/logo.png" alt="EducPro" class="light-logo">
+        <img src="/static/assets/images/logo-light.png" alt="EducPro" class="dark-logo">
+      </a>
+      <button type="button" class="text-xxl d-xl-flex d-none line-height-1 sidebar-toggle text-neutral-500" aria-label="Collapse Sidebar">
+        <i class="ri-contract-left-line"></i>
+      </button>
+    </div>
+
+    <!-- User Profile -->
+    <div class="mx-16 py-12">
+      <div class="dropdown profile-dropdown">
+        <button type="button" class="profile-dropdown__button d-flex align-items-center justify-content-between p-10 w-100 overflow-hidden bg-neutral-50 radius-12" data-bs-toggle="dropdown">
+          <span class="d-flex align-items-start gap-10">
+            <div class="w-40-px h-40-px rounded-circle bg-primary-600 d-flex align-items-center justify-content-center text-white fw-bold" id="userAvatar">A</div>
+            <span class="profile-dropdown__contents">
+              <span class="h6 mb-0 text-md d-block text-primary-light" id="userName">Admin</span>
+              <span class="text-secondary-light text-sm mb-0 d-block" id="userRole">Administrateur</span>
+            </span>
+          </span>
+          <span class="profile-dropdown__icon pe-8 text-xl d-flex line-height-1">
+            <i class="ri-arrow-right-s-line"></i>
+          </span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
+          <li>
+            <a href="#" class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
+              <i class="ri-user-3-line"></i>
+              Mon Profil
+            </a>
+          </li>
+          <li>
+            <a href="#" class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
+              <i class="ri-settings-3-line"></i>
+              Paramètres
+            </a>
+          </li>
+          <li>
+            <a href="/" class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
+              <i class="ri-shut-down-line"></i>
+              Déconnexion
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar-menu-area">
+      <ul class="sidebar-menu" id="sidebarMenu">
+        <!-- Menu will be generated by JavaScript -->
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Main Dashboard -->
+  <main class="dashboard-main">
+    <!-- Topbar -->
+    <div class="navbar-header shadow-1">
+      <div class="row align-items-center justify-content-between">
+        <div class="col-auto">
+          <div class="d-flex flex-wrap align-items-center gap-4">
+            <button type="button" class="sidebar-mobile-toggle" aria-label="Sidebar Toggle">
+              <iconify-icon icon="heroicons:bars-3-solid" class="icon"></iconify-icon>
+            </button>
+            <form class="navbar-search">
+              <input type="text" class="bg-transparent" name="search" placeholder="Rechercher...">
+              <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
+            </form>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="d-flex flex-wrap align-items-center gap-3">
+            <button type="button" data-theme-toggle class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Dark & Light Mode">
+            </button>
+            <div class="dropdown">
+              <button class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative" type="button" data-bs-toggle="dropdown">
+                <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
+                <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="dashboard-main-body">
+      <div class="breadcrumb d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24">
+        <div>
+          <h6 class="fw-semibold mb-0" id="pageTitle">Tableau de Bord</h6>
+          <p class="text-neutral-600 mt-4 mb-0" id="pageSubtitle">Bienvenue sur votre tableau de bord EducPro</p>
+        </div>
+      </div>
+
+      <!-- Content Sections -->
+      <div id="contentArea">
+        <!-- Sections will be injected here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="/static/assets/js/lib/iconify-icon.min.js"></script>
+  <script src="/static/assets/js/lib/jquery-3.7.1.min.js"></script>
+  <script src="/static/assets/js/lib/bootstrap.bundle.min.js"></script>
+  <script src="/static/assets/js/lib/apexcharts.min.js"></script>
+  <script src="/static/assets/js/lib/jsvectormap.min.js"></script>
+  <script src="/static/assets/js/lib/moment.min.js"></script>
+  <script src="/static/assets/js/lib/calendar.js"></script>
+  <script src="/static/assets/js/lib/apexcharts-setting.js"></script>
+  <script src="/static/assets/js/main.js"></script>
+
+  <script>
+    // Get user info from session or URL params
+    function getUserInfo() {
+      const params = new URLSearchParams(window.location.search);
+      const role = localStorage.getItem('role') || params.get('role') || 'admin';
+      const name = localStorage.getItem('name') || 'Admin';
+      const email = localStorage.getItem('email') || 'admin@educpro.com';
+      return { role, name, email };
+    }
+
+    // Generate sidebar menu based on role
+    function generateSidebarMenu(role) {
+      const menus = {
+        admin: [
+          { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
+          { icon: 'ri-graduation-cap-line', label: 'Étudiants', id: 'students' },
+          { icon: 'ri-user-follow-line', label: 'Professeurs', id: 'teachers' },
+          { icon: 'ri-book-2-line', label: 'Classes', id: 'classes' },
+          { icon: 'ri-calendar-check-line', label: 'Emploi du Temps', id: 'schedule' }
+        ],
+        teacher: [
+          { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
+          { icon: 'ri-book-2-line', label: 'Mes Classes', id: 'myClasses' },
+          { icon: 'ri-file-list-line', label: 'Évaluations', id: 'evaluations' },
+          { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' },
+          { icon: 'ri-pencil-line', label: 'Saisir les Notes', id: 'grades' }
+        ],
+        student: [
+          { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
+          { icon: 'ri-star-line', label: 'Mes Notes', id: 'myGrades' },
+          { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' }
+        ]
+      };
+
+      const menuItems = menus[role] || menus.student;
+      let html = '';
+      
+      menuItems.forEach(item => {
+        html += `
+          <li class="dropdown">
+            <a href="javascript:void(0)" class="sidebar-menu-item" data-section="${item.id}" onclick="loadSection('${item.id}', event)">
+              <i class="${item.icon}"></i>
+              <span>${item.label}</span>
+            </a>
+          </li>
+        `;
+      });
+
+      document.getElementById('sidebarMenu').innerHTML = html;
+    }
+
+    // Load section content
+    function loadSection(sectionId, event) {
+      event?.preventDefault?.();
+      
+      // Update active menu item
+      document.querySelectorAll('.sidebar-menu-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      event?.target?.closest('.sidebar-menu-item')?.classList.add('active');
+
+      const user = getUserInfo();
+      let html = '';
+
+      switch(sectionId) {
+        case 'dashboard':
+          html = getDashboardContent(user.role);
+          document.getElementById('pageTitle').textContent = 'Tableau de Bord';
+          break;
+        case 'students':
+          html = getStudentsContent();
+          document.getElementById('pageTitle').textContent = 'Gestion des Étudiants';
+          break;
+        case 'teachers':
+          html = getTeachersContent();
+          document.getElementById('pageTitle').textContent = 'Gestion des Professeurs';
+          break;
+        case 'classes':
+          html = getClassesContent();
+          document.getElementById('pageTitle').textContent = 'Gestion des Classes';
+          break;
+        case 'schedule':
+        case 'mySchedule':
+          html = getScheduleContent();
+          document.getElementById('pageTitle').textContent = 'Emploi du Temps';
+          break;
+        case 'myClasses':
+          html = getMyClassesContent();
+          document.getElementById('pageTitle').textContent = 'Mes Classes';
+          break;
+        case 'evaluations':
+          html = getEvaluationsContent();
+          document.getElementById('pageTitle').textContent = 'Évaluations';
+          break;
+        case 'grades':
+          html = getGradesContent();
+          document.getElementById('pageTitle').textContent = 'Saisir les Notes';
+          break;
+        case 'myGrades':
+          html = getMyGradesContent();
+          document.getElementById('pageTitle').textContent = 'Mes Notes';
+          break;
+        default:
+          html = getDashboardContent(user.role);
+      }
+
+      document.getElementById('contentArea').innerHTML = html;
+    }
+
+    // Dashboard content based on role
+    function getDashboardContent(role) {
+      const stats = {
+        admin: [
+          { title: 'Total Étudiants', value: '2,450', icon: 'ri-graduation-cap-line', color: 'warning-600', percentage: '+10%' },
+          { title: 'Total Professeurs', value: '125', icon: 'ri-user-follow-line', color: 'blue-600', percentage: '+5%' },
+          { title: 'Total Classes', value: '45', icon: 'ri-book-2-line', color: 'purple-600', percentage: '+2%' },
+          { title: 'Taux Présence', value: '92%', icon: 'ri-calendar-check-line', color: 'success-600', percentage: '+8%' }
+        ],
+        teacher: [
+          { title: 'Mes Classes', value: '5', icon: 'ri-book-2-line', color: 'warning-600', percentage: '+0%' },
+          { title: 'Total Étudiants', value: '120', icon: 'ri-graduation-cap-line', color: 'blue-600', percentage: '+5%' },
+          { title: 'Évaluations', value: '8', icon: 'ri-file-list-line', color: 'purple-600', percentage: '+2%' },
+          { title: 'Taux Présence', value: '94%', icon: 'ri-calendar-check-line', color: 'success-600', percentage: '+3%' }
+        ],
+        student: [
+          { title: 'Moyenne Générale', value: '14.5', icon: 'ri-star-line', color: 'warning-600', percentage: '+0.5' },
+          { title: 'Mes Classes', value: '6', icon: 'ri-book-2-line', color: 'blue-600', percentage: '+0%' },
+          { title: 'Absences', value: '3', icon: 'ri-calendar-x-line', color: 'danger-600', percentage: '-1' },
+          { title: 'Taux Présence', value: '95%', icon: 'ri-calendar-check-line', color: 'success-600', percentage: '+2%' }
+        ]
+      };
+
+      const cards = stats[role] || stats.student;
+      let html = '<div class="row gy-4"><div class="col-xxl-12"><div class="row gy-4">';
+
+      cards.forEach((card, idx) => {
+        html += `
+          <div class="col-xxl-3 col-sm-6">
+            <div class="card shadow-1 radius-8 h-100">
+              <div class="card-body p-20">
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-16">
+                  <div class="w-44-px h-44-px bg-${card.color} rounded-circle d-flex justify-content-center align-items-center text-white">
+                    <i class="${card.icon} text-xl"></i>
+                  </div>
+                  <p class="fw-medium text-primary-light mb-1">${card.title}</p>
+                </div>
+                <h6 class="mb-0">${card.value}</h6>
+                <p class="fw-medium text-sm text-primary-light mt-12 mb-0">
+                  <span class="text-success-600 text-sm fw-semibold">${card.percentage}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div></div></div>';
+      return html;
+    }
+
+    // Students management
+    function getStudentsContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Liste des Étudiants</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Classe</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Jean Martin</td>
+                        <td>jean@example.com</td>
+                        <td>1ère S</td>
+                        <td><span class="badge bg-success">Actif</span></td>
+                        <td><a href="#" class="text-primary">Modifier</a></td>
+                      </tr>
+                      <tr>
+                        <td>Marie Dubois</td>
+                        <td>marie@example.com</td>
+                        <td>1ère S</td>
+                        <td><span class="badge bg-success">Actif</span></td>
+                        <td><a href="#" class="text-primary">Modifier</a></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Teachers management
+    function getTeachersContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Liste des Professeurs</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Spécialité</th>
+                        <th>Classes</th>
+                        <th>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Prof. Dupont</td>
+                        <td>dupont@educpro.com</td>
+                        <td>Mathématiques</td>
+                        <td>1ère S, Terminale S</td>
+                        <td><span class="badge bg-success">Actif</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Classes management
+    function getClassesContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Listes des Classes</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Classe</th>
+                        <th>Professeur</th>
+                        <th>Étudiants</th>
+                        <th>Salle</th>
+                        <th>Niveau</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1ère S-A</td>
+                        <td>Prof. Dupont</td>
+                        <td>25</td>
+                        <td>Salle 101</td>
+                        <td>Seconde</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Schedule
+    function getScheduleContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Emploi du Temps</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Heure</th>
+                        <th>Lundi</th>
+                        <th>Mardi</th>
+                        <th>Mercredi</th>
+                        <th>Jeudi</th>
+                        <th>Vendredi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>08:00-09:30</td>
+                        <td>Français</td>
+                        <td>Math</td>
+                        <td>Anglais</td>
+                        <td>Physique</td>
+                        <td>SVT</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // My Classes (Teacher)
+    function getMyClassesContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Mes Classes</h6>
+                <div class="row gy-3">
+                  <div class="col-sm-6 col-lg-4">
+                    <div class="card border">
+                      <div class="card-body">
+                        <h6>1ère S-A</h6>
+                        <p class="text-sm text-secondary-light">25 étudiants</p>
+                        <button class="btn btn-sm btn-primary">Voir Classe</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Evaluations (Teacher)
+    function getEvaluationsContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Mes Évaluations</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Classe</th>
+                        <th>Sujet</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1ère S-A</td>
+                        <td>Devoir Maison</td>
+                        <td>15/03/2026</td>
+                        <td><span class="badge bg-info">Contrôle</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Grades management (Teacher)
+    function getGradesContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Saisir les Notes</h6>
+                <form>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <label class="form-label">Classe</label>
+                      <select class="form-select">
+                        <option>Sélectionnez une classe</option>
+                        <option>1ère S-A</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Évaluation</label>
+                      <select class="form-select">
+                        <option>Sélectionnez une évaluation</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="table-responsive mt-4">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Étudiant</th>
+                          <th>Note</th>
+                          <th>Coefficient</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Jean Martin</td>
+                          <td><input type="number" class="form-control form-control-sm" min="0" max="20"></td>
+                          <td>1</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <button type="submit" class="btn btn-primary mt-3">Enregistrer</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // My Grades (Student)
+    function getMyGradesContent() {
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Mes Notes</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Matière</th>
+                        <th>Classe</th>
+                        <th>Note</th>
+                        <th>Moyenne</th>
+                        <th>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Mathématiques</td>
+                        <td>1ère S</td>
+                        <td>16/20</td>
+                        <td>15.5/20</td>
+                        <td><span class="badge bg-success">Excellent</span></td>
+                      </tr>
+                      <tr>
+                        <td>Français</td>
+                        <td>1ère S</td>
+                        <td>14/20</td>
+                        <td>14/20</td>
+                        <td><span class="badge bg-success">Bon</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Initialize
+    function init() {
+      const user = getUserInfo();
+      
+      // Update user info in sidebar
+      document.getElementById('userName').textContent = user.name;
+      document.getElementById('userRole').textContent = 
+        user.role === 'admin' ? 'Administrateur' :
+        user.role === 'teacher' ? 'Professeur' : 'Étudiant';
+      document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+
+      // Generate sidebar menu
+      generateSidebarMenu(user.role);
+
+      // Load default dashboard
+      loadSection('dashboard', { preventDefault: () => {} });
+      
+      // Set first menu item as active
+      document.querySelector('.sidebar-menu-item')?.classList.add('active');
+    }
+
+    // Initialize on page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+
+</html>

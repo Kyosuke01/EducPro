@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducPro - Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+        }
+
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+            gap: 0;
+        }
+
+        /* ============ SIDEBAR (FIXED - NO COLLAPSE) ============ */
+        .sidebar {
+            width: 280px;
+            background: rgba(20, 20, 35, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, rgba(147, 112, 219, 0.2) 0%, rgba(75, 192, 192, 0.2) 100%);
+        }
+
+        .logo-icon {
+            font-size: 28px;
+            background: linear-gradient(135deg, #9370db, #4bc0c0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text {
+            font-weight: 700;
+            font-size: 20px;
+            background: linear-gradient(135deg, #9370db, #4bc0c0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .nav-label {
+            padding: 12px 20px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .nav-item {
+            margin: 0;
+        }
+
+        .nav-link {
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: rgba(147, 112, 219, 0.15);
+            color: #9370db;
+            border-left-color: #9370db;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(147, 112, 219, 0.3) 0%, transparent 100%);
+            color: #9370db;
+            border-left-color: #9370db;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .nav-text {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        /* ============ MAIN CONTENT ============ */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* ============ TOPBAR ============ */
+        .topbar {
+            background: rgba(30, 30, 45, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .search-box {
+            position: relative;
+            width: 240px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 35px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-box input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(147, 112, 219, 0.5);
+            outline: none;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9370db, #4bc0c0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .logout-btn {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: #ff4757;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.3);
+            border-color: rgba(255, 71, 87, 0.5);
+        }
+
+        /* ============ SECTIONS ============ */
+        .section {
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============ STAT CARDS ============ */
+        .stat-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(147, 112, 219, 0.15) 0%, rgba(75, 192, 192, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(147, 112, 219, 0.5);
+            background: linear-gradient(135deg, rgba(147, 112, 219, 0.2) 0%, rgba(75, 192, 192, 0.15) 100%);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            opacity: 0.3;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            color: rgba(75, 192, 192, 0.8);
+        }
+
+        /* ============ CHARTS ============ */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, rgba(30, 30, 45, 0.8) 0%, rgba(25, 25, 40, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        /* ============ TABLES ============ */
+        .table-card {
+            background: linear-gradient(135deg, rgba(30, 30, 45, 0.8) 0%, rgba(25, 25, 40, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .table-card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+            color: #e0e0e0;
+        }
+
+        .table thead {
+            background: rgba(147, 112, 219, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table thead th {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            padding: 14px;
+            border: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(147, 112, 219, 0.05);
+        }
+
+        /* ============ BADGES ============ */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-active {
+            background: rgba(75, 192, 192, 0.2);
+            color: #4bc0c0;
+            border: 1px solid rgba(75, 192, 192, 0.3);
+        }
+
+        .badge-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        /* ============ BUTTONS ============ */
+        .btn-glass {
+            background: linear-gradient(135deg, rgba(147, 112, 219, 0.3) 0%, rgba(75, 192, 192, 0.2) 100%);
+            border: 1px solid rgba(147, 112, 219, 0.5);
+            color: #fff;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .btn-glass:hover {
+            background: linear-gradient(135deg, rgba(147, 112, 219, 0.4) 0%, rgba(75, 192, 192, 0.3) 100%);
+            border-color: rgba(147, 112, 219, 0.7);
+            color: #fff;
+        }
+
+        .btn-sm-glass {
+            background: rgba(147, 112, 219, 0.15);
+            border: 1px solid rgba(147, 112, 219, 0.3);
+            color: #9370db;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-sm-glass:hover {
+            background: rgba(147, 112, 219, 0.25);
+            border-color: rgba(147, 112, 219, 0.5);
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1024px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wrapper {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 400px;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .topbar-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .stat-cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- ============ SIDEBAR ============ -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="logo-text">EducPro</div>
+            </div>
+
+            <nav class="sidebar-menu" id="sidebarMenu">
+                <!-- Menu items will be populated by JavaScript based on role -->
+            </nav>
+        </div>
+
+        <!-- ============ MAIN CONTENT ============ -->
+        <div class="main-content">
+            <!-- ============ TOPBAR ============ -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="topbar-title" id="sectionTitle">Dashboard</div>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Rechercher...">
+                    </div>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            <span id="userInitial">A</span>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Admin</div>
+                            <div class="user-role" id="userRole">Administrateur</div>
+                        </div>
+                    </div>
+
+                    <button class="logout-btn" onclick="logout()" title="Déconnexion">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============ ADMIN DASHBOARD ============ -->
+            <div id="adminDashboard" class="section">
+                <div class="stat-cards-container">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Total Étudiants</div>
+                                <div class="stat-value">2,547</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> +15% ce mois</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Classes Actives</div>
+                                <div class="stat-value">42</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> +3 cette année</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-building"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Professeurs</div>
+                                <div class="stat-value">156</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> +5 ce mois</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-person-square"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Personnel</div>
+                                <div class="stat-value">89</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> +2 ce mois</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-person-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-title">Distribution des Étudiants</div>
+                        <div class="chart-wrapper">
+                            <canvas id="adminChart1"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">Aperçu Global</div>
+                        <div class="chart-wrapper">
+                            <canvas id="adminChart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Gestion des Professeurs</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Matière</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Jean Lefevre</td>
+                                    <td>jean@example.com</td>
+                                    <td>Mathématiques</td>
+                                    <td><span class="badge badge-active">Actif</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Marie Dubois</td>
+                                    <td>marie@example.com</td>
+                                    <td>Français</td>
+                                    <td><span class="badge badge-active">Actif</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Gestion des Classes</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Professeur Principal</th>
+                                    <th>Étudiants</th>
+                                    <th>Salle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>6ème A</td>
+                                    <td>Jean Lefevre</td>
+                                    <td>28</td>
+                                    <td>A 101</td>
+                                </tr>
+                                <tr>
+                                    <td>6ème B</td>
+                                    <td>Marie Dubois</td>
+                                    <td>26</td>
+                                    <td>A 102</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ TEACHER DASHBOARD ============ -->
+            <div id="teacherDashboard" class="section">
+                <div class="stat-cards-container">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Mes Étudiants</div>
+                                <div class="stat-value">112</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> Dans mes classes</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Mes Classes</div>
+                                <div class="stat-value">4</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> Classes assignées</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-building"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Cours Aujourd'hui</div>
+                                <div class="stat-value">3</div>
+                                <div class="stat-change"><i class="fas fa-clock"></i> À venir</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-book"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Taux d'Assiduité</div>
+                                <div class="stat-value">92%</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> Excellent</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-percent"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-title">Distribution des Étudiants</div>
+                        <div class="chart-wrapper">
+                            <canvas id="teacherChart1"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">Assiduité par Classe</div>
+                        <div class="chart-wrapper">
+                            <canvas id="teacherChart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mes Classes Attribuées</span>
+                        <button class="btn-glass" onclick="createProject()">
+                            <i class="bi bi-plus-lg"></i> Créer Projet
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Étudiants</th>
+                                    <th>Salle</th>
+                                    <th>Emploi du Temps</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>6ème A</td>
+                                    <td>28</td>
+                                    <td>A 101</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-calendar"></i> Voir</button></td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Gérer</button></td>
+                                </tr>
+                                <tr>
+                                    <td>6ème B</td>
+                                    <td>26</td>
+                                    <td>A 102</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-calendar"></i> Voir</button></td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Gérer</button></td>
+                                </tr>
+                                <tr>
+                                    <td>5ème A</td>
+                                    <td>30</td>
+                                    <td>B 201</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-calendar"></i> Voir</button></td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Gérer</button></td>
+                                </tr>
+                                <tr>
+                                    <td>5ème B</td>
+                                    <td>28</td>
+                                    <td>B 202</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-calendar"></i> Voir</button></td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Gérer</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Évaluations et Projets</span>
+                        <button class="btn-glass" onclick="createEvaluation()">
+                            <i class="bi bi-plus-lg"></i> Nouvelle Évaluation
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Intitulé</th>
+                                    <th>Classe</th>
+                                    <th>Date Limite</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Problème Mathématiques</td>
+                                    <td>6ème A</td>
+                                    <td>25 Mars 2026</td>
+                                    <td><span class="badge badge-active">En cours</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Dissertation Français</td>
+                                    <td>6ème B</td>
+                                    <td>28 Mars 2026</td>
+                                    <td><span class="badge badge-pending">À venir</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ STUDENT DASHBOARD ============ -->
+            <div id="studentDashboard" class="section">
+                <div class="stat-cards-container">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Moyenne Générale</div>
+                                <div class="stat-value">15.4</div>
+                                <div class="stat-change"><i class="fas fa-arrow-up"></i> Très bien</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-star-fill"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Ma Classe</div>
+                                <div class="stat-value">6ème A</div>
+                                <div class="stat-change"><i class="fas fa-check"></i> Active</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-building"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Devoirs en Attente</div>
+                                <div class="stat-value">2</div>
+                                <div class="stat-change"><i class="fas fa-exclamation"></i> À rendre</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-pencil-square"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Taux d'Assiduité</div>
+                                <div class="stat-value">98%</div>
+                                <div class="stat-change"><i class="fas fa-check"></i> Excellent</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-percent"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-title">Mes Notes par Matière</div>
+                        <div class="chart-wrapper">
+                            <canvas id="studentChart1"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">Distribution des Résultats</div>
+                        <div class="chart-wrapper">
+                            <canvas id="studentChart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mes Notes - Confidential</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Matière</th>
+                                    <th>Devoir</th>
+                                    <th>Note</th>
+                                    <th>Classe</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Mathématiques</td>
+                                    <td>Problème 1</td>
+                                    <td><strong>18/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>20 Mars 2026</td>
+                                </tr>
+                                <tr>
+                                    <td>Français</td>
+                                    <td>Dictée</td>
+                                    <td><strong>16/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>19 Mars 2026</td>
+                                </tr>
+                                <tr>
+                                    <td>Anglais</td>
+                                    <td>Compréhension</td>
+                                    <td><strong>14/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>18 Mars 2026</td>
+                                </tr>
+                                <tr>
+                                    <td>Histoire</td>
+                                    <td>Dissertation</td>
+                                    <td><strong>15/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>17 Mars 2026</td>
+                                </tr>
+                                <tr>
+                                    <td>Sciences</td>
+                                    <td>Expérience</td>
+                                    <td><strong>17/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>16 Mars 2026</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mon Emploi du Temps</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Lundi</th>
+                                    <th>Mardi</th>
+                                    <th>Mercredi</th>
+                                    <th>Jeudi</th>
+                                    <th>Vendredi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Maths</strong><br><small>8h-9h, Salle A101</small></td>
+                                    <td><strong>Français</strong><br><small>9h-10h, Salle A101</small></td>
+                                    <td><strong>Anglais</strong><br><small>10h-11h, Salle A102</small></td>
+                                    <td><strong>Histoire</strong><br><small>11h-12h, Salle A101</small></td>
+                                    <td><strong>Sciences</strong><br><small>13h-14h, Labo</small></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ ADMIN SECTIONS ============ -->
+            <div id="studentsAdmin" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Gestion des Étudiants</span>
+                        <button class="btn-glass" onclick="alert('Ajouter un étudiant')">
+                            <i class="bi bi-plus-lg"></i> Ajouter
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Classe</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Alice Dupont</td>
+                                    <td>alice@example.com</td>
+                                    <td>6ème A</td>
+                                    <td><span class="badge badge-active">Actif</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Bob Martin</td>
+                                    <td>bob@example.com</td>
+                                    <td>6ème B</td>
+                                    <td><span class="badge badge-active">Actif</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="teachersAdmin" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Gestion des Professeurs</span>
+                        <button class="btn-glass" onclick="alert('Ajouter un professeur')">
+                            <i class="bi bi-plus-lg"></i> Ajouter
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Matière</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Jean Lefevre</td>
+                                    <td>jean@example.com</td>
+                                    <td>Mathématiques</td>
+                                    <td><span class="badge badge-active">Actif</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Marie Dubois</td>
+                                    <td>marie@example.com</td>
+                                    <td>Français</td>
+                                    <td><span class="badge badge-active">Actif</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="classesAdmin" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Gestion des Classes</span>
+                        <button class="btn-glass" onclick="alert('Créer une classe')">
+                            <i class="bi bi-plus-lg"></i> Créer
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Professeur Principal</th>
+                                    <th>Étudiants</th>
+                                    <th>Salle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>6ème A</td>
+                                    <td>Jean Lefevre</td>
+                                    <td>28</td>
+                                    <td>A 101</td>
+                                </tr>
+                                <tr>
+                                    <td>6ème B</td>
+                                    <td>Marie Dubois</td>
+                                    <td>26</td>
+                                    <td>A 102</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scheduleAdmin" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Emploi du Temps Global</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Lundi</th>
+                                    <th>Mardi</th>
+                                    <th>Mercredi</th>
+                                    <th>Jeudi</th>
+                                    <th>Vendredi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>6ème A</strong></td>
+                                    <td>Maths</td>
+                                    <td>Français</td>
+                                    <td>Anglais</td>
+                                    <td>Histoire</td>
+                                    <td>Sciences</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ TEACHER SECTIONS ============ -->
+            <div id="myClasses" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mes Classes Attribuées</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Étudiants</th>
+                                    <th>Salle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>6ème A</td>
+                                    <td>28</td>
+                                    <td>A 101</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Détails</button></td>
+                                </tr>
+                                <tr>
+                                    <td>6ème B</td>
+                                    <td>26</td>
+                                    <td>A 102</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Détails</button></td>
+                                </tr>
+                                <tr>
+                                    <td>5ème A</td>
+                                    <td>30</td>
+                                    <td>B 201</td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-pencil"></i> Détails</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="myEvaluations" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mes Évaluations et Projets</span>
+                        <button class="btn-glass" onclick="alert('Créer une évaluation')">
+                            <i class="bi bi-plus-lg"></i> Nouvelle
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Intitulé</th>
+                                    <th>Classe</th>
+                                    <th>Date Limite</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Problème Mathématiques</td>
+                                    <td>6ème A</td>
+                                    <td>25 Mars 2026</td>
+                                    <td><span class="badge badge-active">En cours</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Dissertation Français</td>
+                                    <td>6ème B</td>
+                                    <td>28 Mars 2026</td>
+                                    <td><span class="badge badge-pending">À venir</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mySchedule" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mon Emploi du Temps</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Lundi</th>
+                                    <th>Mardi</th>
+                                    <th>Mercredi</th>
+                                    <th>Jeudi</th>
+                                    <th>Vendredi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>6ème A</strong><br><small>8h-9h, A101</small></td>
+                                    <td><strong>6ème B</strong><br><small>9h-10h, A102</small></td>
+                                    <td><strong>5ème A</strong><br><small>10h-11h, B201</small></td>
+                                    <td><strong>6ème A</strong><br><small>11h-12h, A101</small></td>
+                                    <td><strong>Libre</strong><br><small>Préparation</small></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="gradesManagement" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Saisir les Notes - 6ème A</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Étudiant</th>
+                                    <th>Note</th>
+                                    <th>Appréciation</th>
+                                    <th>Sauvegarder</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Alice Dupont</td>
+                                    <td><input type="number" min="0" max="20" value="18" style="width: 60px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px; border-radius: 4px;"></td>
+                                    <td><select style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px; border-radius: 4px;"><option>Excellent</option><option>Très bien</option><option>Bien</option></select></td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-check"></i> Sauvegarder</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Bob Martin</td>
+                                    <td><input type="number" min="0" max="20" value="15" style="width: 60px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px; border-radius: 4px;"></td>
+                                    <td><select style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px; border-radius: 4px;"><option>Excellent</option><option>Très bien</option><option>Bien</option></select></td>
+                                    <td><button class="btn-sm-glass"><i class="bi bi-check"></i> Sauvegarder</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ STUDENT SECTIONS ============ -->
+            <div id="myGrades" class="section">
+                <div class="table-card">
+                    <div class="table-card-title">
+                        <span>Mes Notes - Confidentiel</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Matière</th>
+                                    <th>Devoir</th>
+                                    <th>Note</th>
+                                    <th>Classe</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Mathématiques</td>
+                                    <td>Problème 1</td>
+                                    <td><strong>18/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>20 Mars 2026</td>
+                                </tr>
+                                <tr>
+                                    <td>Français</td>
+                                    <td>Dictée</td>
+                                    <td><strong>16/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>19 Mars 2026</td>
+                                </tr>
+                                <tr>
+                                    <td>Anglais</td>
+                                    <td>Compréhension</td>
+                                    <td><strong>14/20</strong></td>
+                                    <td>6ème A</td>
+                                    <td>18 Mars 2026</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ============ STATE ============
+        let currentUser = {
+            name: 'Admin',
+            role: 'admin',
+            email: 'admin@example.com',
+            roleText: 'Administrateur'
+        };
+
+        let charts = {};
+
+        // ============ INITIALIZATION ============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get role from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const role = urlParams.get('view') || 'admin';
+            
+            // Update current user
+            const userInfo = {
+                admin: { name: 'Admin', email: 'admin@example.com', roleText: 'Administrateur' },
+                teacher: { name: 'Professeur Dupont', email: 'prof@example.com', roleText: 'Enseignant' },
+                student: { name: 'Alice Dupont', email: 'alice@example.com', roleText: 'Étudiant' }
+            };
+            
+            currentUser.role = role;
+            currentUser.name = userInfo[role].name;
+            currentUser.email = userInfo[role].email;
+            currentUser.roleText = userInfo[role].roleText;
+            
+            // Setup UI based on role
+            setupRoleBasedUI();
+            updateUserInfo();
+            
+            // Initialize charts
+            setTimeout(() => {
+                initCharts();
+            }, 300);
+        });
+
+        // ============ ROLE-BASED UI SETUP ============
+        function setupRoleBasedUI() {
+            const menuHTML = {
+                admin: `
+                    <div class="nav-label">MENU</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link active" onclick="showSection('adminDashboard', this)">
+                            <i class="nav-icon bi bi-house"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-label">GESTION</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('studentsAdmin', this)">
+                            <i class="nav-icon bi bi-people"></i>
+                            <span class="nav-text">Étudiants</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('teachersAdmin', this)">
+                            <i class="nav-icon bi bi-person-square"></i>
+                            <span class="nav-text">Professeurs</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('classesAdmin', this)">
+                            <i class="nav-icon bi bi-building"></i>
+                            <span class="nav-text">Classes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('scheduleAdmin', this)">
+                            <i class="nav-icon bi bi-calendar-event"></i>
+                            <span class="nav-text">Emploi du Temps</span>
+                        </a>
+                    </div>
+                `,
+                teacher: `
+                    <div class="nav-label">MENU</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link active" onclick="showSection('teacherDashboard', this)">
+                            <i class="nav-icon bi bi-house"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-label">GESTION</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('myClasses', this)">
+                            <i class="nav-icon bi bi-building"></i>
+                            <span class="nav-text">Mes Classes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('myEvaluations', this)">
+                            <i class="nav-icon bi bi-pencil-square"></i>
+                            <span class="nav-text">Évaluations</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('mySchedule', this)">
+                            <i class="nav-icon bi bi-calendar-event"></i>
+                            <span class="nav-text">Mon Emploi du Temps</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('gradesManagement', this)">
+                            <i class="nav-icon bi bi-pencil"></i>
+                            <span class="nav-text">Saisir les Notes</span>
+                        </a>
+                    </div>
+                `,
+                student: `
+                    <div class="nav-label">MENU</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link active" onclick="showSection('studentDashboard', this)">
+                            <i class="nav-icon bi bi-house"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-label">CONSULTATION</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('myGrades', this)">
+                            <i class="nav-icon bi bi-star"></i>
+                            <span class="nav-text">Mes Notes</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" onclick="showSection('mySchedule', this)">
+                            <i class="nav-icon bi bi-calendar-event"></i>
+                            <span class="nav-text">Mon Emploi du Temps</span>
+                        </a>
+                    </div>
+                `
+            };
+
+            document.getElementById('sidebarMenu').innerHTML = menuHTML[currentUser.role] || menuHTML.admin;
+
+            // Show appropriate dashboard
+            const dashboards = document.querySelectorAll('[id$="Dashboard"]');
+            dashboards.forEach(d => d.classList.remove('active'));
+            
+            const dashboardId = currentUser.role === 'admin' ? 'adminDashboard' : 
+                               currentUser.role === 'teacher' ? 'teacherDashboard' : 
+                               'studentDashboard';
+            
+            const dashboard = document.getElementById(dashboardId);
+            if (dashboard) {
+                dashboard.classList.add('active');
+                document.getElementById('sectionTitle').textContent = 
+                    currentUser.role === 'admin' ? 'Dashboard Admin' :
+                    currentUser.role === 'teacher' ? 'Dashboard Professeur' :
+                    'Dashboard Étudiant';
+            }
+        }
+
+        // ============ SECTION NAVIGATION ============
+        function showSection(sectionName, element) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(s => s.classList.remove('active'));
+            
+            const section = document.getElementById(sectionName);
+            if (section) {
+                section.classList.add('active');
+                
+                const titles = {
+                    adminDashboard: 'Dashboard Admin',
+                    teacherDashboard: 'Dashboard Professeur',
+                    studentDashboard: 'Dashboard Étudiant',
+                    studentsAdmin: 'Gestion des Étudiants',
+                    teachersAdmin: 'Gestion des Professeurs',
+                    classesAdmin: 'Gestion des Classes',
+                    scheduleAdmin: 'Emploi du Temps',
+                    myClasses: 'Mes Classes',
+                    myEvaluations: 'Évaluations',
+                    mySchedule: 'Mon Emploi du Temps',
+                    gradesManagement: 'Saisir les Notes',
+                    myGrades: 'Mes Notes'
+                };
+                
+                document.getElementById('sectionTitle').textContent = titles[sectionName] || sectionName;
+            }
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        // ============ USER INFO ============
+        function updateUserInfo() {
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRole').textContent = currentUser.roleText;
+            document.getElementById('userInitial').textContent = currentUser.name.charAt(0).toUpperCase();
+        }
+
+        // ============ CHARTS INITIALIZATION ============
+        function initCharts() {
+            if (currentUser.role === 'admin') {
+                initAdminCharts();
+            } else if (currentUser.role === 'teacher') {
+                initTeacherCharts();
+            } else if (currentUser.role === 'student') {
+                initStudentCharts();
+            }
+        }
+
+        function initAdminCharts() {
+            const ctx1 = document.getElementById('adminChart1');
+            if (ctx1) {
+                charts.admin1 = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['6ème', '5ème', '4ème', '3ème'],
+                        datasets: [{
+                            data: [450, 520, 480, 590],
+                            backgroundColor: ['#9370db', '#4bc0c0', '#ffa07a', '#87ceeb'],
+                            borderColor: 'rgba(30, 30, 45, 1)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#e0e0e0' } } }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('adminChart2');
+            if (ctx2) {
+                charts.admin2 = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Étudiants', 'Professeurs', 'Personnel', 'Classes'],
+                        datasets: [{
+                            label: 'Nombre',
+                            data: [2547, 156, 89, 42],
+                            backgroundColor: ['#9370db', '#4bc0c0', '#ffa07a', '#87ceeb'],
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { 
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function initTeacherCharts() {
+            const ctx1 = document.getElementById('teacherChart1');
+            if (ctx1) {
+                charts.teacher1 = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['6ème A', '6ème B', '5ème A', '5ème B'],
+                        datasets: [{
+                            label: 'Étudiants',
+                            data: [28, 26, 30, 28],
+                            backgroundColor: '#9370db',
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            x: { ticks: { color: '#e0e0e0' }, grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('teacherChart2');
+            if (ctx2) {
+                charts.teacher2 = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['6ème A', '6ème B', '5ème A', '5ème B'],
+                        datasets: [{
+                            label: 'Assiduité (%)',
+                            data: [92, 88, 95, 90],
+                            borderColor: '#4bc0c0',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            x: { ticks: { color: '#e0e0e0' }, grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function initStudentCharts() {
+            const ctx1 = document.getElementById('studentChart1');
+            if (ctx1) {
+                charts.student1 = new Chart(ctx1, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Maths', 'Français', 'Anglais', 'Histoire', 'Sciences'],
+                        datasets: [{
+                            label: 'Mes Notes',
+                            data: [18, 16, 14, 15, 17],
+                            borderColor: '#9370db',
+                            backgroundColor: 'rgba(147, 112, 219, 0.2)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            r: { 
+                                ticks: { color: '#e0e0e0', backdropColor: 'transparent' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('studentChart2');
+            if (ctx2) {
+                charts.student2 = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Excellent', 'Très bien', 'Bien'],
+                        datasets: [{
+                            data: [45, 35, 20],
+                            backgroundColor: ['#4bc0c0', '#9370db', '#ffa07a'],
+                            borderColor: 'rgba(30, 30, 45, 1)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#e0e0e0' } } }
+                    }
+                });
+            }
+        }
+
+        // ============ ACTIONS ============
+        function logout() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                window.location.href = './index.html';
+            }
+        }
+
+        function createProject() {
+            alert('Créer un nouveau projet');
+        }
+
+        function createEvaluation() {
+            alert('Créer une nouvelle évaluation');
+        }
+    </script>
+</body>
+</html>
