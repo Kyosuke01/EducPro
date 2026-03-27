@@ -1,10 +1,6 @@
-version: "3.9"
-
 services:
 
-  # ─────────────────────────────────────────
   # 🗄️ MySQL
-  # ─────────────────────────────────────────
   db:
     image: mysql:8.0
     container_name: educpro_db
@@ -27,9 +23,7 @@ services:
     networks:
       - educpro_network
 
-  # ─────────────────────────────────────────
-  # 🐍 Backend Flask
-  # ─────────────────────────────────────────
+  # 🐍 Backend Flask (API)
   backend:
     build:
       context: ./backend
@@ -55,9 +49,7 @@ services:
     networks:
       - educpro_network
 
-  # ─────────────────────────────────────────
   # 🌐 Frontend Flask + Jinja2
-  # ─────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -82,9 +74,7 @@ services:
     networks:
       - educpro_network
 
-  # ─────────────────────────────────────────
   # 🛠️ Admin Flask + Jinja2
-  # ─────────────────────────────────────────
   admin:
     build:
       context: ./admin
@@ -109,15 +99,9 @@ services:
     networks:
       - educpro_network
 
-# ─────────────────────────────────────────
-# 🔗 Réseau partagé
-# ─────────────────────────────────────────
 networks:
   educpro_network:
     driver: bridge
 
-# ─────────────────────────────────────────
-# 💾 Persistance MySQL
-# ─────────────────────────────────────────
 volumes:
   mysql_data:

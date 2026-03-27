@@ -1,8 +1,10 @@
 # EducPro
 
+
 ## Prérequis
 
 - <a href="https://www.docker.com/products/docker-desktop/" target="_blank">Docker Desktop</a> installé et lancé
+
 
 ## Installation
 
@@ -19,11 +21,13 @@ cp frontend/.env.example frontend/.env
 cp admin/.env.example admin/.env
 ```
 
+
 ## Lancer le projet
 
 ```bash
 docker compose up -d --build
 ```
+
 
 ## Accéder au projet
 
@@ -34,24 +38,24 @@ docker compose up -d --build
   </tr>
   <tr>
     <td>🌐 Frontend</td>
-    <td><a href="http://localhost:3000">http://localhost:3000</a></td>
+    <td><a href="http://localhost:3000" target="_blank">http://localhost:3000</a></td>
   </tr>
   <tr>
     <td>🛠️ Admin</td>
-    <td><a href="http://localhost:3001">http://localhost:3001</a></td>
+    <td><a href="http://localhost:3001" target="_blank">http://localhost:3001</a></td>
   </tr>
   <tr>
     <td>🐍 Backend API</td>
-    <td><a href="http://localhost:5000">http://localhost:5000</a></td>
+    <td><a href="http://localhost:5000" target="_blank">http://localhost:5000</a></td>
   </tr>
   <tr>
     <td>🗄️ MySQL</td>
-    <td><a href="http://localhost:3306">localhost:3306</a></td>
+    <td>localhost:3306</td>
   </tr>
 </table>
 
-## Arrêter le projet
 
+## Arrêter le projet
 
 ```bash
 docker compose down

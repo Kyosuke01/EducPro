@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Accueil - EducPro{% endblock %}
+{% block content %}
+<h1>Les cours disponibles</h1>
+{% for course in courses %}
+<div>
+    <h2>{{ course.title }}</h2>
+    <p>{{ course.description }}</p>
+</div>
+{% endfor %}
+{% endblock %}

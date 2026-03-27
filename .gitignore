@@ -9,20 +9,24 @@ backend/*.pyo
 backend/.env
 backend/instance/
 
-# ─────────────────────────────────────────
-# ⚛️ Next.js (frontend & admin)
-# ─────────────────────────────────────────
-frontend/.next/
-frontend/node_modules/
+frontend/venv/
+frontend/__pycache__/
+frontend/**/__pycache__/
+frontend/*.pyc
+frontend/*.pyo
 frontend/.env
-frontend/.env.local
-frontend/.env.production
 
-admin/.next/
-admin/node_modules/
+admin/venv/
+admin/__pycache__/
+admin/**/__pycache__/
+admin/*.pyc
+admin/*.pyo
 admin/.env
-admin/.env.local
-admin/.env.production
+
+# ─────────────────────────────────────────
+# ⚛️ (plus de Next.js)
+# ─────────────────────────────────────────
+# Ancienne config Next.js supprimée
 
 # ─────────────────────────────────────────
 # 🐳 Docker

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Admin{% endblock %}
+{% block content %}
+<h1>Utilisateurs</h1>
+{% for user in users %}
+<p>{{ user.username }} — {{ user.email }}</p>
+{% endfor %}
+{% endblock %}
