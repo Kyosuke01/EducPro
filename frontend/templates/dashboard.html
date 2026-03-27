@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EducPro - Tableau de Bord</title>
   <link rel="icon" type="image/png" href="/static/assets/images/favicon.png" sizes="16x16">
-  
+
   <!-- CSS Libraries -->
   <link rel="stylesheet" href="/static/assets/css/remixicon.css">
   <link rel="stylesheet" href="/static/assets/css/lib/bootstrap.min.css">
@@ -16,22 +16,37 @@
   <link rel="stylesheet" href="/static/assets/css/lib/flatpickr.min.css">
   <link rel="stylesheet" href="/static/assets/css/lib/calendar.css">
   <link rel="stylesheet" href="/static/assets/css/style.css">
-  
+
   <style>
     /* Override logo display */
-    .logo-icon { display: none !important; }
-    .light-logo { display: block; }
-    .dark-logo { display: none; }
-    
-    html[data-theme="dark"] .light-logo { display: none; }
-    html[data-theme="dark"] .dark-logo { display: block; }
+    .logo-icon {
+      display: none !important;
+    }
+
+    .light-logo {
+      display: block;
+    }
+
+    .dark-logo {
+      display: none;
+    }
+
+    html[data-theme="dark"] .light-logo {
+      display: none;
+    }
+
+    html[data-theme="dark"] .dark-logo {
+      display: block;
+    }
   </style>
 </head>
 
 <body>
   <!-- Theme Customization Start -->
   <div class="body-overlay"></div>
-  <button type="button" class="theme-customization__button w-48-px h-48-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center position-fixed end-0 bottom-0 mb-40 me-40 text-2xxl bg-hover-primary-700" aria-label="Theme Customization Button">
+  <button type="button"
+    class="theme-customization__button w-48-px h-48-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center position-fixed end-0 bottom-0 mb-40 me-40 text-2xxl bg-hover-primary-700"
+    aria-label="Theme Customization Button">
     <i class="ri-settings-3-line animate-spin"></i>
   </button>
 
@@ -41,7 +56,8 @@
         <h6 class="text-sm dark:text-white">Paramètres du Thème</h6>
         <p class="text-xs mb-0 text-neutral-500 dark:text-neutral-200">Personnalisez et prévisualisez instantanément</p>
       </div>
-      <button data-slot="button" class="theme-customization-sidebar__close text-neutral-900 bg-transparent text-hover-primary-600 d-flex text-xl">
+      <button data-slot="button"
+        class="theme-customization-sidebar__close text-neutral-900 bg-transparent text-hover-primary-600 d-flex text-xl">
         <i class="ri-close-fill"></i>
       </button>
     </div>
@@ -50,13 +66,19 @@
       <div class="theme-setting-item">
         <h6 class="fw-medium text-primary-light text-md mb-3">Mode Thème</h6>
         <div class="d-grid grid-cols-3 gap-3 dark-light-mode">
-          <button type="button" class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl active" data-theme="light" aria-label="light">
+          <button type="button"
+            class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl active"
+            data-theme="light" aria-label="light">
             <i class="ri-sun-line"></i>
           </button>
-          <button type="button" class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl" data-theme="dark" aria-label="dark">
+          <button type="button"
+            class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl"
+            data-theme="dark" aria-label="dark">
             <i class="ri-moon-line"></i>
           </button>
-          <button type="button" class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl" data-theme="system" aria-label="system">
+          <button type="button"
+            class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl"
+            data-theme="system" aria-label="system">
             <i class="ri-computer-line"></i>
           </button>
         </div>
@@ -65,20 +87,24 @@
   </div>
 
   <!-- Overlay -->
-  <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300"></div>
+  <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300">
+  </div>
 
   <!-- Sidebar -->
   <aside class="sidebar">
     <button type="button" class="sidebar-close-btn">
       <i class="ri-close-2-line"></i>
     </button>
-    
+
     <div class="sidebar-logo d-flex align-items-center justify-content-between">
       <a href="#" class="">
-        <img src="/static/assets/images/logo/Educpro LOGO.png" alt="EducPro" class="light-logo" style="max-height: 40px;">
-        <img src="/static/assets/images/logo/Educpro LOGO.png" alt="EducPro" class="dark-logo" style="max-height: 40px;">
+        <img src="/static/assets/images/logo/Educpro LOGO.png" alt="EducPro" class="light-logo"
+          style="max-height: 40px;">
+        <img src="/static/assets/images/logo/Educpro LOGO.png" alt="EducPro" class="dark-logo"
+          style="max-height: 40px;">
       </a>
-      <button type="button" class="text-xxl d-xl-flex d-none line-height-1 sidebar-toggle text-neutral-500" aria-label="Collapse Sidebar">
+      <button type="button" class="text-xxl d-xl-flex d-none line-height-1 sidebar-toggle text-neutral-500"
+        aria-label="Collapse Sidebar">
         <i class="ri-contract-left-line"></i>
       </button>
     </div>
@@ -86,9 +112,13 @@
     <!-- User Profile -->
     <div class="mx-16 py-12">
       <div class="dropdown profile-dropdown">
-        <button type="button" class="profile-dropdown__button d-flex align-items-center justify-content-between p-10 w-100 overflow-hidden bg-neutral-50 radius-12" data-bs-toggle="dropdown">
+        <button type="button"
+          class="profile-dropdown__button d-flex align-items-center justify-content-between p-10 w-100 overflow-hidden bg-neutral-50 radius-12"
+          data-bs-toggle="dropdown">
           <span class="d-flex align-items-start gap-10">
-            <div class="w-40-px h-40-px rounded-circle bg-primary-600 d-flex align-items-center justify-content-center text-white fw-bold" id="userAvatar">A</div>
+            <div
+              class="w-40-px h-40-px rounded-circle bg-primary-600 d-flex align-items-center justify-content-center text-white fw-bold"
+              id="userAvatar">A</div>
             <span class="profile-dropdown__contents">
               <span class="h6 mb-0 text-md d-block text-primary-light" id="userName">Admin</span>
               <span class="text-secondary-light text-sm mb-0 d-block" id="userRole">Administrateur</span>
@@ -100,19 +130,22 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
           <li>
-            <a href="#" class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
+            <a href="#"
+              class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
               <i class="ri-user-3-line"></i>
               Mon Profil
             </a>
           </li>
           <li>
-            <a href="#" class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
+            <a href="#"
+              class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
               <i class="ri-settings-3-line"></i>
               Paramètres
             </a>
           </li>
           <li>
-            <a href="/" class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
+            <a href="/"
+              class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
               <i class="ri-shut-down-line"></i>
               Déconnexion
             </a>
@@ -147,10 +180,14 @@
         </div>
         <div class="col-auto">
           <div class="d-flex flex-wrap align-items-center gap-3">
-            <button type="button" data-theme-toggle class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center" aria-label="Dark & Light Mode">
+            <button type="button" data-theme-toggle
+              class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
+              aria-label="Dark & Light Mode">
             </button>
             <div class="dropdown">
-              <button class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative" type="button" data-bs-toggle="dropdown">
+              <button
+                class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative"
+                type="button" data-bs-toggle="dropdown">
                 <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
                 <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
               </button>
@@ -223,7 +260,7 @@
 
       const menuItems = menus[role] || menus.student;
       let html = '';
-      
+
       menuItems.forEach(item => {
         html += `
           <li class="dropdown">
@@ -241,7 +278,7 @@
     // Load section content
     function loadSection(sectionId, event) {
       event?.preventDefault?.();
-      
+
       // Update active menu item
       document.querySelectorAll('.sidebar-menu-item').forEach(item => {
         item.classList.remove('active');
@@ -251,7 +288,7 @@
       const user = getUserInfo();
       let html = '';
 
-      switch(sectionId) {
+      switch (sectionId) {
         case 'dashboard':
           html = getDashboardContent(user.role);
           document.getElementById('pageTitle').textContent = 'Tableau de Bord';
@@ -663,20 +700,20 @@
     // Initialize
     function init() {
       const user = getUserInfo();
-      
+
       // Update user info in sidebar
       document.getElementById('userName').textContent = user.name;
-      document.getElementById('userRole').textContent = 
+      document.getElementById('userRole').textContent =
         user.role === 'admin' ? 'Administrateur' :
-        user.role === 'teacher' ? 'Professeur' : 'Étudiant';
+          user.role === 'teacher' ? 'Professeur' : 'Étudiant';
       document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
 
       // Generate sidebar menu
       generateSidebarMenu(user.role);
 
       // Load default dashboard
-      loadSection('dashboard', { preventDefault: () => {} });
-      
+      loadSection('dashboard', { preventDefault: () => { } });
+
       // Set first menu item as active
       document.querySelector('.sidebar-menu-item')?.classList.add('active');
     }
