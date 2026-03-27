@@ -1,6 +1,6 @@
 CREATE TABLE Student (
   student_id INT PRIMARY KEY AUTO_INCREMENT,
-  n_admin_id VARCHAR(100) PRIMARY KEY AUTO_INCREMENT,
+  n_admin_id VARCHAR(100) UNIQUE,
   student_name VARCHAR(100),
   mail_student VARCHAR(255),
   password VARCHAR(255),
@@ -21,14 +21,14 @@ CREATE TABLE Room (
 
 CREATE TABLE Topic (
   topic_id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) PRIMARY KEY,
+  name VARCHAR(100) UNIQUE,
   teacher_id INT /* FOREIGN KEY */,
   class_id INT /* FOREIGN KEY */
 );
 
 CREATE TABLE Class (
   class_id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) PRIMARY KEY,
+  name VARCHAR(100) UNIQUE,
   student_id INT /* FOREIGN KEY */,
   teacher_id INT /* FOREIGN KEY */
 );
