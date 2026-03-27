@@ -56,60 +56,54 @@ services:
       - educpro_network
 
   # ─────────────────────────────────────────
-  # ⚛️ Frontend Next.js
+  # 🌐 Frontend Flask + Jinja2
   # ─────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile_inline: |
-        FROM node:22-alpine
+        FROM python:3.12-slim
         WORKDIR /app
-        COPY package*.json ./
-        RUN npm ci
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
         COPY . .
         EXPOSE 3000
-        CMD ["npm", "run", "dev"]
+        CMD ["python", "app.py"]
     container_name: educpro_frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    env_file:
+      - ./frontend/.env
     volumes:
       - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       - backend
     networks:
       - educpro_network
 
   # ─────────────────────────────────────────
-  # 🛠️ Admin Next.js
+  # 🛠️ Admin Flask + Jinja2
   # ─────────────────────────────────────────
   admin:
     build:
       context: ./admin
       dockerfile_inline: |
-        FROM node:22-alpine
+        FROM python:3.12-slim
         WORKDIR /app
-        COPY package*.json ./
-        RUN npm ci
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
         COPY . .
         EXPOSE 3001
-        CMD ["npm", "run", "dev", "--", "-p", "3001"]
+        CMD ["python", "app.py"]
     container_name: educpro_admin
     restart: unless-stopped
     ports:
       - "3001:3001"
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    env_file:
+      - ./admin/.env
     volumes:
       - ./admin:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       - backend
     networks:
