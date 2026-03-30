@@ -16,11 +16,11 @@ services:
       - mysql_data:/var/lib/mysql
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
-      interval: 10s
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-prootpassword" ]
+      interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     networks:
       - educpro_network
 
@@ -45,8 +45,7 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     networks:
       - educpro_network
 
@@ -71,6 +70,7 @@ services:
     volumes:
       - ./frontend:/app
     depends_on:
+      - db
       - backend
     networks:
       - educpro_network
@@ -96,6 +96,7 @@ services:
     volumes:
       - ./admin:/app
     depends_on:
+      - db
       - backend
     networks:
       - educpro_network

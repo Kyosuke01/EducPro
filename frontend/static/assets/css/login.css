@@ -3,12 +3,12 @@
    ====================================== */
 
 :root {
-    --primary-color: #00e9d2;
-    --primary-dark: #1a7a6f;
-    --bg-primary: #f5f7fa;
+    --primary-color: #6366F1;
+    --primary-dark: #3730A3;
+    --bg-primary: #EEF2FF;
     --bg-secondary: #ffffff;
-    --text-primary: #1a1a2e;
-    --text-secondary: #6c757d;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
@@ -113,51 +113,51 @@ body {
 }
 
 .brand-title {
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: var(--spacing-sm);
-  letter-spacing: -0.5px;
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    letter-spacing: -0.5px;
 }
 
 .brand-subtitle {
-  font-size: 18px;
-  font-weight: 500;
-  margin-bottom: var(--spacing-lg);
-  opacity: 0.95;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.95;
 }
 
 .brand-description {
-  font-size: 16px;
-  line-height: 1.6;
-  opacity: 0.9;
-  margin-bottom: var(--spacing-2xl);
-  font-weight: 300;
+    font-size: 16px;
+    line-height: 1.6;
+    opacity: 0.9;
+    margin-bottom: var(--spacing-2xl);
+    font-weight: 300;
 }
 
 .brand-features {
-  display: flex;
-  gap: var(--spacing-lg);
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: var(--spacing-2xl);
-  padding-top: var(--spacing-2xl);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: var(--spacing-2xl);
+    padding-top: var(--spacing-2xl);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .feature {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  font-size: 14px;
-  opacity: 0.95;
-  min-width: 120px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 14px;
+    opacity: 0.95;
+    min-width: 120px;
 }
 
 .feature-icon {
-  width: 20px;
-  height: 20px;
-  stroke-width: 2;
-  flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    flex-shrink: 0;
 }
 
 
@@ -259,7 +259,7 @@ body {
 .form-input:focus {
     border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
 
 .form-options {
@@ -305,7 +305,7 @@ body {
 
 .submit-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(13, 110, 253, 0.4);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
 }
 
 .footer-links {
@@ -323,4 +323,4 @@ body {
 
 .footer-links a:hover {
     color: var(--primary-color);
-}
+}
