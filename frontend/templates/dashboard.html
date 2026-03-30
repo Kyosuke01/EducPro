@@ -276,6 +276,7 @@
       const menus = {
         admin: [
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
+          { icon: 'ri-user-add-line', label: 'Ajouter Utilisateur', id: 'createUser' },
           { icon: 'ri-graduation-cap-line', label: 'Étudiants', id: 'students' },
           { icon: 'ri-user-follow-line', label: 'Professeurs', id: 'teachers' },
           { icon: 'ri-book-2-line', label: 'Classes', id: 'classes' },
@@ -343,6 +344,11 @@
           html = await getDashboardContent();
           document.getElementById('pageTitle').textContent = 'Tableau de Bord';
           document.getElementById('pageSubtitle').textContent = `Bienvenue, ${USER.firstName} ${USER.lastName}`;
+          break;
+        case 'createUser':
+          html = await getCreateUserContent();
+          document.getElementById('pageTitle').textContent = "Gestion des Utilisateurs";
+          document.getElementById('pageSubtitle').textContent = "Ajouter un étudiant ou un professeur";
           break;
         case 'students':
           html = await getStudentsContent();
@@ -637,6 +643,214 @@
     }
 
     // ============================================
+    // CREATION UTILISATEUR (Admin)
+    // ============================================
+    async function deleteUser(type, id) {
+      if (!confirm("Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.")) return;
+      try {
+        const resp = await fetch(`/api/users/${type}/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+        if (resp.ok) {
+          alert('Utilisateur supprimé');
+          loadSection(type + 's', null);
+        } else {
+          const js = await resp.json();
+          alert('Erreur: ' + (js.error || 'inconnue'));
+        }
+      } catch(e) { alert('Erreur réseau'); }
+    }
+
+    async function showEditUserForm(type, user) {
+      const classesData = await api('classes');
+      const classesList = classesData.classes || [];
+      let classOptions = '<option value="">-- Sélectionner une classe --</option>';
+      classesList.forEach(c => {
+        classOptions += `<option value="${c.name}" ${user.class_name === c.name ? 'selected' : ''}>${c.name}</option>`;
+      });
+
+      const isStudent = type === 'student';
+      const id = isStudent ? user.student_id : user.teacher_id;
+
+      let html = `
+        <div class="row">
+          <div class="col-12 col-md-8 offset-md-2">
+            <div class="card shadow-1 radius-12 border-0">
+              <div class="card-header border-bottom bg-white p-24">
+                <div class="d-flex align-items-center gap-3">
+                  <button class="btn btn-sm btn-light radius-8" onclick="loadSection('${type}s', event)"><i class="ri-arrow-left-line"></i> Retour</button>
+                  <h6 class="text-lg fw-semibold mb-0"><i class="ri-edit-line text-primary me-2"></i>Éditer ${isStudent ? "l'étudiant" : "le professeur"}</h6>
+                </div>
+              </div>
+              <div class="card-body p-24">
+                <div id="editUserAlert"></div>
+                <form id="editUserForm" onsubmit="submitEditUser(event, '${type}', ${id})">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label text-sm fw-medium">Prénom</label>
+                      <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="editUserFirstName" value="${user.first_name}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label text-sm fw-medium">Nom</label>
+                      <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="editUserLastName" value="${user.last_name}" required>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label text-sm fw-medium">Email</label>
+                    <input type="email" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="editUserEmail" value="${isStudent ? user.mail_student : user.mail_teacher}" required>
+                  </div>
+                  ${isStudent ? `
+                  <div class="mb-3" id="studentFields">
+                    <label class="form-label text-sm fw-medium">Classe</label>
+                    <select class="form-select radius-8 bg-neutral-50 border-0 p-12" id="editUserClass" required>${classOptions}</select>
+                  </div>` : `
+                  <div class="mb-3" id="teacherFields">
+                    <label class="form-label text-sm fw-medium">Matière</label>
+                    <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="editUserTopic" value="${user.topic_name || ''}" placeholder="Ex: Informatique" required>
+                  </div>`}
+                  <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary radius-8" id="editUserBtn"><i class="ri-save-line me-2"></i>Mettre à jour</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('contentArea').innerHTML = html;
+    }
+
+    async function submitEditUser(e, type, id) {
+      e.preventDefault();
+      const btn = document.getElementById('editUserBtn');
+      const alertBox = document.getElementById('editUserAlert');
+      const payload = {
+        first_name: document.getElementById('editUserFirstName').value,
+        last_name: document.getElementById('editUserLastName').value,
+        email: document.getElementById('editUserEmail').value,
+      };
+      if (type === 'student') payload.class_name = document.getElementById('editUserClass').value;
+      else payload.topic_name = document.getElementById('editUserTopic').value;
+      
+      btn.disabled = true; btn.innerText = 'Enregistrement...';
+      try {
+        const resp = await fetch(`/api/users/${type}/${id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          alertBox.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+          setTimeout(() => loadSection(type + 's', null), 1500);
+        } else alertBox.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+      } catch (err) { alertBox.innerHTML = `<div class="alert alert-danger">Erreur ${err.message}</div>`; }
+      finally { btn.disabled = false; btn.innerText = "Mettre à jour"; }
+    }
+
+    async function getCreateUserContent() {
+      const classesData = await api('classes');
+      const classesList = classesData.classes || [];
+      let classOptions = '<option value="">-- Sélectionner une classe --</option>';
+      classesList.forEach(c => { classOptions += `<option value="${c.name}">${c.name}</option>`; });
+
+      return `
+        <div class="row">
+          <div class="col-12 col-md-8 offset-md-2">
+            <div class="card shadow-1 radius-12 border-0">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-user-add-line text-primary me-2"></i>Ajouter un Utilisateur</h6>
+              </div>
+              <div class="card-body p-24">
+                <div id="createUserAlert"></div>
+                <form id="createUserForm" onsubmit="submitCreateUser(event)">
+                  <div class="mb-3">
+                    <label class="form-label text-sm fw-medium">Rôle</label>
+                    <select class="form-select radius-8 bg-neutral-50 border-0 p-12" id="newUserType" onchange="toggleUserTypeFields()" required>
+                      <option value="student" selected>Étudiant</option>
+                      <option value="teacher">Professeur</option>
+                    </select>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label text-sm fw-medium">Prénom</label>
+                      <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="newUserFirstName" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label text-sm fw-medium">Nom</label>
+                      <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="newUserLastName" required>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label text-sm fw-medium">Email</label>
+                    <input type="email" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="newUserEmail" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label text-sm fw-medium">Mot de passe provisoire</label>
+                    <input type="password" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="newUserPassword" required minlength="6">
+                  </div>
+                  <div class="mb-3" id="studentFields">
+                    <label class="form-label text-sm fw-medium">Classe</label>
+                    <select class="form-select radius-8 bg-neutral-50 border-0 p-12" id="newUserClass" required>${classOptions}</select>
+                  </div>
+                  <div class="mb-3 d-none" id="teacherFields">
+                    <label class="form-label text-sm fw-medium">Matière</label>
+                    <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12" id="newUserTopic" placeholder="Ex: Mathématiques">
+                  </div>
+                  <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary radius-8" id="createUserBtn"><i class="ri-user-add-line me-2"></i>Créer l'utilisateur</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleUserTypeFields() {
+      const type = document.getElementById('newUserType').value;
+      if (type === 'student') {
+        document.getElementById('studentFields').classList.remove('d-none');
+        document.getElementById('teacherFields').classList.add('d-none');
+        document.getElementById('newUserClass').required = true;
+        document.getElementById('newUserTopic').required = false;
+      } else {
+        document.getElementById('studentFields').classList.add('d-none');
+        document.getElementById('teacherFields').classList.remove('d-none');
+        document.getElementById('newUserClass').required = false;
+        document.getElementById('newUserTopic').required = true;
+      }
+    }
+
+    async function submitCreateUser(e) {
+      e.preventDefault();
+      const btn = document.getElementById('createUserBtn');
+      const alertBox = document.getElementById('createUserAlert');
+      const payload = {
+        user_type: document.getElementById('newUserType').value,
+        first_name: document.getElementById('newUserFirstName').value,
+        last_name: document.getElementById('newUserLastName').value,
+        email: document.getElementById('newUserEmail').value,
+        password: document.getElementById('newUserPassword').value,
+      };
+      if (payload.user_type === 'student') payload.class_name = document.getElementById('newUserClass').value;
+      else payload.topic_name = document.getElementById('newUserTopic').value;
+      
+      btn.disabled = true; btn.innerText = 'Création en cours...';
+      try {
+        const resp = await fetch('/api/users/', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          alertBox.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+          document.getElementById('createUserForm').reset();
+          toggleUserTypeFields();
+        } else alertBox.innerHTML = `<div class="alert alert-danger">${data.error || 'Erreur inconnue'}</div>`;
+      } catch (err) { alertBox.innerHTML = `<div class="alert alert-danger">Erreur: ${err.message}</div>`; }
+      finally { btn.disabled = false; btn.innerText = "Créer l'utilisateur"; }
+    }
+
+    // ============================================
     // ÉTUDIANTS (Admin)
     // ============================================
     async function getStudentsContent() {
@@ -662,18 +876,27 @@
             </td>
             <td><span class="badge bg-neutral-200 text-neutral-600 rounded-pill px-12 py-6">${s.class_name || '-'}</span></td>
             <td><span class="badge bg-success-100 text-success-600 px-12 py-6 rounded-pill"><i class="ri-check-line me-1"></i>Actif</span></td>
+            ${USER.role === 'admin' ? `
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px" onclick='showEditUserForm("student", ${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="ri-edit-2-line text-primary"></i></button>
+                <button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px" onclick="deleteUser('student', ${s.student_id})"><i class="ri-delete-bin-line text-danger"></i></button>
+              </div>
+            </td>
+            ` : ''}
           </tr>
         `;
       });
 
-      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted py-24">Aucun étudiant trouvé</td></tr>';
+      if (!rows) rows = `<tr><td colspan="${USER.role==='admin'?'4':'3'}" class="text-center text-muted py-24">Aucun étudiant trouvé</td></tr>`;
 
       return `
         <div class="row">
           <div class="col-12">
             <div class="card shadow-1 radius-12">
-              <div class="card-header border-bottom bg-white p-24">
+              <div class="card-header border-bottom bg-white p-24 d-flex justify-content-between align-items-center">
                 <h6 class="text-lg fw-semibold mb-0"><i class="ri-team-line text-primary me-2"></i>Annuaire des Étudiants</h6>
+                ${USER.role === 'admin' ? `<button class="btn btn-sm btn-primary radius-8" onclick="loadSection('createUser')"><i class="ri-add-line me-1"></i>Ajouter</button>` : ''}
               </div>
               <div class="card-body p-0">
                 <div class="table-responsive">
@@ -683,7 +906,9 @@
                         <th class="ps-24 py-16">Étudiant</th>
                         <th class="py-16">Classe</th>
                         <th class="py-16">Statut</th>
+                        ${USER.role === 'admin' ? `<th class="py-16">Actions</th>` : ''}
                       </tr>
+                    </thead>
                     <tbody>${rows}</tbody>
                   </table>
                 </div>
@@ -722,18 +947,27 @@
             </td>
             <td><span class="badge bg-neutral-200 text-neutral-600 rounded-pill px-12 py-6">${t.topic_name || 'Administration'}</span></td>
             <td>${role}</td>
+            ${USER.role === 'admin' ? `
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px" onclick='showEditUserForm("teacher", ${JSON.stringify(t).replace(/'/g, "&apos;")})'><i class="ri-edit-2-line text-primary"></i></button>
+                ${!t.is_admin ? `<button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px" onclick="deleteUser('teacher', ${t.teacher_id})"><i class="ri-delete-bin-line text-danger"></i></button>` : ''}
+              </div>
+            </td>
+            ` : ''}
           </tr>
         `;
       });
 
-      if (!rows) rows = '<tr><td colspan="3" class="text-center text-muted py-24">Aucun professeur trouvé</td></tr>';
+      if (!rows) rows = `<tr><td colspan="${USER.role==='admin'?'4':'3'}" class="text-center text-muted py-24">Aucun professeur trouvé</td></tr>`;
 
       return `
         <div class="row">
           <div class="col-12">
             <div class="card shadow-1 radius-12">
-              <div class="card-header border-bottom bg-white p-24">
+              <div class="card-header border-bottom bg-white p-24 d-flex justify-content-between align-items-center">
                 <h6 class="text-lg fw-semibold mb-0"><i class="ri-user-star-line text-primary me-2"></i>Corps Enseignant et Administratif</h6>
+                ${USER.role === 'admin' ? `<button class="btn btn-sm btn-primary radius-8" onclick="loadSection('createUser')"><i class="ri-add-line me-1"></i>Ajouter</button>` : ''}
               </div>
               <div class="card-body p-0">
                 <div class="table-responsive">
@@ -743,6 +977,7 @@
                         <th class="ps-24 py-16">Professeur</th>
                         <th class="py-16">Spécialité</th>
                         <th class="py-16">Rôle</th>
+                        ${USER.role === 'admin' ? `<th class="py-16">Actions</th>` : ''}
                       </tr>
                     </thead>
                     <tbody>${rows}</tbody>

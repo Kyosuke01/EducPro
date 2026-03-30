@@ -36,9 +36,6 @@ def get_users():
 # POST créer un utilisateur (Sécurisé par accès Admin)
 @users_bp.route("/", methods=["POST"])
 def create_user():
-    if request.headers.get("User-Agent") != "educpro-admin/1.0":
-        return jsonify({"error": "Accès refusé. Seuls les administrateurs peuvent créer des utilisateurs."}), 403
-
     data = request.get_json()
     if not data:
         return jsonify({"error": "Données invalides."}), 400
@@ -93,9 +90,6 @@ def create_user():
 # PUT modifier un utilisateur
 @users_bp.route("/<user_type>/<int:user_id>", methods=["PUT"])
 def update_user(user_type, user_id):
-    if request.headers.get("User-Agent") != "educpro-admin/1.0":
-        return jsonify({"error": "Accès refusé. Seuls les administrateurs."}), 403
-
     data = request.get_json()
     first_name = data.get("first_name")
     last_name = data.get("last_name")
@@ -132,9 +126,6 @@ def update_user(user_type, user_id):
 # DELETE supprimer un utilisateur
 @users_bp.route("/<user_type>/<int:user_id>", methods=["DELETE"])
 def delete_user(user_type, user_id):
-    if request.headers.get("User-Agent") != "educpro-admin/1.0":
-        return jsonify({"error": "Accès refusé. Seuls les administrateurs."}), 403
-
     conn = None
     try:
         conn = get_db_connection()

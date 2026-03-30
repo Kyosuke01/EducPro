@@ -54,8 +54,6 @@ def login():
             student = cursor.fetchone()
 
             if student and bcrypt.checkpw(password.encode('utf-8'), student["password"].encode('utf-8')):
-                if request.headers.get("User-Agent") == "educpro-admin/1.0":
-                    return jsonify({"error": "Accès refusé. Les étudiants doivent utiliser l'interface normale."}), 403
                 return jsonify({
                     "message": "Connexion réussie.",
                     "user": {
@@ -78,12 +76,6 @@ def login():
 
             if teacher and bcrypt.checkpw(password.encode('utf-8'), teacher["password"].encode('utf-8')):
                 role = "admin" if teacher.get("is_admin") else "teacher"
-                user_agent = request.headers.get("User-Agent")
-                
-                if role == "admin" and user_agent != "educpro-admin/1.0":
-                    return jsonify({"error": "Accès refusé. Les administrateurs doivent se connecter sur l'interface d'administration."}), 403
-                if role == "teacher" and user_agent == "educpro-admin/1.0":
-                    return jsonify({"error": "Accès refusé. Les professeurs doivent se connecter sur l'interface normale."}), 403
 
                 return jsonify({
                     "message": "Connexion réussie.",

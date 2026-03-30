@@ -9,7 +9,7 @@ SET CHARACTER SET utf8mb4;
 CREATE TABLE IF NOT EXISTS Class (
   class_id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100) UNIQUE NOT NULL
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des professeurs
 CREATE TABLE IF NOT EXISTS Teacher (
@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS Teacher (
   last_name VARCHAR(100) NOT NULL,
   mail_teacher VARCHAR(255) UNIQUE,
   password VARCHAR(255),
-  is_admin TINYINT DEFAULT 0,
+  is_admin BOOLEAN DEFAULT FALSE,
   topic_name VARCHAR(100)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des étudiants
 CREATE TABLE IF NOT EXISTS Student (
@@ -30,8 +30,11 @@ CREATE TABLE IF NOT EXISTS Student (
   mail_student VARCHAR(255) UNIQUE,
   password VARCHAR(255),
   class_name VARCHAR(100),
-  dob DATE
-);
+  dob DATE,
+  FOREIGN KEY (class_name) REFERENCES Class(name)
+    ON DELETE SET NULL 
+    ON UPDATE CASCADE
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des matières
 CREATE TABLE IF NOT EXISTS Topic (
@@ -39,13 +42,13 @@ CREATE TABLE IF NOT EXISTS Topic (
   name VARCHAR(100) UNIQUE NOT NULL,
   teacher_id INT,
   class_id INT
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des salles
 CREATE TABLE IF NOT EXISTS Room (
   room_id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(50) UNIQUE NOT NULL
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des notes
 CREATE TABLE IF NOT EXISTS Grade (
@@ -53,27 +56,31 @@ CREATE TABLE IF NOT EXISTS Grade (
   grade FLOAT NOT NULL,
   student_id INT NOT NULL,
   topic_name VARCHAR(100) NOT NULL
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table emploi du temps
+-- Table des emplois du temps (EDT)
 CREATE TABLE IF NOT EXISTS EDT (
-  edt_id INT PRIMARY KEY AUTO_INCREMENT,
-  topic_name VARCHAR(100) NOT NULL,
-  room_name VARCHAR(50),
-  teacher_l_name VARCHAR(100),
-  teacher_f_name VARCHAR(100),
+  slot_id INT PRIMARY KEY AUTO_INCREMENT,
   class_name VARCHAR(100),
-  start_time DATETIME NOT NULL,
-  end_time DATETIME NOT NULL
-);
+  teacher_id INT,
+  day_of_week VARCHAR(20) NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  FOREIGN KEY (class_name) REFERENCES Class(name) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (teacher_id) REFERENCES Teacher(teacher_id) ON DELETE CASCADE
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table absences / retards
-CREATE TABLE IF NOT EXISTS Attendance (
+-- Table des présences (Absences / Retards)
+CREATE TABLE IF NOT EXISTS ATTENDANCE (
   attendance_id INT PRIMARY KEY AUTO_INCREMENT,
-  late INT DEFAULT 0,
-  absent INT DEFAULT 0,
-  student_id INT NOT NULL
-);
+  student_id INT NOT NULL,
+  slot_id INT,
+  date_attendance DATE NOT NULL,
+  status ENUM('present', 'absent', 'late') DEFAULT 'present',
+  justified BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
+  FOREIGN KEY (slot_id) REFERENCES EDT(slot_id) ON DELETE SET NULL
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table tickets
 CREATE TABLE IF NOT EXISTS TICKET (
@@ -81,7 +88,7 @@ CREATE TABLE IF NOT EXISTS TICKET (
   msg_content VARCHAR(255),
   teacher_id INT,
   student_id INT
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
 -- DONNÉES DE TEST

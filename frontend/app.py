@@ -114,6 +114,21 @@ def api_proxy(path):
 
     url = f"{API_URL}/api/{path}"
     headers = get_secure_headers()
+    
+    # --- ROLE-BASED ACCESS CONTROL (RBAC) ---
+    role = session.get("role")
+    method = request.method
+    first_segment = path.split("/")[0] if path else ""
+
+    if method in ["POST", "PUT", "DELETE"]:
+        if role == "student":
+            if first_segment not in ["messages"]:
+                return jsonify({"error": "Action refusée. Accès administrateur requis."}), 403
+        elif role == "teacher":
+            # Les professeurs ne peuvent écrire QUE les présences, notes, et messages
+            if first_segment not in ["attendance", "grades", "messages", "edt"]:
+                 return jsonify({"error": "Action non autorisée pour un enseignant."}), 403
+    # ----------------------------------------
 
     try:
         if request.method == "GET":
