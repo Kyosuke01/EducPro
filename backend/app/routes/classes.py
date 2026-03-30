@@ -2,8 +2,9 @@
 routes/classes.py — Routes pour les classes et les matières.
 
 Endpoints :
-    GET /api/classes/<class_name>/students   — Étudiants d'une classe
-    GET /api/topics                          — Liste de toutes les matières
+    GET /api/classes                          — Liste de toutes les classes
+    GET /api/classes/<class_name>/students    — Étudiants d'une classe
+    GET /api/topics                           — Liste de toutes les matières
 """
 
 from flask import Blueprint, jsonify
@@ -13,18 +14,33 @@ classes_bp = Blueprint("classes", __name__)
 
 
 # ──────────────────────────────────────────────
+# GET /api/classes
+# ──────────────────────────────────────────────
+@classes_bp.route("/classes", methods=["GET"])
+def get_all_classes():
+    """Liste de toutes les classes."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT class_id, name FROM Class ORDER BY name ASC")
+            classes = cursor.fetchall()
+
+        return jsonify({"classes": classes}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ──────────────────────────────────────────────
 # GET /api/classes/<class_name>/students
 # ──────────────────────────────────────────────
 @classes_bp.route("/classes/<string:class_name>/students", methods=["GET"])
 def get_students_by_class(class_name):
-    """
-    Récupère la liste des étudiants inscrits dans une classe spécifique.
-
-    Retourne :
-        200 — Liste des étudiants de la classe.
-        404 — Aucun étudiant trouvé pour cette classe.
-        500 — Erreur serveur.
-    """
+    """Récupère la liste des étudiants inscrits dans une classe spécifique."""
     conn = None
     try:
         conn = get_db_connection()
@@ -41,7 +57,7 @@ def get_students_by_class(class_name):
         if students:
             return jsonify({"class_name": class_name, "students": students}), 200
         else:
-            return jsonify({"error": f"Aucun étudiant trouvé pour la classe '{class_name}'."}), 404
+            return jsonify({"class_name": class_name, "students": []}), 200
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
@@ -55,14 +71,7 @@ def get_students_by_class(class_name):
 # ──────────────────────────────────────────────
 @classes_bp.route("/topics", methods=["GET"])
 def get_all_topics():
-    """
-    Récupère la liste de toutes les matières disponibles.
-
-    Retourne :
-        200 — Liste des matières.
-        404 — Aucune matière trouvée.
-        500 — Erreur serveur.
-    """
+    """Récupère la liste de toutes les matières disponibles."""
     conn = None
     try:
         conn = get_db_connection()
@@ -71,10 +80,7 @@ def get_all_topics():
             cursor.execute(sql)
             topics = cursor.fetchall()
 
-        if topics:
-            return jsonify({"topics": topics}), 200
-        else:
-            return jsonify({"error": "Aucune matière trouvée."}), 404
+        return jsonify({"topics": topics}), 200
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500

@@ -4,6 +4,7 @@ routes/grades.py — Routes pour la gestion des notes.
 Endpoints :
     GET  /api/grades/student/<student_id>   — Notes d'un étudiant
     GET  /api/grades/topic/<topic_name>     — Notes par matière
+    GET  /api/grades/class/<class_name>     — Notes de tous les étudiants d'une classe
     POST /api/grades                        — Ajouter une note
 """
 
@@ -18,14 +19,7 @@ grades_bp = Blueprint("grades", __name__)
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades/student/<int:student_id>", methods=["GET"])
 def get_grades_by_student(student_id):
-    """
-    Récupère toutes les notes d'un étudiant donné.
-
-    Retourne :
-        200 — Liste des notes de l'étudiant.
-        404 — Aucune note trouvée pour cet étudiant.
-        500 — Erreur serveur.
-    """
+    """Récupère toutes les notes d'un étudiant donné."""
     conn = None
     try:
         conn = get_db_connection()
@@ -34,10 +28,7 @@ def get_grades_by_student(student_id):
             cursor.execute(sql, (student_id,))
             grades = cursor.fetchall()
 
-        if grades:
-            return jsonify({"student_id": student_id, "grades": grades}), 200
-        else:
-            return jsonify({"error": f"Aucune note trouvée pour l'étudiant {student_id}."}), 404
+        return jsonify({"student_id": student_id, "grades": grades}), 200
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
@@ -51,14 +42,7 @@ def get_grades_by_student(student_id):
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades/topic/<string:topic_name>", methods=["GET"])
 def get_grades_by_topic(topic_name):
-    """
-    Récupère toutes les notes pour une matière spécifique.
-
-    Retourne :
-        200 — Liste des notes de la matière.
-        404 — Aucune note trouvée pour cette matière.
-        500 — Erreur serveur.
-    """
+    """Récupère toutes les notes pour une matière spécifique."""
     conn = None
     try:
         conn = get_db_connection()
@@ -67,10 +51,37 @@ def get_grades_by_topic(topic_name):
             cursor.execute(sql, (topic_name,))
             grades = cursor.fetchall()
 
-        if grades:
-            return jsonify({"topic_name": topic_name, "grades": grades}), 200
-        else:
-            return jsonify({"error": f"Aucune note trouvée pour la matière '{topic_name}'."}), 404
+        return jsonify({"topic_name": topic_name, "grades": grades}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ──────────────────────────────────────────────
+# GET /api/grades/class/<string:class_name>
+# ──────────────────────────────────────────────
+@grades_bp.route("/grades/class/<string:class_name>", methods=["GET"])
+def get_grades_by_class(class_name):
+    """Récupère toutes les notes des étudiants d'une classe."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT g.grade_id, g.grade, g.student_id, g.topic_name,
+                       s.first_name, s.last_name
+                FROM Grade g
+                JOIN Student s ON g.student_id = s.student_id
+                WHERE s.class_name = %s
+                ORDER BY s.last_name, s.first_name, g.topic_name
+            """
+            cursor.execute(sql, (class_name,))
+            grades = cursor.fetchall()
+
+        return jsonify({"class_name": class_name, "grades": grades}), 200
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
@@ -84,24 +95,9 @@ def get_grades_by_topic(topic_name):
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades", methods=["POST"])
 def create_grade():
-    """
-    Ajoute une nouvelle note pour un étudiant.
-
-    Body JSON attendu :
-        {
-            "grade": 15.5,
-            "student_id": 1,
-            "topic_name": "Mathématiques"
-        }
-
-    Retourne :
-        201 — Note ajoutée avec succès.
-        400 — Champs manquants.
-        500 — Erreur serveur.
-    """
+    """Ajoute une nouvelle note pour un étudiant."""
     data = request.get_json()
 
-    # --- Validation des champs requis ---
     required_fields = ["grade", "student_id", "topic_name"]
     missing = [f for f in required_fields if not data or data.get(f) is None]
     if missing:

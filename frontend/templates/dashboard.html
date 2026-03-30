@@ -144,7 +144,7 @@
             </a>
           </li>
           <li>
-            <a href="/"
+            <a href="/logout"
               class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
               <i class="ri-shut-down-line"></i>
               Déconnexion
@@ -224,17 +224,54 @@
   <script src="/static/assets/js/lib/apexcharts-setting.js"></script>
   <script src="/static/assets/js/main.js"></script>
 
+  <!-- Injection sécurisée des données utilisateur pour le Linter JS -->
+  <script id="user-data" type="application/json">
+    {{ {
+      "id": user_id,
+      "firstName": first_name,
+      "lastName": last_name,
+      "email": email,
+      "role": role,
+      "className": class_name,
+      "topicName": topic_name
+    } | tojson | safe }}
+  </script>
+
   <script>
-    // Get user info from session or URL params
-    function getUserInfo() {
-      const params = new URLSearchParams(window.location.search);
-      const role = localStorage.getItem('role') || params.get('role') || 'admin';
-      const name = localStorage.getItem('name') || 'Admin';
-      const email = localStorage.getItem('email') || 'admin@educpro.com';
-      return { role, name, email };
+    // ============================================
+    // User info extraite proprement
+    // ============================================
+    const userDataElement = document.getElementById('user-data');
+    const USER = userDataElement && userDataElement.textContent.trim() !== ''
+      ? JSON.parse(userDataElement.textContent)
+      : {};
+
+    // ============================================
+    // API helper
+    // ============================================
+    async function api(path, options = {}) {
+      try {
+        const resp = await fetch(`/api/${path}`, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options
+        });
+
+        const contentType = resp.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          return await resp.json();
+        } else {
+          const text = await resp.text();
+          return { error: `Réponse inattendue (non-JSON): ${text.substring(0, 50)}...` };
+        }
+      } catch (e) {
+        console.error('API Error:', e);
+        return { error: e.message };
+      }
     }
 
-    // Generate sidebar menu based on role
+    // ============================================
+    // Sidebar menu based on role
+    // ============================================
     function generateSidebarMenu(role) {
       const menus = {
         admin: [
@@ -248,13 +285,15 @@
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
           { icon: 'ri-book-2-line', label: 'Mes Classes', id: 'myClasses' },
           { icon: 'ri-file-list-line', label: 'Évaluations', id: 'evaluations' },
+          { icon: 'ri-user-follow-line', label: 'Saisir les Absences', id: 'teacherAttendance' },
           { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' },
           { icon: 'ri-pencil-line', label: 'Saisir les Notes', id: 'grades' }
         ],
         student: [
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
           { icon: 'ri-star-line', label: 'Mes Notes', id: 'myGrades' },
-          { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' }
+          { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' },
+          { icon: 'ri-user-line', label: 'Mon Assiduité', id: 'myAttendance' }
         ]
       };
 
@@ -275,91 +314,158 @@
       document.getElementById('sidebarMenu').innerHTML = html;
     }
 
-    // Load section content
-    function loadSection(sectionId, event) {
+    // ============================================
+    // Section loader
+    // ============================================
+    async function loadSection(sectionId, event) {
       event?.preventDefault?.();
 
       // Update active menu item
       document.querySelectorAll('.sidebar-menu-item').forEach(item => {
         item.classList.remove('active');
       });
-      event?.target?.closest('.sidebar-menu-item')?.classList.add('active');
+      if (event?.target) {
+        event.target.closest('.sidebar-menu-item')?.classList.add('active');
+      } else {
+        document.querySelector(`[data-section="${sectionId}"]`)?.classList.add('active');
+      }
 
-      const user = getUserInfo();
+      const contentArea = document.getElementById('contentArea');
+      contentArea.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div></div>';
+
       let html = '';
 
       switch (sectionId) {
         case 'dashboard':
-          html = getDashboardContent(user.role);
+          html = await getDashboardContent();
           document.getElementById('pageTitle').textContent = 'Tableau de Bord';
+          document.getElementById('pageSubtitle').textContent = `Bienvenue, ${USER.firstName} ${USER.lastName}`;
           break;
         case 'students':
-          html = getStudentsContent();
+          html = await getStudentsContent();
           document.getElementById('pageTitle').textContent = 'Gestion des Étudiants';
+          document.getElementById('pageSubtitle').textContent = 'Liste de tous les étudiants';
           break;
         case 'teachers':
-          html = getTeachersContent();
+          html = await getTeachersContent();
           document.getElementById('pageTitle').textContent = 'Gestion des Professeurs';
+          document.getElementById('pageSubtitle').textContent = 'Liste de tous les professeurs';
           break;
         case 'classes':
-          html = getClassesContent();
+          html = await getClassesContent();
           document.getElementById('pageTitle').textContent = 'Gestion des Classes';
+          document.getElementById('pageSubtitle').textContent = 'Liste de toutes les classes';
           break;
         case 'schedule':
-        case 'mySchedule':
-          html = getScheduleContent();
+          html = await getScheduleContent();
           document.getElementById('pageTitle').textContent = 'Emploi du Temps';
+          document.getElementById('pageSubtitle').textContent = 'Emplois du temps de toutes les classes';
+          break;
+        case 'mySchedule':
+          html = await getMyScheduleContent();
+          document.getElementById('pageTitle').textContent = 'Mon Emploi du Temps';
+          document.getElementById('pageSubtitle').textContent = '';
           break;
         case 'myClasses':
-          html = getMyClassesContent();
+          html = await getMyClassesContent();
           document.getElementById('pageTitle').textContent = 'Mes Classes';
+          document.getElementById('pageSubtitle').textContent = '';
           break;
         case 'evaluations':
-          html = getEvaluationsContent();
+          html = await getEvaluationsContent();
           document.getElementById('pageTitle').textContent = 'Évaluations';
+          document.getElementById('pageSubtitle').textContent = 'Notes par matière';
           break;
         case 'grades':
-          html = getGradesContent();
+          html = await getGradesContent();
           document.getElementById('pageTitle').textContent = 'Saisir les Notes';
+          document.getElementById('pageSubtitle').textContent = '';
           break;
         case 'myGrades':
-          html = getMyGradesContent();
+          html = await getMyGradesContent();
           document.getElementById('pageTitle').textContent = 'Mes Notes';
+          document.getElementById('pageSubtitle').textContent = '';
+          break;
+        case 'myAttendance':
+          html = await getMyAttendanceContent();
+          document.getElementById('pageTitle').textContent = 'Mon Assiduité';
+          document.getElementById('pageSubtitle').textContent = '';
+          break;
+        case 'teacherAttendance':
+          html = await getTeacherAttendanceContent();
+          document.getElementById('pageTitle').textContent = 'Saisir les Absences';
+          document.getElementById('pageSubtitle').textContent = '';
           break;
         default:
-          html = getDashboardContent(user.role);
+          html = await getDashboardContent();
       }
 
-      document.getElementById('contentArea').innerHTML = html;
+      contentArea.innerHTML = html;
     }
 
-    // Dashboard content based on role
-    function getDashboardContent(role) {
-      const stats = {
-        admin: [
-          { title: 'Total Étudiants', value: '2,450', icon: 'ri-graduation-cap-line', color: 'warning-600', percentage: '+10%' },
-          { title: 'Total Professeurs', value: '125', icon: 'ri-user-follow-line', color: 'blue-600', percentage: '+5%' },
-          { title: 'Total Classes', value: '45', icon: 'ri-book-2-line', color: 'purple-600', percentage: '+2%' },
-          { title: 'Taux Présence', value: '92%', icon: 'ri-calendar-check-line', color: 'success-600', percentage: '+8%' }
-        ],
-        teacher: [
-          { title: 'Mes Classes', value: '5', icon: 'ri-book-2-line', color: 'warning-600', percentage: '+0%' },
-          { title: 'Total Étudiants', value: '120', icon: 'ri-graduation-cap-line', color: 'blue-600', percentage: '+5%' },
-          { title: 'Évaluations', value: '8', icon: 'ri-file-list-line', color: 'purple-600', percentage: '+2%' },
-          { title: 'Taux Présence', value: '94%', icon: 'ri-calendar-check-line', color: 'success-600', percentage: '+3%' }
-        ],
-        student: [
-          { title: 'Moyenne Générale', value: '14.5', icon: 'ri-star-line', color: 'warning-600', percentage: '+0.5' },
-          { title: 'Mes Classes', value: '6', icon: 'ri-book-2-line', color: 'blue-600', percentage: '+0%' },
-          { title: 'Absences', value: '3', icon: 'ri-calendar-x-line', color: 'danger-600', percentage: '-1' },
-          { title: 'Taux Présence', value: '95%', icon: 'ri-calendar-check-line', color: 'success-600', percentage: '+2%' }
-        ]
-      };
+    // ============================================
+    // DASHBOARD — Stats dynamiques
+    // ============================================
+    async function getDashboardContent() {
+      try {
+        if (USER.role === 'admin') {
+          const [studentsData, teachersData, classesData] = await Promise.all([
+            api('students'),
+            api('teachers'),
+            api('classes')
+          ]);
+          const nbStudents = (studentsData && studentsData.students) ? studentsData.students.length : 0;
+          const nbTeachers = (teachersData && teachersData.teachers) ? teachersData.teachers.length : 0;
+          const nbClasses = (classesData && classesData.classes) ? classesData.classes.length : 0;
 
-      const cards = stats[role] || stats.student;
+          return buildStatsCards([
+            { title: 'Total Étudiants', value: nbStudents, icon: 'ri-graduation-cap-line', color: 'warning-600' },
+            { title: 'Total Professeurs', value: nbTeachers, icon: 'ri-user-follow-line', color: 'blue-600' },
+            { title: 'Total Classes', value: nbClasses, icon: 'ri-book-2-line', color: 'purple-600' },
+            { title: 'Plateforme', value: 'Active', icon: 'ri-check-double-line', color: 'success-600' }
+          ]);
+
+        } else if (USER.role === 'teacher') {
+          const edtData = await api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`);
+          const edtList = (edtData && edtData.edt) ? edtData.edt : [];
+          const nbSlots = edtList.length;
+          const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].length;
+
+          return buildStatsCards([
+            { title: 'Mes Créneaux', value: nbSlots, icon: 'ri-calendar-line', color: 'warning-600' },
+            { title: 'Mes Classes', value: uniqueClasses, icon: 'ri-book-2-line', color: 'blue-600' },
+            { title: 'Matière', value: USER.topicName || '-', icon: 'ri-file-list-line', color: 'purple-600' },
+            { title: 'Statut', value: 'Actif', icon: 'ri-check-double-line', color: 'success-600' }
+          ]);
+
+        } else {
+          // Student
+          const [gradesData, attendanceData] = await Promise.all([
+            api(`grades/student/${USER.id}`),
+            api(`attendance/student/${USER.id}`)
+          ]);
+
+          const grades = (gradesData && gradesData.grades) ? gradesData.grades : [];
+          const avg = grades.length > 0 ? (grades.reduce((s, g) => s + g.grade, 0) / grades.length).toFixed(1) : '-';
+          const att = (attendanceData && attendanceData.attendance && attendanceData.attendance.length > 0)
+            ? attendanceData.attendance[0]
+            : { late: 0, absent: 0 };
+
+          return buildStatsCards([
+            { title: 'Moyenne Générale', value: avg + '/20', icon: 'ri-star-line', color: 'warning-600' },
+            { title: 'Classe', value: USER.className || '-', icon: 'ri-book-2-line', color: 'blue-600' },
+            { title: 'Absences', value: att.absent || 0, icon: 'ri-calendar-x-line', color: 'danger-600' },
+            { title: 'Retards', value: att.late || 0, icon: 'ri-time-line', color: 'purple-600' }
+          ]);
+        }
+      } catch (e) {
+        return `<div class="alert alert-danger">Erreur de chargement du dashboard : ${e.message}</div>`;
+      }
+    }
+
+    function buildStatsCards(cards) {
       let html = '<div class="row gy-4"><div class="col-xxl-12"><div class="row gy-4">';
-
-      cards.forEach((card, idx) => {
+      cards.forEach(card => {
         html += `
           <div class="col-xxl-3 col-sm-6">
             <div class="card shadow-1 radius-8 h-100">
@@ -371,21 +477,36 @@
                   <p class="fw-medium text-primary-light mb-1">${card.title}</p>
                 </div>
                 <h6 class="mb-0">${card.value}</h6>
-                <p class="fw-medium text-sm text-primary-light mt-12 mb-0">
-                  <span class="text-success-600 text-sm fw-semibold">${card.percentage}</span>
-                </p>
               </div>
             </div>
           </div>
         `;
       });
-
       html += '</div></div></div>';
       return html;
     }
 
-    // Students management
-    function getStudentsContent() {
+    // ============================================
+    // ÉTUDIANTS (Admin)
+    // ============================================
+    async function getStudentsContent() {
+      const data = await api('students');
+      const students = data.students || [];
+
+      let rows = '';
+      students.forEach(s => {
+        rows += `
+          <tr>
+            <td>${s.last_name} ${s.first_name}</td>
+            <td>${s.mail_student || '-'}</td>
+            <td>${s.class_name || '-'}</td>
+            <td><span class="badge bg-success">Actif</span></td>
+          </tr>
+        `;
+      });
+
+      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted">Aucun étudiant trouvé</td></tr>';
+
       return `
         <div class="row">
           <div class="col-12">
@@ -400,25 +521,9 @@
                         <th>Email</th>
                         <th>Classe</th>
                         <th>Statut</th>
-                        <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>Jean Martin</td>
-                        <td>jean@example.com</td>
-                        <td>1ère S</td>
-                        <td><span class="badge bg-success">Actif</span></td>
-                        <td><a href="#" class="text-primary">Modifier</a></td>
-                      </tr>
-                      <tr>
-                        <td>Marie Dubois</td>
-                        <td>marie@example.com</td>
-                        <td>1ère S</td>
-                        <td><span class="badge bg-success">Actif</span></td>
-                        <td><a href="#" class="text-primary">Modifier</a></td>
-                      </tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                   </table>
                 </div>
               </div>
@@ -428,8 +533,28 @@
       `;
     }
 
-    // Teachers management
-    function getTeachersContent() {
+    // ============================================
+    // PROFESSEURS (Admin)
+    // ============================================
+    async function getTeachersContent() {
+      const data = await api('teachers');
+      const teachers = data.teachers || [];
+
+      let rows = '';
+      teachers.forEach(t => {
+        const role = t.is_admin ? 'Admin' : 'Professeur';
+        rows += `
+          <tr>
+            <td>${t.last_name} ${t.first_name}</td>
+            <td>${t.mail_teacher || '-'}</td>
+            <td>${t.topic_name || '-'}</td>
+            <td><span class="badge bg-${t.is_admin ? 'warning' : 'success'}">${role}</span></td>
+          </tr>
+        `;
+      });
+
+      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted">Aucun professeur trouvé</td></tr>';
+
       return `
         <div class="row">
           <div class="col-12">
@@ -443,19 +568,10 @@
                         <th>Nom</th>
                         <th>Email</th>
                         <th>Spécialité</th>
-                        <th>Classes</th>
-                        <th>Statut</th>
+                        <th>Rôle</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>Prof. Dupont</td>
-                        <td>dupont@educpro.com</td>
-                        <td>Mathématiques</td>
-                        <td>1ère S, Terminale S</td>
-                        <td><span class="badge bg-success">Actif</span></td>
-                      </tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                   </table>
                 </div>
               </div>
@@ -465,34 +581,46 @@
       `;
     }
 
-    // Classes management
-    function getClassesContent() {
+    // ============================================
+    // CLASSES (Admin)
+    // ============================================
+    async function getClassesContent() {
+      const data = await api('classes');
+      const classes = data.classes || [];
+
+      let rows = '';
+      for (const cls of classes) {
+        const studData = await api(`classes/${encodeURIComponent(cls.name)}/students`);
+        const nbStudents = studData.students ? studData.students.length : 0;
+        rows += `
+          <tr>
+            <td>${cls.name}</td>
+            <td>${nbStudents}</td>
+            <td><span class="badge bg-primary">Active</span></td>
+            <td><a href="javascript:void(0)" onclick="showClassDetail('${cls.name}')" class="text-primary">Voir détails</a></td>
+          </tr>
+        `;
+      }
+
+      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted">Aucune classe trouvée</td></tr>';
+
       return `
         <div class="row">
           <div class="col-12">
             <div class="card">
               <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Listes des Classes</h6>
+                <h6 class="text-lg fw-semibold mb-20">Liste des Classes</h6>
                 <div class="table-responsive">
                   <table class="table table-hover">
                     <thead>
                       <tr>
                         <th>Classe</th>
-                        <th>Professeur</th>
                         <th>Étudiants</th>
-                        <th>Salle</th>
-                        <th>Niveau</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>1ère S-A</td>
-                        <td>Prof. Dupont</td>
-                        <td>25</td>
-                        <td>Salle 101</td>
-                        <td>Seconde</td>
-                      </tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                   </table>
                 </div>
               </div>
@@ -502,8 +630,64 @@
       `;
     }
 
-    // Schedule
-    function getScheduleContent() {
+    async function showClassDetail(className) {
+      const data = await api(`classes/${encodeURIComponent(className)}/students`);
+      const students = data.students || [];
+
+      let rows = '';
+      students.forEach(s => {
+        rows += `<tr><td>${s.last_name} ${s.first_name}</td><td>${s.mail_student || '-'}</td></tr>`;
+      });
+
+      if (!rows) rows = '<tr><td colspan="2" class="text-center text-muted">Aucun étudiant</td></tr>';
+
+      document.getElementById('contentArea').innerHTML = `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <div class="d-flex align-items-center gap-3 mb-20">
+                  <button class="btn btn-sm btn-outline-primary" onclick="loadSection('classes', event)">← Retour</button>
+                  <h6 class="text-lg fw-semibold mb-0">Classe : ${className}</h6>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead><tr><th>Nom</th><th>Email</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // EDT — Admin (toutes les classes)
+    // ============================================
+    async function getScheduleContent() {
+      const data = await api('edt');
+      const edtList = data.edt || [];
+
+      let rows = '';
+      edtList.forEach(e => {
+        const start = e.start_time ? e.start_time.substring(0, 16).replace('T', ' ') : '-';
+        const end = e.end_time ? e.end_time.substring(11, 16) || e.end_time.substring(0, 16) : '-';
+        rows += `
+          <tr>
+            <td>${e.class_name}</td>
+            <td>${e.topic_name}</td>
+            <td>${e.teacher_f_name} ${e.teacher_l_name}</td>
+            <td>${e.room_name || '-'}</td>
+            <td>${start}</td>
+            <td>${end}</td>
+          </tr>
+        `;
+      });
+
+      if (!rows) rows = '<tr><td colspan="6" class="text-center text-muted">Aucun créneau trouvé</td></tr>';
+
       return `
         <div class="row">
           <div class="col-12">
@@ -514,24 +698,15 @@
                   <table class="table table-hover">
                     <thead>
                       <tr>
-                        <th>Heure</th>
-                        <th>Lundi</th>
-                        <th>Mardi</th>
-                        <th>Mercredi</th>
-                        <th>Jeudi</th>
-                        <th>Vendredi</th>
+                        <th>Classe</th>
+                        <th>Matière</th>
+                        <th>Professeur</th>
+                        <th>Salle</th>
+                        <th>Début</th>
+                        <th>Fin</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>08:00-09:30</td>
-                        <td>Français</td>
-                        <td>Math</td>
-                        <td>Anglais</td>
-                        <td>Physique</td>
-                        <td>SVT</td>
-                      </tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                   </table>
                 </div>
               </div>
@@ -541,25 +716,99 @@
       `;
     }
 
-    // My Classes (Teacher)
-    function getMyClassesContent() {
+    // ============================================
+    // MON EDT (Student / Teacher)
+    // ============================================
+    async function getMyScheduleContent() {
+      let data;
+      if (USER.role === 'student') {
+        data = await api(`edt/class/${encodeURIComponent(USER.className)}`);
+      } else {
+        data = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
+      }
+
+      const edtList = data.edt || [];
+
+      let rows = '';
+      edtList.forEach(e => {
+        const start = e.start_time ? e.start_time.substring(0, 16).replace('T', ' ') : '-';
+        const end = e.end_time ? e.end_time.substring(11, 16) || e.end_time.substring(0, 16) : '-';
+        rows += `
+          <tr>
+            <td>${e.topic_name}</td>
+            <td>${e.teacher_f_name} ${e.teacher_l_name}</td>
+            <td>${e.room_name || '-'}</td>
+            <td>${e.class_name}</td>
+            <td>${start}</td>
+            <td>${end}</td>
+          </tr>
+        `;
+      });
+
+      if (!rows) rows = '<tr><td colspan="6" class="text-center text-muted">Aucun créneau trouvé</td></tr>';
+
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Mon Emploi du Temps</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Matière</th>
+                        <th>Professeur</th>
+                        <th>Salle</th>
+                        <th>Classe</th>
+                        <th>Début</th>
+                        <th>Fin</th>
+                      </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // MES CLASSES (Teacher)
+    // ============================================
+    async function getMyClassesContent() {
+      const data = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
+      const edtList = data.edt || [];
+      const uniqueClasses = [...new Set(edtList.map(e => e.class_name))];
+
+      let cards = '';
+      for (const cls of uniqueClasses) {
+        const studData = await api(`classes/${encodeURIComponent(cls)}/students`);
+        const nbStudents = studData.students ? studData.students.length : 0;
+        cards += `
+          <div class="col-sm-6 col-lg-4">
+            <div class="card border">
+              <div class="card-body">
+                <h6>${cls}</h6>
+                <p class="text-sm text-secondary-light">${nbStudents} étudiants</p>
+                <button class="btn btn-sm btn-primary" onclick="showClassDetail('${cls}')">Voir Classe</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!cards) cards = '<div class="col-12"><p class="text-muted">Aucune classe assignée</p></div>';
+
       return `
         <div class="row">
           <div class="col-12">
             <div class="card">
               <div class="card-body p-20">
                 <h6 class="text-lg fw-semibold mb-20">Mes Classes</h6>
-                <div class="row gy-3">
-                  <div class="col-sm-6 col-lg-4">
-                    <div class="card border">
-                      <div class="card-body">
-                        <h6>1ère S-A</h6>
-                        <p class="text-sm text-secondary-light">25 étudiants</p>
-                        <button class="btn btn-sm btn-primary">Voir Classe</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <div class="row gy-3">${cards}</div>
               </div>
             </div>
           </div>
@@ -567,32 +816,54 @@
       `;
     }
 
-    // Evaluations (Teacher)
-    function getEvaluationsContent() {
+    // ============================================
+    // ÉVALUATIONS (Teacher) — Notes par matière
+    // ============================================
+    async function getEvaluationsContent() {
+      const data = await api(`grades/topic/${encodeURIComponent(USER.topicName || '')}`);
+      const grades = data.grades || [];
+
+      // Fetch student names
+      const studentIds = [...new Set(grades.map(g => g.student_id))];
+      const studentNames = {};
+      for (const sid of studentIds) {
+        const sData = await api(`students/${sid}`);
+        if (sData.first_name) {
+          studentNames[sid] = `${sData.last_name} ${sData.first_name}`;
+        }
+      }
+
+      let rows = '';
+      grades.forEach(g => {
+        const studentName = studentNames[g.student_id] || `Étudiant #${g.student_id}`;
+        const badgeClass = g.grade >= 10 ? 'bg-success' : 'bg-danger';
+        rows += `
+          <tr>
+            <td>${studentName}</td>
+            <td>${g.topic_name}</td>
+            <td><span class="badge ${badgeClass}">${g.grade}/20</span></td>
+          </tr>
+        `;
+      });
+
+      if (!rows) rows = '<tr><td colspan="3" class="text-center text-muted">Aucune note trouvée</td></tr>';
+
       return `
         <div class="row">
           <div class="col-12">
             <div class="card">
               <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Mes Évaluations</h6>
+                <h6 class="text-lg fw-semibold mb-20">Évaluations — ${USER.topicName || 'Toutes matières'}</h6>
                 <div class="table-responsive">
                   <table class="table table-hover">
                     <thead>
                       <tr>
-                        <th>Classe</th>
-                        <th>Sujet</th>
-                        <th>Date</th>
-                        <th>Type</th>
+                        <th>Étudiant</th>
+                        <th>Matière</th>
+                        <th>Note</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>1ère S-A</td>
-                        <td>Devoir Maison</td>
-                        <td>15/03/2026</td>
-                        <td><span class="badge bg-info">Contrôle</span></td>
-                      </tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                   </table>
                 </div>
               </div>
@@ -602,50 +873,39 @@
       `;
     }
 
-    // Grades management (Teacher)
-    function getGradesContent() {
+    // ============================================
+    // SAISIR NOTES (Teacher)
+    // ============================================
+    async function getGradesContent() {
+      // Get classes taught by this teacher
+      const edtData = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
+      const edtList = edtData.edt || [];
+      const uniqueClasses = [...new Set(edtList.map(e => e.class_name))];
+
+      let classOptions = '<option value="">Sélectionnez une classe</option>';
+      uniqueClasses.forEach(cls => {
+        classOptions += `<option value="${cls}">${cls}</option>`;
+      });
+
       return `
         <div class="row">
           <div class="col-12">
             <div class="card">
               <div class="card-body p-20">
                 <h6 class="text-lg fw-semibold mb-20">Saisir les Notes</h6>
-                <form>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <label class="form-label">Classe</label>
-                      <select class="form-select">
-                        <option>Sélectionnez une classe</option>
-                        <option>1ère S-A</option>
-                      </select>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Évaluation</label>
-                      <select class="form-select">
-                        <option>Sélectionnez une évaluation</option>
-                      </select>
-                    </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Classe</label>
+                    <select class="form-select" id="gradeClassSelect" onchange="loadGradeStudents()">
+                      ${classOptions}
+                    </select>
                   </div>
-                  <div class="table-responsive mt-4">
-                    <table class="table">
-                      <thead>
-                        <tr>
-                          <th>Étudiant</th>
-                          <th>Note</th>
-                          <th>Coefficient</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>Jean Martin</td>
-                          <td><input type="number" class="form-control form-control-sm" min="0" max="20"></td>
-                          <td>1</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div class="col-md-6">
+                    <label class="form-label">Matière</label>
+                    <input type="text" class="form-control" id="gradeTopicInput" value="${USER.topicName || ''}" readonly>
                   </div>
-                  <button type="submit" class="btn btn-primary mt-3">Enregistrer</button>
-                </form>
+                </div>
+                <div id="gradeStudentsArea"></div>
               </div>
             </div>
           </div>
@@ -653,10 +913,108 @@
       `;
     }
 
-    // My Grades (Student)
-    function getMyGradesContent() {
+    async function loadGradeStudents() {
+      const className = document.getElementById('gradeClassSelect').value;
+      const area = document.getElementById('gradeStudentsArea');
+      if (!className) { area.innerHTML = ''; return; }
+
+      const data = await api(`classes/${encodeURIComponent(className)}/students`);
+      const students = data.students || [];
+
+      let rows = '';
+      students.forEach(s => {
+        rows += `
+          <tr>
+            <td>${s.last_name} ${s.first_name}</td>
+            <td><input type="number" class="form-control form-control-sm grade-input" data-student-id="${s.student_id}" min="0" max="20" step="0.5"></td>
+          </tr>
+        `;
+      });
+
+      area.innerHTML = `
+        <div class="table-responsive mt-3">
+          <table class="table">
+            <thead><tr><th>Étudiant</th><th>Note / 20</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <button class="btn btn-primary mt-3" onclick="submitGrades()">Enregistrer les Notes</button>
+        <div id="gradeMessage" class="mt-2"></div>
+      `;
+    }
+
+    async function submitGrades() {
+      const topicName = document.getElementById('gradeTopicInput').value;
+      const inputs = document.querySelectorAll('.grade-input');
+      const msgEl = document.getElementById('gradeMessage');
+      let count = 0;
+
+      for (const input of inputs) {
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) {
+          const studentId = parseInt(input.dataset.studentId);
+          await api('grades', {
+            method: 'POST',
+            body: JSON.stringify({ grade: val, student_id: studentId, topic_name: topicName })
+          });
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        msgEl.innerHTML = `<div class="alert alert-success">${count} note(s) enregistrée(s) avec succès.</div>`;
+      } else {
+        msgEl.innerHTML = '<div class="alert alert-warning">Aucune note à enregistrer.</div>';
+      }
+    }
+
+    // ============================================
+    // MES NOTES (Student)
+    // ============================================
+    async function getMyGradesContent() {
+      const data = await api(`grades/student/${USER.id}`);
+      const grades = data.grades || [];
+
+      // Calculate average per topic
+      const byTopic = {};
+      grades.forEach(g => {
+        if (!byTopic[g.topic_name]) byTopic[g.topic_name] = [];
+        byTopic[g.topic_name].push(g.grade);
+      });
+
+      let rows = '';
+      for (const [topic, notes] of Object.entries(byTopic)) {
+        const avg = (notes.reduce((s, n) => s + n, 0) / notes.length).toFixed(1);
+        const statusClass = avg >= 14 ? 'bg-success' : avg >= 10 ? 'bg-warning' : 'bg-danger';
+        const statusText = avg >= 14 ? 'Bon' : avg >= 10 ? 'Moyen' : 'Insuffisant';
+        notes.forEach(note => {
+          rows += `
+            <tr>
+              <td>${topic}</td>
+              <td>${USER.className}</td>
+              <td>${note}/20</td>
+              <td>${avg}/20</td>
+              <td><span class="badge ${statusClass}">${statusText}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      if (!rows) rows = '<tr><td colspan="5" class="text-center text-muted">Aucune note trouvée</td></tr>';
+
+      const allGrades = grades.map(g => g.grade);
+      const globalAvg = allGrades.length > 0 ? (allGrades.reduce((s, n) => s + n, 0) / allGrades.length).toFixed(1) : '-';
+
       return `
         <div class="row">
+          <div class="col-12 mb-3">
+            <div class="card bg-primary-600 text-white">
+              <div class="card-body p-20">
+                <h6 class="text-white mb-1">Moyenne Générale</h6>
+                <h3 class="text-white mb-0">${globalAvg}/20</h3>
+              </div>
+            </div>
+          </div>
           <div class="col-12">
             <div class="card">
               <div class="card-body p-20">
@@ -672,22 +1030,7 @@
                         <th>Statut</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td>Mathématiques</td>
-                        <td>1ère S</td>
-                        <td>16/20</td>
-                        <td>15.5/20</td>
-                        <td><span class="badge bg-success">Excellent</span></td>
-                      </tr>
-                      <tr>
-                        <td>Français</td>
-                        <td>1ère S</td>
-                        <td>14/20</td>
-                        <td>14/20</td>
-                        <td><span class="badge bg-success">Bon</span></td>
-                      </tr>
-                    </tbody>
+                    <tbody>${rows}</tbody>
                   </table>
                 </div>
               </div>
@@ -697,25 +1040,160 @@
       `;
     }
 
-    // Initialize
-    function init() {
-      const user = getUserInfo();
+    // ============================================
+    // MON ASSIDUITÉ (Student)
+    // ============================================
+    async function getMyAttendanceContent() {
+      const data = await api(`attendance/student/${USER.id}`);
+      const records = data.attendance || [];
 
+      const att = records.length > 0 ? records[0] : { late: 0, absent: 0 };
+
+      return `
+        <div class="row gy-4">
+          <div class="col-sm-6">
+            <div class="card shadow-1 radius-8 h-100">
+              <div class="card-body p-20 text-center">
+                <div class="w-64-px h-64-px bg-danger-600 rounded-circle d-flex justify-content-center align-items-center text-white mx-auto mb-12">
+                  <i class="ri-calendar-x-line text-2xl"></i>
+                </div>
+                <h3>${att.absent}</h3>
+                <p class="text-secondary-light">Absences</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="card shadow-1 radius-8 h-100">
+              <div class="card-body p-20 text-center">
+                <div class="w-64-px h-64-px bg-warning-600 rounded-circle d-flex justify-content-center align-items-center text-white mx-auto mb-12">
+                  <i class="ri-time-line text-2xl"></i>
+                </div>
+                <h3>${att.late}</h3>
+                <p class="text-secondary-light">Retards</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // INIT
+    // ============================================
+    function init() {
       // Update user info in sidebar
-      document.getElementById('userName').textContent = user.name;
+      document.getElementById('userName').textContent = `${USER.firstName} ${USER.lastName}`;
       document.getElementById('userRole').textContent =
-        user.role === 'admin' ? 'Administrateur' :
-          user.role === 'teacher' ? 'Professeur' : 'Étudiant';
-      document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        USER.role === 'admin' ? 'Administrateur' :
+          USER.role === 'teacher' ? 'Professeur' : 'Étudiant';
+      document.getElementById('userAvatar').textContent = USER.firstName.charAt(0).toUpperCase();
 
       // Generate sidebar menu
-      generateSidebarMenu(user.role);
+      generateSidebarMenu(USER.role);
 
       // Load default dashboard
       loadSection('dashboard', { preventDefault: () => { } });
+    }
 
-      // Set first menu item as active
-      document.querySelector('.sidebar-menu-item')?.classList.add('active');
+    // ============================================
+    // RÉCAP ASSIDUITÉ (Teacher)
+    // ============================================
+    async function getTeacherAttendanceContent() {
+      const edtData = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
+      const edtList = edtData.edt || [];
+      const uniqueClasses = [...new Set(edtList.map(e => e.class_name))];
+
+      let classOptions = '<option value="">Sélectionnez une classe</option>';
+      uniqueClasses.forEach(cls => {
+        classOptions += `<option value="${cls}">${cls}</option>`;
+      });
+
+      return `
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body p-20">
+                <h6 class="text-lg fw-semibold mb-20">Saisir les Absences / Retards</h6>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Classe</label>
+                    <select class="form-select" id="attClassSelect" onchange="loadAttendanceStudents()">
+                      ${classOptions}
+                    </select>
+                  </div>
+                </div>
+                <div id="attStudentsArea"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadAttendanceStudents() {
+      const className = document.getElementById('attClassSelect').value;
+      const area = document.getElementById('attStudentsArea');
+      if (!className) { area.innerHTML = ''; return; }
+
+      const data = await api(`classes/${encodeURIComponent(className)}/students`);
+      const students = data.students || [];
+
+      let rows = '';
+      students.forEach(s => {
+        rows += `
+          <tr>
+            <td>${s.last_name} ${s.first_name}</td>
+            <td>
+              <div class="d-flex gap-2">
+                <button class="btn btn-xs btn-outline-warning" onclick="markAttendance(${s.student_id}, 1, 0, this)">+1 Retard</button>
+                <button class="btn btn-xs btn-outline-danger" onclick="markAttendance(${s.student_id}, 0, 1, this)">+1 Absence</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      area.innerHTML = `
+        <div class="table-responsive mt-3">
+          <table class="table">
+            <thead><tr><th>Étudiant</th><th>Action</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div id="attMessage" class="mt-2"></div>
+      `;
+    }
+
+    async function markAttendance(studentId, late, absent, btn) {
+      btn.disabled = true;
+      const res = await api('attendance', {
+        method: 'POST',
+        body: JSON.stringify({ student_id: studentId, late, absent })
+      });
+
+      if (!res.error) {
+        const msgEl = document.getElementById('attMessage');
+        msgEl.innerHTML = `<div class="alert alert-success">Action enregistrée pour l'étudiant #${studentId}</div>`;
+        setTimeout(() => msgEl.innerHTML = '', 2000);
+      }
+      btn.disabled = false;
+    }
+    // ============================================
+    // INIT
+    // ============================================
+    function init() {
+      // Update user info in sidebar
+      document.getElementById('userName').textContent = `${USER.firstName} ${USER.lastName}`;
+      document.getElementById('userRole').textContent =
+        USER.role === 'admin' ? 'Administrateur' :
+          USER.role === 'teacher' ? 'Professeur' : 'Étudiant';
+      document.getElementById('userAvatar').textContent = USER.firstName ? USER.firstName.charAt(0).toUpperCase() : 'U';
+
+      // Generate sidebar menu
+      generateSidebarMenu(USER.role);
+
+      // Load default dashboard
+      loadSection('dashboard', { preventDefault: () => { } });
     }
 
     // Initialize on page load

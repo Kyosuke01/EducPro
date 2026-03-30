@@ -2,6 +2,7 @@
 routes/edt.py — Routes pour la gestion des emplois du temps (EDT).
 
 Endpoints :
+    GET  /api/edt                           — Tous les créneaux EDT
     GET  /api/edt/class/<class_name>        — EDT d'une classe
     GET  /api/edt/teacher/<teacher_l_name>  — EDT d'un professeur
     POST /api/edt                           — Ajouter une entrée EDT
@@ -13,19 +14,50 @@ from app.db import get_db_connection
 edt_bp = Blueprint("edt", __name__)
 
 
+def _serialize_edt(edt_list):
+    """Convertit les datetime en chaînes pour tous les créneaux."""
+    for entry in edt_list:
+        if entry.get("start_time"):
+            entry["start_time"] = entry["start_time"].strftime("%Y-%m-%d %H:%M:%S")
+        if entry.get("end_time"):
+            entry["end_time"] = entry["end_time"].strftime("%Y-%m-%d %H:%M:%S")
+    return edt_list
+
+
+# ──────────────────────────────────────────────
+# GET /api/edt
+# ──────────────────────────────────────────────
+@edt_bp.route("/edt", methods=["GET"])
+def get_all_edt():
+    """Récupère tous les créneaux EDT."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT edt_id, topic_name, room_name, teacher_l_name, teacher_f_name,
+                       class_name, start_time, end_time
+                FROM EDT
+                ORDER BY start_time ASC
+            """
+            cursor.execute(sql)
+            edt_list = cursor.fetchall()
+
+        return jsonify({"edt": _serialize_edt(edt_list)}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 # ──────────────────────────────────────────────
 # GET /api/edt/class/<class_name>
 # ──────────────────────────────────────────────
 @edt_bp.route("/edt/class/<string:class_name>", methods=["GET"])
 def get_edt_by_class(class_name):
-    """
-    Récupère l'emploi du temps complet d'une classe donnée.
-
-    Retourne :
-        200 — Liste des créneaux de la classe.
-        404 — Aucun créneau trouvé pour cette classe.
-        500 — Erreur serveur.
-    """
+    """Récupère l'emploi du temps complet d'une classe donnée."""
     conn = None
     try:
         conn = get_db_connection()
@@ -40,17 +72,7 @@ def get_edt_by_class(class_name):
             cursor.execute(sql, (class_name,))
             edt_list = cursor.fetchall()
 
-        if edt_list:
-            # Conversion des datetime en chaînes pour la sérialisation JSON
-            for entry in edt_list:
-                if entry.get("start_time"):
-                    entry["start_time"] = entry["start_time"].strftime("%Y-%m-%d %H:%M:%S")
-                if entry.get("end_time"):
-                    entry["end_time"] = entry["end_time"].strftime("%Y-%m-%d %H:%M:%S")
-
-            return jsonify({"class_name": class_name, "edt": edt_list}), 200
-        else:
-            return jsonify({"error": f"Aucun emploi du temps trouvé pour la classe '{class_name}'."}), 404
+        return jsonify({"class_name": class_name, "edt": _serialize_edt(edt_list)}), 200
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
@@ -64,14 +86,7 @@ def get_edt_by_class(class_name):
 # ──────────────────────────────────────────────
 @edt_bp.route("/edt/teacher/<string:teacher_l_name>", methods=["GET"])
 def get_edt_by_teacher(teacher_l_name):
-    """
-    Récupère l'emploi du temps d'un professeur (par son nom de famille).
-
-    Retourne :
-        200 — Liste des créneaux du professeur.
-        404 — Aucun créneau trouvé pour ce professeur.
-        500 — Erreur serveur.
-    """
+    """Récupère l'emploi du temps d'un professeur (par son nom de famille)."""
     conn = None
     try:
         conn = get_db_connection()
@@ -86,16 +101,7 @@ def get_edt_by_teacher(teacher_l_name):
             cursor.execute(sql, (teacher_l_name,))
             edt_list = cursor.fetchall()
 
-        if edt_list:
-            for entry in edt_list:
-                if entry.get("start_time"):
-                    entry["start_time"] = entry["start_time"].strftime("%Y-%m-%d %H:%M:%S")
-                if entry.get("end_time"):
-                    entry["end_time"] = entry["end_time"].strftime("%Y-%m-%d %H:%M:%S")
-
-            return jsonify({"teacher_l_name": teacher_l_name, "edt": edt_list}), 200
-        else:
-            return jsonify({"error": f"Aucun emploi du temps trouvé pour le professeur '{teacher_l_name}'."}), 404
+        return jsonify({"teacher_l_name": teacher_l_name, "edt": _serialize_edt(edt_list)}), 200
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
@@ -109,28 +115,9 @@ def get_edt_by_teacher(teacher_l_name):
 # ──────────────────────────────────────────────
 @edt_bp.route("/edt", methods=["POST"])
 def create_edt_entry():
-    """
-    Ajoute une nouvelle entrée dans l'emploi du temps.
-
-    Body JSON attendu :
-        {
-            "topic_name": "...",
-            "room_name": "...",
-            "teacher_l_name": "...",
-            "teacher_f_name": "...",
-            "class_name": "...",
-            "start_time": "YYYY-MM-DD HH:MM:SS",
-            "end_time": "YYYY-MM-DD HH:MM:SS"
-        }
-
-    Retourne :
-        201 — Entrée créée avec succès.
-        400 — Champs manquants.
-        500 — Erreur serveur.
-    """
+    """Ajoute une nouvelle entrée dans l'emploi du temps."""
     data = request.get_json()
 
-    # --- Validation des champs requis ---
     required_fields = ["topic_name", "room_name", "teacher_l_name",
                        "teacher_f_name", "class_name", "start_time", "end_time"]
     missing = [f for f in required_fields if not data or not data.get(f)]
