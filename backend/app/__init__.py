@@ -30,6 +30,7 @@ def create_app():
     from app.routes.attendance import attendance_bp
     from app.routes.edt import edt_bp
     from app.routes.grades import grades_bp
+    from app.routes.messages import messages_bp
 
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(auth_bp, url_prefix="/api")
@@ -37,6 +38,7 @@ def create_app():
     app.register_blueprint(attendance_bp, url_prefix="/api")
     app.register_blueprint(edt_bp, url_prefix="/api")
     app.register_blueprint(grades_bp, url_prefix="/api")
+    app.register_blueprint(messages_bp, url_prefix="/api")
 
     from flask import request, jsonify
 

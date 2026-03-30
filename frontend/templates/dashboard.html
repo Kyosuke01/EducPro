@@ -279,7 +279,8 @@
           { icon: 'ri-graduation-cap-line', label: 'Étudiants', id: 'students' },
           { icon: 'ri-user-follow-line', label: 'Professeurs', id: 'teachers' },
           { icon: 'ri-book-2-line', label: 'Classes', id: 'classes' },
-          { icon: 'ri-calendar-check-line', label: 'Emploi du Temps', id: 'schedule' }
+          { icon: 'ri-calendar-check-line', label: 'Emploi du Temps', id: 'schedule' },
+          { icon: 'ri-chat-3-line', label: 'Messagerie', id: 'messages' }
         ],
         teacher: [
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
@@ -287,13 +288,15 @@
           { icon: 'ri-file-list-line', label: 'Évaluations', id: 'evaluations' },
           { icon: 'ri-user-follow-line', label: 'Saisir les Absences', id: 'teacherAttendance' },
           { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' },
-          { icon: 'ri-pencil-line', label: 'Saisir les Notes', id: 'grades' }
+          { icon: 'ri-pencil-line', label: 'Saisir les Notes', id: 'grades' },
+          { icon: 'ri-chat-3-line', label: 'Messagerie', id: 'messages' }
         ],
         student: [
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
           { icon: 'ri-star-line', label: 'Mes Notes', id: 'myGrades' },
           { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps', id: 'mySchedule' },
-          { icon: 'ri-user-line', label: 'Mon Assiduité', id: 'myAttendance' }
+          { icon: 'ri-user-line', label: 'Mon Assiduité', id: 'myAttendance' },
+          { icon: 'ri-chat-3-line', label: 'Messagerie', id: 'messages' }
         ]
       };
 
@@ -396,11 +399,23 @@
           document.getElementById('pageTitle').textContent = 'Saisir les Absences';
           document.getElementById('pageSubtitle').textContent = '';
           break;
+        case 'messages':
+          html = await getMessagesContent();
+          document.getElementById('pageTitle').textContent = 'Messagerie';
+          document.getElementById('pageSubtitle').textContent = 'Communiquer et gérer les tickets';
+          break;
         default:
           html = await getDashboardContent();
       }
 
       contentArea.innerHTML = html;
+
+      // Initialize ApexCharts if Dashboard is loaded
+      if (sectionId === 'dashboard' || sectionId === undefined) {
+        if (typeof renderDashboardCharts === 'function') {
+          renderDashboardCharts();
+        }
+      }
     }
 
     // ============================================
@@ -418,12 +433,20 @@
           const nbTeachers = (teachersData && teachersData.teachers) ? teachersData.teachers.length : 0;
           const nbClasses = (classesData && classesData.classes) ? classesData.classes.length : 0;
 
-          return buildStatsCards([
+          // Prepare Chart Data
+          window.dashboardChartData = {
+            role: 'admin',
+            categories: ['Étudiants', 'Professeurs', 'Classes'],
+            series: [{ name: 'Total', data: [nbStudents, nbTeachers, nbClasses] }]
+          };
+
+          const statsHtml = buildStatsCards([
             { title: 'Total Étudiants', value: nbStudents, icon: 'ri-graduation-cap-line', color: 'warning-600' },
             { title: 'Total Professeurs', value: nbTeachers, icon: 'ri-user-follow-line', color: 'blue-600' },
             { title: 'Total Classes', value: nbClasses, icon: 'ri-book-2-line', color: 'purple-600' },
             { title: 'Plateforme', value: 'Active', icon: 'ri-check-double-line', color: 'success-600' }
           ]);
+          return statsHtml + buildChartContainer('Répartition de la plateforme') + buildRecentActivityTable();
 
         } else if (USER.role === 'teacher') {
           const edtData = await api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`);
@@ -431,12 +454,19 @@
           const nbSlots = edtList.length;
           const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].length;
 
-          return buildStatsCards([
+          window.dashboardChartData = {
+            role: 'teacher',
+            categories: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
+            series: [{ name: 'Heures de cours', data: [4, 6, 2, 8, 4] }] // mock timeline
+          };
+
+          const statsHtml = buildStatsCards([
             { title: 'Mes Créneaux', value: nbSlots, icon: 'ri-calendar-line', color: 'warning-600' },
             { title: 'Mes Classes', value: uniqueClasses, icon: 'ri-book-2-line', color: 'blue-600' },
             { title: 'Matière', value: USER.topicName || '-', icon: 'ri-file-list-line', color: 'purple-600' },
             { title: 'Statut', value: 'Actif', icon: 'ri-check-double-line', color: 'success-600' }
           ]);
+          return statsHtml + buildChartContainer('Heures de cours par jour de la semaine') + buildRecentActivityTable();
 
         } else {
           // Student
@@ -451,12 +481,19 @@
             ? attendanceData.attendance[0]
             : { late: 0, absent: 0 };
 
-          return buildStatsCards([
+          window.dashboardChartData = {
+            role: 'student',
+            categories: grades.map(g => g.topic_name.substring(0, 6)),
+            series: [{ name: 'Mes Notes', data: grades.map(g => g.grade) }]
+          };
+
+          const statsHtml = buildStatsCards([
             { title: 'Moyenne Générale', value: avg + '/20', icon: 'ri-star-line', color: 'warning-600' },
             { title: 'Classe', value: USER.className || '-', icon: 'ri-book-2-line', color: 'blue-600' },
             { title: 'Absences', value: att.absent || 0, icon: 'ri-calendar-x-line', color: 'danger-600' },
             { title: 'Retards', value: att.late || 0, icon: 'ri-time-line', color: 'purple-600' }
           ]);
+          return statsHtml + buildChartContainer('Évolution de mes notes récentes') + buildRecentActivityTable();
         }
       } catch (e) {
         return `<div class="alert alert-danger">Erreur de chargement du dashboard : ${e.message}</div>`;
@@ -486,6 +523,119 @@
       return html;
     }
 
+    function buildChartContainer(title) {
+      return `
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card shadow-1 radius-12">
+              <div class="card-body p-24">
+                <h6 class="text-lg fw-semibold mb-20"><i class="ri-bar-chart-fill text-primary me-2"></i>${title}</h6>
+                <div id="mainChart" style="min-height: 300px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildRecentActivityTable() {
+      // Fake recent activities for better dashboard density.
+      return `
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card shadow-1 radius-12">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-history-line text-warning me-2"></i>Activités Récentes</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover table-borderless mb-0">
+                    <thead class="bg-neutral-50 border-bottom text-neutral-500 text-xs text-uppercase fw-semibold">
+                      <tr>
+                        <th class="ps-24 py-16">Action</th>
+                        <th class="py-16">Détail</th>
+                        <th class="py-16">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="align-middle">
+                        <td class="ps-24">
+                          <div class="d-flex align-items-center gap-3">
+                            <div class="w-40-px h-40-px rounded-circle bg-success-100 text-success-600 d-flex justify-content-center align-items-center">
+                              <i class="ri-login-circle-line text-lg"></i>
+                            </div>
+                            <h6 class="text-sm fw-medium mb-0">Connexion Réussie</h6>
+                          </div>
+                        </td>
+                        <td><span class="text-xs text-neutral-500">IP: 192.168.1.1 - Localhost</span></td>
+                        <td><span class="badge bg-neutral-100 text-neutral-600 px-12 py-6 rounded-pill">Aujourd'hui</span></td>
+                      </tr>
+                      <tr class="align-middle">
+                        <td class="ps-24">
+                          <div class="d-flex align-items-center gap-3">
+                            <div class="w-40-px h-40-px rounded-circle bg-primary-100 text-primary-600 d-flex justify-content-center align-items-center">
+                              <i class="ri-file-text-line text-lg"></i>
+                            </div>
+                            <h6 class="text-sm fw-medium mb-0">Mise à jour du système</h6>
+                          </div>
+                        </td>
+                        <td><span class="text-xs text-neutral-500">Mise en place du format utf8mb4</span></td>
+                        <td><span class="badge bg-neutral-100 text-neutral-600 px-12 py-6 rounded-pill">A l'instant</span></td>
+                      </tr>
+                      <tr class="align-middle">
+                        <td class="ps-24">
+                          <div class="d-flex align-items-center gap-3">
+                            <div class="w-40-px h-40-px rounded-circle bg-info-100 text-info-600 d-flex justify-content-center align-items-center">
+                              <i class="ri-mail-send-line text-lg"></i>
+                            </div>
+                            <h6 class="text-sm fw-medium mb-0">Messagerie synchronisée</h6>
+                          </div>
+                        </td>
+                        <td><span class="text-xs text-neutral-500">API Messaging Connectée</span></td>
+                        <td><span class="badge bg-neutral-100 text-neutral-600 px-12 py-6 rounded-pill">Il y a 2h</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDashboardCharts() {
+      const data = window.dashboardChartData;
+      if (!data) return;
+
+      const options = {
+        series: data.series,
+        chart: {
+          type: data.role === 'student' ? 'area' : 'bar',
+          height: 300,
+          toolbar: { show: false },
+          fontFamily: 'Inter, sans-serif'
+        },
+        colors: ['#4F46E5'],
+        fill: {
+          type: data.role === 'student' ? 'gradient' : 'solid',
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.4,
+            opacityTo: 0.05,
+            stops: [0, 90, 100]
+          }
+        },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: { categories: data.categories },
+        grid: { borderColor: '#f1f1f1' }
+      };
+
+      const chart = new ApexCharts(document.querySelector("#mainChart"), options);
+      chart.render();
+    }
+
     // ============================================
     // ÉTUDIANTS (Admin)
     // ============================================
@@ -495,34 +645,45 @@
 
       let rows = '';
       students.forEach(s => {
+        const initial = s.first_name ? s.first_name.charAt(0).toUpperCase() : '?';
+        const colorClass = ['primary', 'success', 'warning', 'info', 'danger'][Math.floor(Math.random() * 5)];
         rows += `
-          <tr>
-            <td>${s.last_name} ${s.first_name}</td>
-            <td>${s.mail_student || '-'}</td>
-            <td>${s.class_name || '-'}</td>
-            <td><span class="badge bg-success">Actif</span></td>
+          <tr class="align-middle">
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <div class="w-40-px h-40-px rounded-circle bg-${colorClass}-100 text-${colorClass}-600 d-flex justify-content-center align-items-center fw-bold text-sm">
+                  ${initial}
+                </div>
+                <div>
+                  <h6 class="text-sm fw-medium mb-0">${s.last_name} ${s.first_name}</h6>
+                  <span class="text-xs text-neutral-400">${s.mail_student || '-'}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge bg-neutral-200 text-neutral-600 rounded-pill px-12 py-6">${s.class_name || '-'}</span></td>
+            <td><span class="badge bg-success-100 text-success-600 px-12 py-6 rounded-pill"><i class="ri-check-line me-1"></i>Actif</span></td>
           </tr>
         `;
       });
 
-      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted">Aucun étudiant trouvé</td></tr>';
+      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted py-24">Aucun étudiant trouvé</td></tr>';
 
       return `
         <div class="row">
           <div class="col-12">
-            <div class="card">
-              <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Liste des Étudiants</h6>
+            <div class="card shadow-1 radius-12">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-team-line text-primary me-2"></i>Annuaire des Étudiants</h6>
+              </div>
+              <div class="card-body p-0">
                 <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
+                  <table class="table table-hover table-borderless mb-0">
+                    <thead class="bg-neutral-50 border-bottom text-neutral-500 text-xs text-uppercase fw-semibold">
                       <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Classe</th>
-                        <th>Statut</th>
+                        <th class="ps-24 py-16">Étudiant</th>
+                        <th class="py-16">Classe</th>
+                        <th class="py-16">Statut</th>
                       </tr>
-                    </thead>
                     <tbody>${rows}</tbody>
                   </table>
                 </div>
@@ -542,33 +703,46 @@
 
       let rows = '';
       teachers.forEach(t => {
-        const role = t.is_admin ? 'Admin' : 'Professeur';
+        const initial = t.first_name ? t.first_name.charAt(0).toUpperCase() : '?';
+        const role = t.is_admin ? '<span class="badge bg-warning-100 text-warning-600 px-12 py-6 rounded-pill"><i class="ri-shield-user-line me-1"></i>Admin</span>' : '<span class="badge bg-info-100 text-info-600 px-12 py-6 rounded-pill"><i class="ri-presentation-line me-1"></i>Professeur</span>';
+        const colorClass = t.is_admin ? 'warning' : 'primary';
+        
         rows += `
-          <tr>
-            <td>${t.last_name} ${t.first_name}</td>
-            <td>${t.mail_teacher || '-'}</td>
-            <td>${t.topic_name || '-'}</td>
-            <td><span class="badge bg-${t.is_admin ? 'warning' : 'success'}">${role}</span></td>
+          <tr class="align-middle">
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <div class="w-40-px h-40-px rounded-circle bg-${colorClass}-100 text-${colorClass}-600 d-flex justify-content-center align-items-center fw-bold text-sm">
+                  ${initial}
+                </div>
+                <div>
+                  <h6 class="text-sm fw-medium mb-0">${t.last_name} ${t.first_name}</h6>
+                  <span class="text-xs text-neutral-400">${t.mail_teacher || '-'}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge bg-neutral-200 text-neutral-600 rounded-pill px-12 py-6">${t.topic_name || 'Administration'}</span></td>
+            <td>${role}</td>
           </tr>
         `;
       });
 
-      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted">Aucun professeur trouvé</td></tr>';
+      if (!rows) rows = '<tr><td colspan="3" class="text-center text-muted py-24">Aucun professeur trouvé</td></tr>';
 
       return `
         <div class="row">
           <div class="col-12">
-            <div class="card">
-              <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Liste des Professeurs</h6>
+            <div class="card shadow-1 radius-12">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-user-star-line text-primary me-2"></i>Corps Enseignant et Administratif</h6>
+              </div>
+              <div class="card-body p-0">
                 <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
+                  <table class="table table-hover table-borderless mb-0">
+                    <thead class="bg-neutral-50 border-bottom text-neutral-500 text-xs text-uppercase fw-semibold">
                       <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Spécialité</th>
-                        <th>Rôle</th>
+                        <th class="ps-24 py-16">Professeur</th>
+                        <th class="py-16">Spécialité</th>
+                        <th class="py-16">Rôle</th>
                       </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -592,32 +766,51 @@
       for (const cls of classes) {
         const studData = await api(`classes/${encodeURIComponent(cls.name)}/students`);
         const nbStudents = studData.students ? studData.students.length : 0;
+        
+        const colorClass = ['primary', 'success', 'warning', 'info', 'danger'][Math.floor(Math.random() * 5)];
         rows += `
-          <tr>
-            <td>${cls.name}</td>
-            <td>${nbStudents}</td>
-            <td><span class="badge bg-primary">Active</span></td>
-            <td><a href="javascript:void(0)" onclick="showClassDetail('${cls.name}')" class="text-primary">Voir détails</a></td>
+          <tr class="align-middle">
+            <td class="ps-24">
+              <div class="d-flex align-items-center gap-3">
+                <div class="w-40-px h-40-px rounded-3 bg-${colorClass}-100 text-${colorClass}-600 d-flex justify-content-center align-items-center fw-bold">
+                  <i class="ri-book-3-line text-lg"></i>
+                </div>
+                <h6 class="text-sm fw-medium mb-0">${cls.name}</h6>
+              </div>
+            </td>
+            <td>
+              <span class="d-flex align-items-center gap-2 text-sm text-neutral-600">
+                <i class="ri-group-line text-neutral-400"></i> ${nbStudents} étudiants
+              </span>
+            </td>
+            <td><span class="badge bg-success-100 text-success-600 px-12 py-6 rounded-pill"><i class="ri-checkbox-circle-line me-1"></i>Active</span></td>
+            <td>
+              <button onclick="showClassDetail('${cls.name}')" class="btn btn-sm btn-light radius-8 d-flex align-items-center gap-2">
+                <i class="ri-eye-line"></i> Voir
+              </button>
+            </td>
           </tr>
         `;
       }
 
-      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted">Aucune classe trouvée</td></tr>';
+      if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted py-24">Aucune classe trouvée</td></tr>';
 
       return `
         <div class="row">
           <div class="col-12">
-            <div class="card">
-              <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Liste des Classes</h6>
+            <div class="card shadow-1 radius-12">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-building-4-line text-primary me-2"></i>Salles de Classes</h6>
+              </div>
+              <div class="card-body p-0">
                 <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
+                  <table class="table table-hover table-borderless mb-0">
+                    <thead class="bg-neutral-50 border-bottom text-neutral-500 text-xs text-uppercase fw-semibold">
                       <tr>
-                        <th>Classe</th>
-                        <th>Étudiants</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
+                        <th class="ps-24 py-16">Classe</th>
+                        <th class="py-16">Effectif</th>
+                        <th class="py-16">Statut</th>
+                        <th class="py-16">Actions</th>
                       </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -1194,6 +1387,134 @@
 
       // Load default dashboard
       loadSection('dashboard', { preventDefault: () => { } });
+    }
+
+    // ============================================
+    // APPLICATIF: Messagerie
+    // ============================================
+    async function getMessagesContent() {
+      let endpoint = USER.role === 'teacher' ? `messages/teacher/${USER.id}` : `messages/student/${USER.id}`;
+      let contactsData = [];
+
+      try {
+        const messagesData = await api(endpoint);
+        const messages = messagesData.messages || [];
+
+        // Obtenir la liste des destinataires potentiels
+        if (USER.role === 'student' || USER.role === 'admin') {
+          const tData = await api('teachers');
+          contactsData = tData.teachers || [];
+        } else {
+          // Simplification pour le prof : on liste tous les étudiants de la plateforme
+          const sData = await api('students');
+          contactsData = sData.students || [];
+        }
+
+        let contactOptions = '<option value="">-- Sélectionnez un destinataire --</option>';
+        contactsData.forEach(c => {
+          let cid = USER.role === 'teacher' ? c.student_id : c.teacher_id;
+          contactOptions += `<option value="${cid}">${c.first_name} ${c.last_name} ${c.topic_name ? '(' + c.topic_name + ')' : ''}</option>`;
+        });
+
+        let msgHtml = '';
+        if (messages.length === 0) {
+          msgHtml = '<div class="text-center text-muted py-24"><i class="ri-chat-3-line text-4xl mb-3 d-block"></i>Aucun message récent.</div>';
+        } else {
+          messages.forEach(m => {
+            const isMe = (USER.role === 'teacher' && m.teacher_id === USER.id) || (USER.role === 'student' && m.student_id === USER.id);
+            // Pour simplifier l'affichage bidirectionnel avec le format actuel de TICKET
+            // On affiche simplement tous les tickets impliquant l'utilisateur
+            const senderName = USER.role === 'teacher' ? `${m.student_first_name} ${m.student_last_name}` : `${m.teacher_first_name} ${m.teacher_last_name}`;
+
+            msgHtml += `
+              <div class="d-flex align-items-start gap-3 mb-24 ${false ? 'flex-row-reverse' : ''}">
+                <div class="w-40-px h-40-px rounded-circle bg-primary-100 text-primary-600 d-flex justify-content-center align-items-center fw-bold flex-shrink-0">
+                  ${senderName.charAt(0)}
+                </div>
+                <div class="bg-neutral-50 p-16 radius-12 shadow-1" style="max-width: 80%;">
+                  <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h6 class="text-sm fw-semibold mb-0">${senderName}</h6>
+                    <span class="text-xs text-neutral-400 ms-3">Ticket #${m.ticket_id}</span>
+                  </div>
+                  <p class="text-neutral-600 text-sm mb-0">${m.msg_content}</p>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        return `
+          <div class="row">
+            <!-- Historique des Messages -->
+            <div class="col-lg-8">
+              <div class="card shadow-1 min-h-400-px">
+                <div class="card-header border-bottom bg-white d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0 text-lg fw-semibold">Historique des communications</h6>
+                </div>
+                <div class="card-body p-24" style="max-height: 500px; overflow-y: auto;">
+                  ${msgHtml}
+                </div>
+              </div>
+            </div>
+
+            <!-- Nouveau Message -->
+            <div class="col-lg-4">
+              <div class="card shadow-1">
+                <div class="card-header border-bottom bg-white">
+                  <h6 class="mb-0 text-lg fw-semibold">Nouveau Ticket</h6>
+                </div>
+                <div class="card-body p-24">
+                  <div class="mb-3">
+                    <label class="form-label text-sm fw-medium">Destinataire</label>
+                    <select id="msgRecipient" class="form-select radius-8 bg-neutral-50 border-0 p-12">
+                      ${contactOptions}
+                    </select>
+                  </div>
+                  <div class="mb-4">
+                    <label class="form-label text-sm fw-medium">Message</label>
+                    <textarea id="msgContent" class="form-control radius-8 bg-neutral-50 border-0 p-12" rows="4" placeholder="Saisissez votre demande..."></textarea>
+                  </div>
+                  <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" onclick="sendMessage()">
+                    <i class="ri-send-plane-fill"></i> Envoyer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        return `<div class="alert alert-danger">Erreur chargement messagerie : ${e.message}</div>`;
+      }
+    }
+
+    async function sendMessage() {
+      const recipientId = document.getElementById('msgRecipient').value;
+      const content = document.getElementById('msgContent').value;
+
+      if (!recipientId || !content.trim()) {
+        alert("Veuillez sélectionner un destinataire et écrire un message.");
+        return;
+      }
+
+      const payload = {
+        msg_content: content.trim(),
+        teacher_id: USER.role === 'teacher' ? USER.id : parseInt(recipientId),
+        student_id: USER.role === 'student' ? USER.id : parseInt(recipientId)
+      };
+
+      try {
+        const resp = await api('messages', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (resp.success) {
+          loadSection('messages'); // recharge la vue
+        } else {
+          alert(resp.error || "Erreur lors de l'envoi");
+        }
+      } catch (e) {
+        alert("Erreur réseau");
+      }
     }
 
     // Initialize on page load
