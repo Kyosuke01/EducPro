@@ -2,6 +2,9 @@
 -- EducPro — Schema + Test Data
 -- ============================================
 
+SET NAMES 'utf8mb4';
+SET CHARACTER SET utf8mb4;
+
 -- Table des classes
 CREATE TABLE IF NOT EXISTS Class (
   class_id INT PRIMARY KEY AUTO_INCREMENT,

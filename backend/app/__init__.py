@@ -14,7 +14,7 @@ def create_app():
 
     app.config["SQLALCHEMY_DATABASE_URI"] = (
         f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
-        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}?charset=utf8mb4"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -45,7 +45,8 @@ def create_app():
         # On ne protège que les routes qui matchent /api/ (sauf exceptions si nécessaire)
         if request.path.startswith("/api/"):
             # Vérification du User-Agent
-            if request.headers.get("User-Agent") != "educrpro/1.0":
+            user_agent = request.headers.get("User-Agent")
+            if user_agent not in ["educrpro/1.0", "educpro-admin/1.0"]:
                 return jsonify({"error": "Forbidden: Invalid User-Agent"}), 403
             
             # Vérification de la clé API
