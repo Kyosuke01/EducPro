@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" href="/static/assets/images/favicon.png" sizes="16x16">
 
   <!-- CSS Libraries -->
-  <link rel="stylesheet" href="/static/assets/css/remixicon.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
   <link rel="stylesheet" href="/static/assets/css/lib/bootstrap.min.css">
   <link rel="stylesheet" href="/static/assets/css/lib/apexcharts.css">
   <link rel="stylesheet" href="/static/assets/css/lib/dataTables.min.css">
@@ -305,7 +305,7 @@
 
       menuItems.forEach(item => {
         html += `
-          <li class="dropdown">
+          <li class="dropdown mb-3">
             <a href="javascript:void(0)" class="sidebar-menu-item" data-section="${item.id}" onclick="loadSection('${item.id}', event)">
               <i class="${item.icon}"></i>
               <span>${item.label}</span>
@@ -501,7 +501,7 @@
     }
 
     function buildStatsCards(cards) {
-      let html = '<div class="row gy-4"><div class="col-xxl-12"><div class="row gy-4">';
+      let html = '<div class="row gy-4 mb-4"><div class="col-xxl-12"><div class="row gy-4">';
       cards.forEach(card => {
         html += `
           <div class="col-xxl-3 col-sm-6">
@@ -525,7 +525,7 @@
 
     function buildChartContainer(title) {
       return `
-        <div class="row mt-4">
+        <div class="row mt-5">
           <div class="col-12">
             <div class="card shadow-1 radius-12">
               <div class="card-body p-24">
@@ -541,7 +541,7 @@
     function buildRecentActivityTable() {
       // Fake recent activities for better dashboard density.
       return `
-        <div class="row mt-4">
+        <div class="row mt-5">
           <div class="col-12">
             <div class="card shadow-1 radius-12">
               <div class="card-header border-bottom bg-white p-24">
@@ -1247,7 +1247,7 @@
           <div class="col-sm-6">
             <div class="card shadow-1 radius-8 h-100">
               <div class="card-body p-20 text-center">
-                <div class="w-64-px h-64-px bg-danger-600 rounded-circle d-flex justify-content-center align-items-center text-white mx-auto mb-12">
+                <div class="w-64-px h-64-px bg-danger-100 rounded-circle d-flex justify-content-center align-items-center text-danger-600 mx-auto mb-12">
                   <i class="ri-calendar-x-line text-2xl"></i>
                 </div>
                 <h3>${att.absent}</h3>
@@ -1258,7 +1258,7 @@
           <div class="col-sm-6">
             <div class="card shadow-1 radius-8 h-100">
               <div class="card-body p-20 text-center">
-                <div class="w-64-px h-64-px bg-warning-600 rounded-circle d-flex justify-content-center align-items-center text-white mx-auto mb-12">
+                <div class="w-64-px h-64-px bg-warning-100 rounded-circle d-flex justify-content-center align-items-center text-warning-600 mx-auto mb-12">
                   <i class="ri-time-line text-2xl"></i>
                 </div>
                 <h3>${att.late}</h3>
