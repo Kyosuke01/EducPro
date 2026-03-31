@@ -45,3 +45,9 @@ Thumbs.db
 *.ntvs*
 *.njsproj
 *.sln
+
+# ─────────────────────────────────────────
+# 📄 Rapports
+# ─────────────────────────────────────────
+rapport_base_de_donnees.md
+
