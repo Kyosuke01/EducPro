@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EducPro - Tableau de Bord</title>
-  <link rel="icon" type="image/png" href="/static/assets/images/favicon.png" sizes="16x16">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%234f46e5'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial' font-size='28' text-anchor='middle' fill='white' font-weight='700'%3EE%3C/text%3E%3C/svg%3E">
 
   <!-- CSS Libraries -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
@@ -185,7 +185,7 @@
   <script src="/static/assets/js/lib/moment.min.js"></script>
   <script src="/static/assets/js/lib/calendar.js"></script>
   <script src="/static/assets/js/lib/apexcharts-setting.js"></script>
-  <script src="/static/assets/js/main.js"></script>
+  <script src="/static/assets/js/app.js"></script>
 
   <!-- Injection sécurisée des données utilisateur pour le Linter JS -->
   <script id="user-data" type="application/json">
@@ -266,25 +266,38 @@
           console.error(e);
         }
       } else {
-        if (USER.has_2fa && confirm("Voulez-vous vraiment désactiver l'A2F ?")) {
-             try {
-                 const res = await fetch('/api/auth/2fa/disable', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ user_id: USER.id, role: USER.role })
-                 });
-                 if(res.ok) {
-                     USER.has_2fa = false;
-                     document.getElementById('mainContent').innerHTML = getParametresContent();
-                 } else { document.getElementById('switch2FA').checked = true; }
-             } catch(e) { document.getElementById('switch2FA').checked = true; }
-        } else if (USER.has_2fa) {
-             document.getElementById('switch2FA').checked = true; // annule
+        if (USER.has_2fa) {
+           try {
+             const res = await fetch('/api/auth/2fa/disable', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ user_id: USER.id, role: USER.role })
+             });
+             if(res.ok) {
+               USER.has_2fa = false;
+               document.getElementById('contentArea').innerHTML = getParametresContent();
+             } else { document.getElementById('switch2FA').checked = true; }
+           } catch(e) { document.getElementById('switch2FA').checked = true; }
         } else {
-             setupSection.style.display = 'none';
-             current2FASecret = "";
+           setupSection.style.display = 'none';
+           current2FASecret = "";
         }
       }
+    }
+
+    function showNotice(type, message) {
+      const box = document.getElementById('param-alert');
+      if (!box) return;
+      if (type === 'success') {
+        box.style.display = 'none';
+        return;
+      }
+      const classes = type === 'error'
+        ? 'alert alert-danger d-flex align-items-center gap-2 mb-3'
+        : 'alert alert-warning d-flex align-items-center gap-2 mb-3';
+      box.className = classes;
+      box.innerHTML = `<i class="ri-information-line"></i><span>${message}</span>`;
+      box.style.display = 'flex';
     }
 
     async function validate2FA() {
@@ -302,19 +315,33 @@
               code: code
             })
           });
+          console.log('[2fa] verify response status', res.status, 'ok', res.ok, 'content-type', res.headers.get('content-type'));
           if (res.ok) {
             USER.has_2fa = true;
-            document.getElementById('mainContent').innerHTML = getParametresContent();
-            alert("Authentification à double facteur activée avec succès !");
+            document.getElementById('contentArea').innerHTML = getParametresContent();
           } else {
-            const err = await res.json();
-            alert("Erreur: " + err.error);
+            let errText = '';
+            try {
+              const ctype = res.headers.get('content-type') || '';
+              if (ctype.includes('application/json')) {
+                const err = await res.json();
+                errText = err?.error || JSON.stringify(err);
+              } else {
+                errText = await res.text();
+              }
+            } catch (parseErr) {
+              console.error('[2fa] parse error', parseErr);
+              errText = 'Réponse non lisible';
+            }
+            console.error('[2fa] verify failed', res.status, errText);
+            showNotice('error', errText || 'Erreur inattendue');
           }
         } catch (e) {
-          alert("Erreur réseau ou serveur.");
+          console.error('[2fa] network/exception', e);
+          showNotice('error', 'Erreur réseau ou serveur.');
         }
       } else {
-        alert("Veuillez entrer un code à 6 chiffres.");
+        showNotice('warning', 'Veuillez entrer un code à 6 chiffres.');
       }
     }
 
@@ -323,25 +350,29 @@
       const pwdInputs = e.target.querySelectorAll('input[type="password"]');
       const old_password = pwdInputs[0].value;
       const new_password = pwdInputs[1].value;
-      if (new_password.length < 6) return alert("Le nouveau mot de passe est trop court.");
+      const totpInput = e.target.querySelector('input[name="totp_code"]');
+      const totpCode = totpInput ? totpInput.value.trim() : '';
+
+      if (new_password.length < 6) return showNotice('warning', 'Le nouveau mot de passe est trop court.');
+      if (USER.has_2fa && totpCode.length !== 6) return showNotice('warning', 'Code 2FA requis pour modifier le mot de passe.');
 
       try {
         const res = await fetch('/api/users/change-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: USER.id, role: USER.role, old_password: old_password, new_password: new_password
+            user_id: USER.id, role: USER.role, old_password: old_password, new_password: new_password, code: totpCode || undefined
           })
         });
         if (res.ok) {
-          alert("Mot de passe mis à jour !");
+          showNotice('warning', 'Mot de passe mis à jour.');
           e.target.reset();
         } else {
           const err = await res.json();
-          alert("Erreur : " + err.error);
+          showNotice('error', err.error || 'Erreur lors de la mise à jour.');
         }
       } catch (ex) {
-        alert("Erreur serveur.");
+        showNotice('error', 'Erreur serveur.');
       }
     }
 
@@ -504,6 +535,8 @@
                   .custom-switch-clean:checked { background-color: #4f46e5 !important; }
                   .custom-switch-clean:checked::after { transform: translateX(24px); }
                 </style>
+                <div id="param-alert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none"></div>
+
                 <div class="d-flex align-items-center justify-content-between mb-4">
                   <div>
                     <h6 class="text-md fw-medium mb-1">Authentification à Double Facteur (2FA)</h6>
@@ -558,7 +591,11 @@
                       <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
                       <input type="password" name="new_password" id="new_password" autocomplete="new-password" class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
                     </div>
-                    <button type="submit" class="btn btn-outline-primary radius-8">Mettre à jour le mot de passe</button>
+                    <div class="mb-4">
+                      <label class="form-label text-sm fw-medium">Code 2FA (si activé)</label>
+                      <input type="text" name="totp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" class="form-control radius-8 bg-neutral-50 border-0 p-12" placeholder="123456" ${USER.has_2fa ? '' : ''}>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary radius-8 mt-3">Mettre à jour le mot de passe</button>
                   </form>
                 </div>
 

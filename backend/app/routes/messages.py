@@ -8,6 +8,22 @@ from app.db import get_db_connection
 messages_bp = Blueprint("messages", __name__)
 
 # ──────────────────────────────────────────────
+# GET /api/notifications
+# ──────────────────────────────────────────────
+@messages_bp.route("/notifications", methods=["GET"])
+def get_notifications():
+    """Renvoie une petite liste de notifications mockées pour l'UI."""
+    # On autorise un filtre limit tout en restant tolérant
+    limit = request.args.get("limit", 5, type=int)
+    sample = [
+        {"title": "Bienvenue", "body": "Votre compte est prêt.", "type": "system"},
+        {"title": "Profil", "body": "Pensez à compléter vos informations.", "type": "message"},
+        {"title": "Sécurité", "body": "Activez l'A2F pour protéger votre compte.", "type": "alert"},
+        {"title": "Rappel", "body": "Consultez les dernières mises à jour.", "type": "info"},
+    ]
+    return jsonify({"notifications": sample[:limit]}), 200
+
+# ──────────────────────────────────────────────
 # GET /api/messages/student/<int:student_id>
 # ──────────────────────────────────────────────
 @messages_bp.route("/messages/student/<int:student_id>", methods=["GET"])

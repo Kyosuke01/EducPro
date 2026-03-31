@@ -41,6 +41,7 @@ def login():
 
     email = data["email"]
     password = data["password"]
+    code = data.get("code")
 
     conn = None
     try:
@@ -55,6 +56,13 @@ def login():
             student = cursor.fetchone()
 
             if student and bcrypt.checkpw(password.encode('utf-8'), student["password"].encode('utf-8')):
+                # Si A2F activée, exiger le code TOTP
+                if student.get("totp_secret"):
+                    if not code:
+                        return jsonify({"error": "Code 2FA requis"}), 401
+                    if not pyotp.TOTP(student["totp_secret"]).verify(code):
+                        return jsonify({"error": "Code 2FA invalide"}), 401
+
                 return jsonify({
                     "message": "Connexion réussie.",
                     "user": {
@@ -78,6 +86,13 @@ def login():
 
             if teacher and bcrypt.checkpw(password.encode('utf-8'), teacher["password"].encode('utf-8')):
                 role = "admin" if teacher.get("is_admin") else "teacher"
+
+                # Si A2F activée, exiger le code TOTP
+                if teacher.get("totp_secret"):
+                    if not code:
+                        return jsonify({"error": "Code 2FA requis"}), 401
+                    if not pyotp.TOTP(teacher["totp_secret"]).verify(code):
+                        return jsonify({"error": "Code 2FA invalide"}), 401
 
                 return jsonify({
                     "message": "Connexion réussie.",
@@ -354,6 +369,8 @@ def change_password():
     if not all(k in data for k in ("user_id", "role", "old_password", "new_password")):
         return jsonify({"error": "user_id, role, old_password, new_password requis"}), 400
 
+    code = data.get("code")
+
     table = "Teacher" if data["role"] in ["teacher", "admin"] else "Student"
     id_field = "teacher_id" if table == "Teacher" else "student_id"
 
@@ -361,11 +378,18 @@ def change_password():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute(f"SELECT password FROM {table} WHERE {id_field} = %s", (data["user_id"],))
+            cursor.execute(f"SELECT password, totp_secret FROM {table} WHERE {id_field} = %s", (data["user_id"],))
             user = cursor.fetchone()
 
             if not user or not bcrypt.checkpw(data["old_password"].encode('utf-8'), user["password"].encode('utf-8')):
                 return jsonify({"error": "Ancien mot de passe incorrect"}), 400
+
+            # Si A2F activée, valider le code fourni
+            if user.get("totp_secret"):
+                if not code:
+                    return jsonify({"error": "Code 2FA requis"}), 401
+                if not pyotp.TOTP(user["totp_secret"]).verify(code):
+                    return jsonify({"error": "Code 2FA invalide"}), 401
 
             hashed = bcrypt.hashpw(data["new_password"].encode('utf-8'), bcrypt.gensalt(14)).decode('utf-8')
             cursor.execute(f"UPDATE {table} SET password = %s WHERE {id_field} = %s", (hashed, data["user_id"]))

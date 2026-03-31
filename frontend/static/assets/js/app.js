@@ -215,6 +215,7 @@
 
   // =========================== Color Schema js Start ================================
   const colorPickerButtons = document.querySelectorAll(".color-picker-btn");
+  console.log("[color-picker] found buttons:", colorPickerButtons.length);
 
   const colors = {
     base: "#25A194",
@@ -230,9 +231,12 @@
     localStorage.setItem("templateColor", color);
   }
 
-  colorPickerButtons.forEach((btn) => {
+  colorPickerButtons.forEach((btn, idx) => {
+    console.log("[color-picker] bind click", idx, btn?.getAttribute("data-color"));
     btn.addEventListener("click", () => {
       const color = btn.getAttribute("data-color");
+
+      console.log("[color-picker] click", color);
 
       if (!color) return; // safety
 
@@ -247,16 +251,21 @@
 
   // Load saved color on refresh
   const savedColor = localStorage.getItem("templateColor");
+  console.log("[color-picker] savedColor", savedColor);
   if (savedColor && colors[savedColor]) {
     applyColor(savedColor);
-    document
-      .querySelector(`.color-picker-btn[data-color="${savedColor}"]`)
-      .classList.add("active");
+    const savedBtn = document.querySelector(`.color-picker-btn[data-color="${savedColor}"]`);
+    console.log("[color-picker] savedBtn", savedBtn);
+    if (savedBtn) {
+      savedBtn.classList.add("active");
+    }
   } else {
     // Default (base)
-    document
-      .querySelector(`.color-picker-btn[data-color="base"]`)
-      .classList.add("active");
+    const baseBtn = document.querySelector(`.color-picker-btn[data-color="base"]`);
+    console.log("[color-picker] baseBtn", baseBtn);
+    if (baseBtn) {
+      baseBtn.classList.add("active");
+    }
   }
   // =========================== Color Schema js End ================================
 

@@ -37,15 +37,17 @@ def index():
 def login():
     email = request.form.get("email")
     password = request.form.get("password")
+    code = request.form.get("code") or None
 
     if not email or not password:
         return redirect(url_for("index", error="Veuillez remplir tous les champs."))
 
     try:
-        resp = requests.post(f"{API_URL}/api/auth/login", headers=get_secure_headers(), json={
-            "email": email,
-            "password": password
-        }, timeout=5)
+        payload = {"email": email, "password": password}
+        if code:
+            payload["code"] = code
+
+        resp = requests.post(f"{API_URL}/api/auth/login", headers=get_secure_headers(), json=payload, timeout=5)
 
         if resp.status_code == 200:
             data = resp.json()
@@ -146,9 +148,15 @@ def api_proxy(path):
         else:
             return jsonify({"error": "Méthode non supportée"}), 405
 
-        return (resp.content, resp.status_code, {"Content-Type": "application/json"})
+        # Log minimal proxy info pour diagnostiquer les retours inattendus
+        app.logger.info(f"[proxy] {request.method} /api/{path} -> {resp.status_code} {resp.headers.get('Content-Type')}")
+
+        # Propager le Content-Type réel pour éviter de forcer du JSON sur des réponses 404/HTML
+        content_type = resp.headers.get("Content-Type", "application/json")
+        return (resp.content, resp.status_code, {"Content-Type": content_type})
 
     except requests.exceptions.RequestException as e:
+        app.logger.error(f"[proxy] backend exception {e}")
         return jsonify({"error": f"Erreur de communication avec le backend : {str(e)}"}), 502
 
 
