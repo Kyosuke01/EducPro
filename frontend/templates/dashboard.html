@@ -317,20 +317,37 @@
               </div>
               <div class="card-body p-24">
                 <style>
-                  .custom-switch {
-                    width: 50px !important;
-                    height: 26px !important;
-                    background-color: #9ca3af !important; /* Gris */
-                    border: 2px solid #9ca3af !important;
+                  .custom-switch-clean {
+                    appearance: none;
+                    width: 48px !important;
+                    height: 24px !important;
+                    background-color: #cbd5e1 !important; /* Gris clair */
+                    border-radius: 24px !important;
+                    position: relative;
                     cursor: pointer;
-                    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
-                    border-radius: 20px !important;
-                    transition: background-position .15s ease-in-out, background-color .15s ease-in-out !important;
+                    outline: none;
+                    border: none !important;
+                    transition: background-color 0.3s ease;
+                    margin: 0 !important;
+                    flex-shrink: 0;
                   }
-                  .custom-switch:checked {
+                  .custom-switch-clean::after {
+                    content: '';
+                    position: absolute;
+                    top: 2px;
+                    left: 2px;
+                    width: 20px;
+                    height: 20px;
+                    background-color: white;
+                    border-radius: 50%;
+                    transition: transform 0.3s ease;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                  }
+                  .custom-switch-clean:checked {
                     background-color: #4f46e5 !important; /* Indigo/bleu (active) */
-                    border-color: #4f46e5 !important;
-                    background-position: right center !important;
+                  }
+                  .custom-switch-clean:checked::after {
+                    transform: translateX(24px);
                   }
                 </style>
                 <div class="d-flex align-items-center justify-content-between mb-4">
@@ -338,8 +355,8 @@
                     <h6 class="text-md fw-medium mb-1">Authentification à Double Facteur (2FA)</h6>
                     <p class="text-sm text-neutral-500 mb-0">Ajoutez une couche de sécurité supplémentaire à votre compte en activant le 2FA.</p>
                   </div>
-                  <div class="form-check form-switch cursor-pointer mb-0">
-                    <input class="form-check-input custom-switch mt-0" type="checkbox" role="switch" id="switch2FA">
+                  <div class="cursor-pointer d-flex align-items-center mb-0">
+                    <input class="custom-switch-clean" type="checkbox" role="switch" id="switch2FA">
                   </div>
                 </div>
                 <hr class="border-neutral-200">
@@ -352,29 +369,7 @@
               </div>
             </div>
 
-            <div class="card shadow-1 radius-12 border-0">
-              <div class="card-header border-bottom bg-white p-24">
-                <h6 class="text-lg fw-semibold mb-0"><i class="ri-settings-4-line text-primary me-2"></i>Préférences générales</h6>
-              </div>
-              <div class="card-body p-24">
-                <div class="mb-4">
-                  <label class="form-label text-sm fw-medium">Langue de l'interface</label>
-                  <select class="form-select radius-8 bg-neutral-50 border-0 p-12 w-50">
-                    <option value="fr" selected>Français</option>
-                    <option value="en">Anglais</option>
-                  </select>
-                </div>
-                <div class="mb-4">
-                  <label class="form-label text-sm fw-medium align-items-center d-flex gap-2">
-                    <input type="checkbox" class="form-check-input mt-0" checked>
-                    Recevoir des notifications par email
-                  </label>
-                </div>
-                <div class="text-end">
-                  <button class="btn btn-primary radius-8" onclick="alert('Modifications enregistrées !')">Enregistrer les préférences</button>
-                </div>
-              </div>
-            </div>
+
 
           </div>
         </div>
