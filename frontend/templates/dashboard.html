@@ -6,7 +6,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EducPro - Tableau de Bord</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%234f46e5'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial' font-size='28' text-anchor='middle' fill='white' font-weight='700'%3EE%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%234f46e5'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial' font-size='28' text-anchor='middle' fill='white' font-weight='700'%3EE%3C/text%3E%3C/svg%3E">
 
   <!-- CSS Libraries -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
@@ -267,20 +268,20 @@
         }
       } else {
         if (USER.has_2fa) {
-           try {
-             const res = await fetch('/api/auth/2fa/disable', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ user_id: USER.id, role: USER.role })
-             });
-             if(res.ok) {
-               USER.has_2fa = false;
-               document.getElementById('contentArea').innerHTML = getParametresContent();
-             } else { document.getElementById('switch2FA').checked = true; }
-           } catch(e) { document.getElementById('switch2FA').checked = true; }
+          try {
+            const res = await fetch('/api/auth/2fa/disable', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: USER.id, role: USER.role })
+            });
+            if (res.ok) {
+              USER.has_2fa = false;
+              document.getElementById('contentArea').innerHTML = getParametresContent();
+            } else { document.getElementById('switch2FA').checked = true; }
+          } catch (e) { document.getElementById('switch2FA').checked = true; }
         } else {
-           setupSection.style.display = 'none';
-           current2FASecret = "";
+          setupSection.style.display = 'none';
+          current2FASecret = "";
         }
       }
     }
@@ -535,7 +536,6 @@
                   .custom-switch-clean:checked { background-color: #4f46e5 !important; }
                   .custom-switch-clean:checked::after { transform: translateX(24px); }
                 </style>
-                <div id="param-alert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none"></div>
 
                 <div class="d-flex align-items-center justify-content-between mb-4">
                   <div>
@@ -549,10 +549,10 @@
                 
                 <!-- Section Configuration A2F -->
                 <div id="setup2FASection" style="display: ${USER.has_2fa ? 'block' : 'none'};" class="bg-neutral-50 p-20 radius-8 mb-4 border">
-                  ${USER.has_2fa ? 
-                  '<div class="alert alert-success mt-1 mb-1"><i class="ri-shield-check-line me-2"></i> L\\\'A2F a été configurée et sécurise activement ce compte.</div>' 
-                  : 
-                  `
+                  ${USER.has_2fa ?
+          '<div class="alert alert-success mt-1 mb-1"><i class="ri-shield-check-line me-2"></i> L\\\'A2F a été configurée et sécurise activement ce compte.</div>'
+          :
+          `
                   <h6 class="text-sm fw-semibold mb-3">1. Scannez ce QR Code avec votre application d'authentification</h6>
                   <div class="text-center mb-4">
                     <img id="qr-code-img" src="" alt="QR Code A2F" class="radius-8 shadow-sm">
