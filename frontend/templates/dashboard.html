@@ -42,49 +42,7 @@
 </head>
 
 <body>
-  <!-- Theme Customization Start -->
-  <div class="body-overlay"></div>
-  <button type="button"
-    class="theme-customization__button w-48-px h-48-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center position-fixed end-0 bottom-0 mb-40 me-40 text-2xxl bg-hover-primary-700"
-    aria-label="Theme Customization Button">
-    <i class="ri-settings-3-line animate-spin"></i>
-  </button>
-
-  <div class="theme-customization-sidebar w-100 bg-base h-100vh overflow-y-auto position-fixed end-0 top-0">
-    <div class="d-flex align-items-center gap-3 py-16 px-24 justify-content-between border-bottom">
-      <div>
-        <h6 class="text-sm dark:text-white">Paramètres du Thème</h6>
-        <p class="text-xs mb-0 text-neutral-500 dark:text-neutral-200">Personnalisez et prévisualisez instantanément</p>
-      </div>
-      <button data-slot="button"
-        class="theme-customization-sidebar__close text-neutral-900 bg-transparent text-hover-primary-600 d-flex text-xl">
-        <i class="ri-close-fill"></i>
-      </button>
-    </div>
-
-    <div class="d-flex flex-column gap-48 p-24 overflow-y-auto flex-grow-1">
-      <div class="theme-setting-item">
-        <h6 class="fw-medium text-primary-light text-md mb-3">Mode Thème</h6>
-        <div class="d-grid grid-cols-3 gap-3 dark-light-mode">
-          <button type="button"
-            class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl active"
-            data-theme="light" aria-label="light">
-            <i class="ri-sun-line"></i>
-          </button>
-          <button type="button"
-            class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl"
-            data-theme="dark" aria-label="dark">
-            <i class="ri-moon-line"></i>
-          </button>
-          <button type="button"
-            class="theme-btn theme-setting-item__btn d-flex align-items-center justify-content-center h-64-px rounded-3 text-xl"
-            data-theme="system" aria-label="system">
-            <i class="ri-computer-line"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Theme Customization Start (Removed) -->
 
   <!-- Overlay -->
   <div class="overlay bg-black bg-opacity-50 w-100 h-100 position-fixed z-9 visibility-hidden opacity-0 duration-300">
@@ -130,14 +88,14 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-lg-end border p-12">
           <li>
-            <a href="#"
+            <a href="javascript:void(0)" onclick="loadSection('monProfil')"
               class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
               <i class="ri-user-3-line"></i>
               Mon Profil
             </a>
           </li>
           <li>
-            <a href="#"
+            <a href="javascript:void(0)" onclick="loadSection('parametres')"
               class="dropdown-item rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900 d-flex align-items-center gap-2 py-6">
               <i class="ri-settings-3-line"></i>
               Paramètres
@@ -180,10 +138,6 @@
         </div>
         <div class="col-auto">
           <div class="d-flex flex-wrap align-items-center gap-3">
-            <button type="button" data-theme-toggle
-              class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
-              aria-label="Dark & Light Mode">
-            </button>
             <div class="dropdown">
               <button
                 class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative"
@@ -191,6 +145,14 @@
                 <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
                 <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
               </button>
+              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0 radius-12" id="notificationDropdown" style="width: 300px;">
+                <div class="p-16 border-bottom">
+                  <h6 class="text-md fw-semibold mb-0">Notifications</h6>
+                </div>
+                <div class="p-16" id="notificationContainer">
+                  <!-- Notifications injectées par JS -->
+                </div>
+              </ul>
             </div>
           </div>
         </div>
@@ -245,6 +207,179 @@
     const USER = userDataElement && userDataElement.textContent.trim() !== ''
       ? JSON.parse(userDataElement.textContent)
       : {};
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const notifContainer = document.getElementById('notificationContainer');
+      if (!notifContainer) return;
+
+      try {
+        // Pseudo appel au backend pour récupérer les notifications depuis la base de données
+        const data = await api('notifications?limit=3');
+        let notifications = data.notifications || [];
+
+        // Données mockées dans le cas où l'API backend n'est pas encore prête
+        if (notifications.length === 0 || data.error) {
+          if (USER.role === 'admin') {
+            notifications = [
+              { title: "Nouveau ticket", body: "L'utilisateur Jean Dupont a ouvert un ticket.", type: "message" },
+              { title: "Mise à jour requise", body: "Le système nécessite une mise à jour mineure.", type: "system" },
+              { title: "Connexion échouée", body: "Tentative de connexion en échec détectée.", type: "alert" }
+            ];
+          } else if (USER.role === 'teacher') {
+            notifications = [
+              { title: "Nouveau message étudiant", body: "Question sur le cours d'hier.", type: "message" },
+              { title: "Rappel", body: "Saisie des notes avant vendredi.", type: "alert" }
+            ];
+          } else {
+            notifications = [
+              { title: "Nouvelle note", body: "Votre professeur a publié une nouvelle note.", type: "grade" },
+              { title: "Nouveau message", body: "Message concernant votre dernier devoir.", type: "message" },
+              { title: "Absence enregistrée", body: "Une absence a été signalée hier.", type: "alert" }
+            ];
+          }
+        }
+
+        let html = '';
+        notifications.forEach(notif => {
+          let icon = "ri-notification-3-line";
+          let color = "primary";
+          if (notif.type === 'message') { icon = "ri-message-3-line"; color = "info"; }
+          else if (notif.type === 'system' || notif.type === 'alert') { icon = "ri-error-warning-line"; color = "warning"; }
+          else if (notif.type === 'grade') { icon = "ri-star-line"; color = "success"; }
+
+          html += `
+            <a href="javascript:void(0)" onclick="loadSection('messages')" class="d-flex align-items-start gap-3 text-neutral-900 text-hover-primary-600 text-decoration-none mb-3">
+              <div class="w-40-px h-40-px rounded-circle bg-${color}-50 d-flex justify-content-center align-items-center flex-shrink-0">
+                <i class="${icon} text-${color} text-xl"></i>
+              </div>
+              <div>
+                <h6 class="text-sm fw-medium mb-1">${notif.title}</h6>
+                <p class="text-xs text-neutral-500 mb-0">${notif.body}</p>
+              </div>
+            </a>
+          `;
+        });
+        notifContainer.innerHTML = html;
+
+        // Met à jour la pastille rouge clignotante
+        const indicator = document.querySelector('.has-indicator span.bg-danger-600');
+        if (indicator && notifications.length > 0) {
+          indicator.style.display = 'block';
+        } else if (indicator) {
+          indicator.style.display = 'none';
+        }
+
+      } catch (e) {
+        notifContainer.innerHTML = '<p class="text-xs text-neutral-500 text-center">Erreur de chargement</p>';
+      }
+    });
+
+    function getMonProfilContent() {
+      return `
+        <div class="row">
+          <div class="col-12 col-md-8 offset-md-2">
+            <div class="card shadow-1 radius-12 border-0">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-user-3-line text-primary me-2"></i>Informations de profil</h6>
+              </div>
+              <div class="card-body p-24">
+                <div class="row mb-3">
+                  <div class="col-sm-4 fw-medium text-neutral-500">Nom:</div>
+                  <div class="col-sm-8 fw-semibold">${USER.lastName || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4 fw-medium text-neutral-500">Prénom:</div>
+                  <div class="col-sm-8 fw-semibold">${USER.firstName || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4 fw-medium text-neutral-500">Email:</div>
+                  <div class="col-sm-8 fw-semibold">${USER.email || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4 fw-medium text-neutral-500">Rôle:</div>
+                  <div class="col-sm-8 fw-semibold">${USER.role === 'admin' ? 'Administrateur' : (USER.role === 'teacher' ? 'Professeur' : 'Étudiant')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function getParametresContent() {
+      return `
+        <div class="row">
+          <div class="col-12 col-md-8 offset-md-2">
+            
+            <div class="card shadow-1 radius-12 border-0 mb-4">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-lock-password-line text-primary me-2"></i>Sécurité & Authentification</h6>
+              </div>
+              <div class="card-body p-24">
+                <style>
+                  .custom-switch {
+                    width: 50px !important;
+                    height: 26px !important;
+                    background-color: #9ca3af !important; /* Gris */
+                    border: 2px solid #9ca3af !important;
+                    cursor: pointer;
+                    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
+                    border-radius: 20px !important;
+                    transition: background-position .15s ease-in-out, background-color .15s ease-in-out !important;
+                  }
+                  .custom-switch:checked {
+                    background-color: #4f46e5 !important; /* Indigo/bleu (active) */
+                    border-color: #4f46e5 !important;
+                    background-position: right center !important;
+                  }
+                </style>
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                  <div>
+                    <h6 class="text-md fw-medium mb-1">Authentification à Double Facteur (2FA)</h6>
+                    <p class="text-sm text-neutral-500 mb-0">Ajoutez une couche de sécurité supplémentaire à votre compte en activant le 2FA.</p>
+                  </div>
+                  <div class="form-check form-switch cursor-pointer mb-0">
+                    <input class="form-check-input custom-switch mt-0" type="checkbox" role="switch" id="switch2FA">
+                  </div>
+                </div>
+                <hr class="border-neutral-200">
+                <div class="mt-4">
+                  <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
+                  <button class="btn btn-outline-primary radius-8" onclick="alert('Fonction en attente de la création de la route API correspondante.')">
+                    Modifier mon mot de passe
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card shadow-1 radius-12 border-0">
+              <div class="card-header border-bottom bg-white p-24">
+                <h6 class="text-lg fw-semibold mb-0"><i class="ri-settings-4-line text-primary me-2"></i>Préférences générales</h6>
+              </div>
+              <div class="card-body p-24">
+                <div class="mb-4">
+                  <label class="form-label text-sm fw-medium">Langue de l'interface</label>
+                  <select class="form-select radius-8 bg-neutral-50 border-0 p-12 w-50">
+                    <option value="fr" selected>Français</option>
+                    <option value="en">Anglais</option>
+                  </select>
+                </div>
+                <div class="mb-4">
+                  <label class="form-label text-sm fw-medium align-items-center d-flex gap-2">
+                    <input type="checkbox" class="form-check-input mt-0" checked>
+                    Recevoir des notifications par email
+                  </label>
+                </div>
+                <div class="text-end">
+                  <button class="btn btn-primary radius-8" onclick="alert('Modifications enregistrées !')">Enregistrer les préférences</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
 
     // ============================================
     // API helper
@@ -409,6 +544,16 @@
           html = await getMessagesContent();
           document.getElementById('pageTitle').textContent = 'Messagerie';
           document.getElementById('pageSubtitle').textContent = 'Communiquer et gérer les tickets';
+          break;
+        case 'monProfil':
+          html = getMonProfilContent();
+          document.getElementById('pageTitle').textContent = 'Mon Profil';
+          document.getElementById('pageSubtitle').textContent = 'Gérez vos informations personnelles';
+          break;
+        case 'parametres':
+          html = getParametresContent();
+          document.getElementById('pageTitle').textContent = 'Paramètres';
+          document.getElementById('pageSubtitle').textContent = 'Configuration de votre compte';
           break;
         default:
           html = await getDashboardContent();
