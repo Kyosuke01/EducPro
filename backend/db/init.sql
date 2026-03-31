@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS Teacher (
   mail_teacher VARCHAR(255) UNIQUE,
   password VARCHAR(255),
   is_admin BOOLEAN DEFAULT FALSE,
-  topic_name VARCHAR(100)
+  topic_name VARCHAR(100),
+  totp_secret VARCHAR(32) DEFAULT NULL
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des étudiants
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS Student (
   last_name VARCHAR(100) NOT NULL,
   mail_student VARCHAR(255) UNIQUE,
   password VARCHAR(255),
+  totp_secret VARCHAR(32) DEFAULT NULL,
   class_name VARCHAR(100),
   dob DATE,
   FOREIGN KEY (class_name) REFERENCES Class(name)

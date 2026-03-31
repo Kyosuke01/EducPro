@@ -145,7 +145,8 @@
                 <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
                 <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0 radius-12" id="notificationDropdown" style="width: 300px;">
+              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0 radius-12" id="notificationDropdown"
+                style="width: 300px;">
                 <div class="p-16 border-bottom">
                   <h6 class="text-md fw-semibold mb-0">Notifications</h6>
                 </div>
@@ -195,7 +196,8 @@
       "email": email,
       "role": role,
       "className": class_name,
-      "topicName": topic_name
+      "topicName": topic_name,
+      "has_2fa": has_2fa
     } | tojson | safe }}
   </script>
 
@@ -207,6 +209,141 @@
     const USER = userDataElement && userDataElement.textContent.trim() !== ''
       ? JSON.parse(userDataElement.textContent)
       : {};
+
+    function setupOtpInputs(containerId) {
+      setTimeout(() => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const inputs = container.querySelectorAll('.otp-input');
+
+        inputs.forEach((input, index) => {
+          input.addEventListener('input', (e) => {
+            if (e.target.value.length === 1 && index < inputs.length - 1) {
+              inputs[index + 1].focus();
+            }
+          });
+
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+              inputs[index - 1].focus();
+            }
+          });
+
+          input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').replace(/\\D/g, '').slice(0, 6);
+            pasteData.split('').forEach((char, i) => {
+              if (inputs[i]) {
+                inputs[i].value = char;
+                if (i < inputs.length - 1) inputs[i + 1].focus();
+              }
+            });
+          });
+        });
+      }, 100); // Petit délai pour attendre l'injection DOM
+    }
+
+    let current2FASecret = "";
+
+    async function toggle2FASection() {
+      const isChecked = document.getElementById('switch2FA').checked;
+      const setupSection = document.getElementById('setup2FASection');
+      if (isChecked) {
+        setupSection.style.display = 'block';
+        setupOtpInputs('dashboard-otp-container');
+        try {
+          const res = await fetch('/api/auth/2fa/generate?email=' + encodeURIComponent(USER.email || 'user'));
+          if (res.ok) {
+            const data = await res.json();
+            current2FASecret = data.secret;
+            document.getElementById('qr-code-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(data.uri);
+            document.getElementById('manual-key-text').innerHTML = '<strong>' + data.secret + '</strong>';
+            document.getElementById('manual-key-text').style.filter = 'blur(5px)';
+          } else {
+            alert('Erreur lors de la génération du code 2FA.');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        if (USER.has_2fa && confirm("Voulez-vous vraiment désactiver l'A2F ?")) {
+             try {
+                 const res = await fetch('/api/auth/2fa/disable', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ user_id: USER.id, role: USER.role })
+                 });
+                 if(res.ok) {
+                     USER.has_2fa = false;
+                     document.getElementById('mainContent').innerHTML = getParametresContent();
+                 } else { document.getElementById('switch2FA').checked = true; }
+             } catch(e) { document.getElementById('switch2FA').checked = true; }
+        } else if (USER.has_2fa) {
+             document.getElementById('switch2FA').checked = true; // annule
+        } else {
+             setupSection.style.display = 'none';
+             current2FASecret = "";
+        }
+      }
+    }
+
+    async function validate2FA() {
+      const inputs = document.querySelectorAll('#dashboard-otp-container .otp-input');
+      const code = Array.from(inputs).map(i => i.value).join('');
+      if (code.length === 6) {
+        try {
+          const res = await fetch('/api/auth/2fa/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: USER.id,
+              role: USER.role,
+              secret: current2FASecret,
+              code: code
+            })
+          });
+          if (res.ok) {
+            USER.has_2fa = true;
+            document.getElementById('mainContent').innerHTML = getParametresContent();
+            alert("Authentification à double facteur activée avec succès !");
+          } else {
+            const err = await res.json();
+            alert("Erreur: " + err.error);
+          }
+        } catch (e) {
+          alert("Erreur réseau ou serveur.");
+        }
+      } else {
+        alert("Veuillez entrer un code à 6 chiffres.");
+      }
+    }
+
+    async function changePassword(e) {
+      e.preventDefault();
+      const pwdInputs = e.target.querySelectorAll('input[type="password"]');
+      const old_password = pwdInputs[0].value;
+      const new_password = pwdInputs[1].value;
+      if (new_password.length < 6) return alert("Le nouveau mot de passe est trop court.");
+
+      try {
+        const res = await fetch('/api/users/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: USER.id, role: USER.role, old_password: old_password, new_password: new_password
+          })
+        });
+        if (res.ok) {
+          alert("Mot de passe mis à jour !");
+          e.target.reset();
+        } else {
+          const err = await res.json();
+          alert("Erreur : " + err.error);
+        }
+      } catch (ex) {
+        alert("Erreur serveur.");
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', async () => {
       const notifContainer = document.getElementById('notificationContainer');
@@ -308,6 +445,27 @@
 
     function getParametresContent() {
       return `
+        <style>
+          .otp-input {
+            width: 45px;
+            height: 55px;
+            font-size: 24px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin: 0 4px;
+            font-weight: 600;
+            color: #1e293b;
+            background-color: #f8fafc;
+            transition: all 0.2s ease;
+          }
+          .otp-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background-color: #fff;
+          }
+        </style>
         <div class="row">
           <div class="col-12 col-md-8 offset-md-2">
             
@@ -321,7 +479,7 @@
                     appearance: none;
                     width: 48px !important;
                     height: 24px !important;
-                    background-color: #cbd5e1 !important; /* Gris clair */
+                    background-color: #cbd5e1 !important;
                     border-radius: 24px !important;
                     position: relative;
                     cursor: pointer;
@@ -343,33 +501,69 @@
                     transition: transform 0.3s ease;
                     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
                   }
-                  .custom-switch-clean:checked {
-                    background-color: #4f46e5 !important; /* Indigo/bleu (active) */
-                  }
-                  .custom-switch-clean:checked::after {
-                    transform: translateX(24px);
-                  }
+                  .custom-switch-clean:checked { background-color: #4f46e5 !important; }
+                  .custom-switch-clean:checked::after { transform: translateX(24px); }
                 </style>
                 <div class="d-flex align-items-center justify-content-between mb-4">
                   <div>
                     <h6 class="text-md fw-medium mb-1">Authentification à Double Facteur (2FA)</h6>
-                    <p class="text-sm text-neutral-500 mb-0">Ajoutez une couche de sécurité supplémentaire à votre compte en activant le 2FA.</p>
+                    <p class="text-sm text-neutral-500 mb-0">Ajoutez une couche de sécurité supplémentaire à votre compte en activant le 2FA (Google Authenticator).</p>
                   </div>
                   <div class="cursor-pointer d-flex align-items-center mb-0">
-                    <input class="custom-switch-clean" type="checkbox" role="switch" id="switch2FA">
+                    <input class="custom-switch-clean" type="checkbox" role="switch" id="switch2FA" onchange="toggle2FASection()" ${USER.has_2fa ? 'checked' : ''}>
                   </div>
                 </div>
-                <hr class="border-neutral-200">
-                <div class="mt-4">
-                  <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
-                  <button class="btn btn-outline-primary radius-8" onclick="alert('Fonction en attente de la création de la route API correspondante.')">
-                    Modifier mon mot de passe
-                  </button>
+                
+                <!-- Section Configuration A2F -->
+                <div id="setup2FASection" style="display: ${USER.has_2fa ? 'block' : 'none'};" class="bg-neutral-50 p-20 radius-8 mb-4 border">
+                  ${USER.has_2fa ? 
+                  '<div class="alert alert-success mt-1 mb-1"><i class="ri-shield-check-line me-2"></i> L\\\'A2F a été configurée et sécurise activement ce compte.</div>' 
+                  : 
+                  `
+                  <h6 class="text-sm fw-semibold mb-3">1. Scannez ce QR Code avec votre application d'authentification</h6>
+                  <div class="text-center mb-4">
+                    <img id="qr-code-img" src="" alt="QR Code A2F" class="radius-8 shadow-sm">
+                    <p class="text-xs text-neutral-500 mt-2 d-flex align-items-center justify-content-center gap-2">
+                       Clé manuelle : 
+                       <span id="manual-key-text" style="filter: blur(5px); cursor: pointer; transition: 0.3s;" onclick="this.style.filter='none'">Génération...</span>
+                       <button type="button" class="btn btn-sm btn-light py-0 px-2 border-0 shadow-sm" style="border-radius:20px;" onclick="document.getElementById('manual-key-text').style.filter = document.getElementById('manual-key-text').style.filter === 'none' ? 'blur(5px)' : 'none'"><i class="ri-eye-line text-neutral-500"></i></button>
+                    </p>
+                  </div>
+                  
+                  <h6 class="text-sm fw-semibold mb-3">2. Entrez le code à 6 chiffres généré</h6>
+                  <div class="d-flex justify-content-center mb-4" id="dashboard-otp-container">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                  </div>
+                  <div class="text-center">
+                    <button class="btn btn-primary radius-8" onclick="validate2FA()">Valider l'activation</button>
+                  </div>
+                  `}
                 </div>
+
+                <hr class="border-neutral-200 my-4">
+                
+                <div>
+                  <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
+                  <form onsubmit="changePassword(event)">
+                    <div class="mb-3">
+                      <label class="form-label text-sm fw-medium">Mot de passe actuel</label>
+                      <input type="password" name="current_password" id="current_password" autocomplete="current-password" class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
+                    </div>
+                    <div class="mb-4">
+                      <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
+                      <input type="password" name="new_password" id="new_password" autocomplete="new-password" class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary radius-8">Mettre à jour le mot de passe</button>
+                  </form>
+                </div>
+
               </div>
             </div>
-
-
 
           </div>
         </div>
@@ -796,7 +990,7 @@
           const js = await resp.json();
           alert('Erreur: ' + (js.error || 'inconnue'));
         }
-      } catch(e) { alert('Erreur réseau'); }
+      } catch (e) { alert('Erreur réseau'); }
     }
 
     async function showEditUserForm(type, user) {
@@ -869,7 +1063,7 @@
       };
       if (type === 'student') payload.class_name = document.getElementById('editUserClass').value;
       else payload.topic_name = document.getElementById('editUserTopic').value;
-      
+
       btn.disabled = true; btn.innerText = 'Enregistrement...';
       try {
         const resp = await fetch(`/api/users/${type}/${id}`, {
@@ -973,7 +1167,7 @@
       };
       if (payload.user_type === 'student') payload.class_name = document.getElementById('newUserClass').value;
       else payload.topic_name = document.getElementById('newUserTopic').value;
-      
+
       btn.disabled = true; btn.innerText = 'Création en cours...';
       try {
         const resp = await fetch('/api/users/', {
@@ -1028,7 +1222,7 @@
         `;
       });
 
-      if (!rows) rows = `<tr><td colspan="${USER.role==='admin'?'4':'3'}" class="text-center text-muted py-24">Aucun étudiant trouvé</td></tr>`;
+      if (!rows) rows = `<tr><td colspan="${USER.role === 'admin' ? '4' : '3'}" class="text-center text-muted py-24">Aucun étudiant trouvé</td></tr>`;
 
       return `
         <div class="row">
@@ -1071,7 +1265,7 @@
         const initial = t.first_name ? t.first_name.charAt(0).toUpperCase() : '?';
         const role = t.is_admin ? '<span class="badge bg-warning-100 text-warning-600 px-12 py-6 rounded-pill"><i class="ri-shield-user-line me-1"></i>Admin</span>' : '<span class="badge bg-info-100 text-info-600 px-12 py-6 rounded-pill"><i class="ri-presentation-line me-1"></i>Professeur</span>';
         const colorClass = t.is_admin ? 'warning' : 'primary';
-        
+
         rows += `
           <tr class="align-middle">
             <td>
@@ -1099,7 +1293,7 @@
         `;
       });
 
-      if (!rows) rows = `<tr><td colspan="${USER.role==='admin'?'4':'3'}" class="text-center text-muted py-24">Aucun professeur trouvé</td></tr>`;
+      if (!rows) rows = `<tr><td colspan="${USER.role === 'admin' ? '4' : '3'}" class="text-center text-muted py-24">Aucun professeur trouvé</td></tr>`;
 
       return `
         <div class="row">
@@ -1141,7 +1335,7 @@
       for (const cls of classes) {
         const studData = await api(`classes/${encodeURIComponent(cls.name)}/students`);
         const nbStudents = studData.students ? studData.students.length : 0;
-        
+
         const colorClass = ['primary', 'success', 'warning', 'info', 'danger'][Math.floor(Math.random() * 5)];
         rows += `
           <tr class="align-middle">

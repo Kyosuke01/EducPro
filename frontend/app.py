@@ -58,6 +58,7 @@ def login():
             session["role"] = user.get("role")
             session["class_name"] = user.get("class_name")
             session["topic_name"] = user.get("topic_name")
+            session["has_2fa"] = user.get("has_2fa", False)
             
             # Anti-hijacking
             session["ip"] = request.remote_addr
@@ -91,7 +92,8 @@ def dashboard():
         email=session.get("email"),
         role=session.get("role"),
         class_name=session.get("class_name"),
-        topic_name=session.get("topic_name")
+        topic_name=session.get("topic_name"),
+        has_2fa=session.get("has_2fa", False)
     )
 
 
@@ -109,7 +111,9 @@ def logout():
 # ──────────────────────────────────────────────
 @app.route("/api/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
 def api_proxy(path):
-    if "user_id" not in session:
+    public_routes = ["auth/forgot-password", "auth/reset-password"]
+    
+    if path not in public_routes and "user_id" not in session:
         return jsonify({"error": "Non authentifié"}), 401
 
     url = f"{API_URL}/api/{path}"
@@ -120,13 +124,13 @@ def api_proxy(path):
     method = request.method
     first_segment = path.split("/")[0] if path else ""
 
-    if method in ["POST", "PUT", "DELETE"]:
+    if method in ["POST", "PUT", "DELETE"] and path not in public_routes:
         if role == "student":
-            if first_segment not in ["messages"]:
+            if first_segment not in ["messages", "auth", "users"]:
                 return jsonify({"error": "Action refusée. Accès administrateur requis."}), 403
         elif role == "teacher":
             # Les professeurs ne peuvent écrire QUE les présences, notes, et messages
-            if first_segment not in ["attendance", "grades", "messages", "edt"]:
+            if first_segment not in ["attendance", "grades", "messages", "edt", "auth", "users"]:
                  return jsonify({"error": "Action non autorisée pour un enseignant."}), 403
     # ----------------------------------------
 
