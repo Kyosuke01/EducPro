@@ -22,14 +22,27 @@
     $(".dashboard-main").toggleClass("active");
   });
 
-  $(".sidebar-mobile-toggle").on("click", function () {
+  const openSidebar = (e) => {
+    e.stopPropagation();
     $(".sidebar").addClass("sidebar-open");
     $("body").addClass("overlay-active");
-  });
+  };
 
-  $(".sidebar-close-btn").on("click", function () {
+  const closeSidebar = () => {
     $(".sidebar").removeClass("sidebar-open");
     $("body").removeClass("overlay-active");
+  };
+
+  $(".sidebar-mobile-toggle").on("click", openSidebar);
+  $(".sidebar-close-btn").on("click", closeSidebar);
+
+  // Close sidebar when clicking outside
+  $(document).on("click", function (e) {
+    if ($("body").hasClass("overlay-active")) {
+      if (!$(e.target).closest(".sidebar").length && !$(e.target).closest(".sidebar-mobile-toggle").length) {
+        closeSidebar();
+      }
+    }
   });
 
   //to keep the current page active
