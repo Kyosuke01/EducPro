@@ -39,6 +39,26 @@
     html[data-theme="dark"] .dark-logo {
       display: block;
     }
+
+    .param-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      padding: 16px;
+    }
+
+    .param-modal__card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    }
   </style>
 </head>
 
@@ -172,6 +192,19 @@
       </div>
     </div>
   </main>
+
+  <!-- Password confirmation modal -->
+  <div id="password2faModal" class="param-modal" onclick="closePassword2FAModal(true)">
+    <div class="param-modal__card" onclick="event.stopPropagation();">
+      <h6 class="fw-semibold mb-2">Confirmer avec le code A2F</h6>
+      <p class="text-sm text-neutral-500 mb-3">Entrez le code à 6 chiffres depuis votre application d'authentification.</p>
+      <input type="text" name="password2faCode" class="form-control radius-8 bg-neutral-50 border-0 p-12 mb-3" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-light" onclick="closePassword2FAModal(true)">Annuler</button>
+        <button type="button" class="btn btn-primary" onclick="confirmPasswordChangeWithCode()">Valider</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="/static/assets/js/lib/iconify-icon.min.js"></script>
@@ -630,6 +663,8 @@
                 
                 <div>
                   <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
+                  <p class="text-xs text-neutral-500 mb-3">Si l'A2F est activée, un code vous sera demandé après avoir cliqué sur «&nbsp;Mettre à jour&nbsp;».</p>
+                  <div id="param-alert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none;"></div>
                   <form onsubmit="changePassword(event)">
                     <div class="mb-3">
                       <label class="form-label text-sm fw-medium">Mot de passe actuel</label>
@@ -639,7 +674,6 @@
                       <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
                       <input type="password" name="new_password" id="new_password" autocomplete="new-password" class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
                     </div>
-                            <div id="param-alert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none;"></div>
                     <div class="mb-4">
                       <label class="form-label text-sm fw-medium">Code 2FA (si activé)</label>
                       <input type="text" name="totp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" class="form-control radius-8 bg-neutral-50 border-0 p-12" placeholder="123456" ${USER.has_2fa ? '' : ''}>
@@ -660,37 +694,18 @@
     // API helper
     // ============================================
     async function api(path, options = {}) {
-                  .param-modal {
-                    position: fixed;
-                    inset: 0;
-                    background: rgba(15, 23, 42, 0.55);
-                    display: none;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1100;
-                    padding: 16px;
-                  }
-                  .param-modal__card {
-                    background: #fff;
-                    border-radius: 16px;
-                    padding: 24px;
-                    width: 100%;
-                    max-width: 420px;
-                    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
-                  }
       try {
         const resp = await fetch(`/api/${path}`, {
           headers: { 'Content-Type': 'application/json' },
           ...options
         });
 
-        const contentType = resp.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
+        const contentType = resp.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
           return await resp.json();
-        } else {
-          const text = await resp.text();
-                  <form onsubmit="changePassword(event)" data-password-form="true">
         }
+
+        return await resp.text();
       } catch (e) {
         console.error('API Error:', e);
         return { error: e.message };
@@ -698,7 +713,10 @@
     }
 
     // ============================================
-                    <p class="text-xs text-neutral-500 mb-3">Si l'A2F est activée, un code vous sera demandé après avoir cliqué sur "Mettre à jour".</p>
+    // Sidebar menu builder
+    // ============================================
+    function generateSidebarMenu(role) {
+      const menus = {
         admin: [
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
           { icon: 'ri-user-add-line', label: 'Ajouter Utilisateur', id: 'createUser' },
@@ -706,18 +724,6 @@
           { icon: 'ri-user-follow-line', label: 'Professeurs', id: 'teachers' },
           { icon: 'ri-book-2-line', label: 'Classes', id: 'classes' },
           { icon: 'ri-calendar-check-line', label: 'Emploi du Temps', id: 'schedule' },
-            <div id="password2faModal" class="param-modal" onclick="closePassword2FAModal(true)">
-              <div class="param-modal__card" onclick="event.stopPropagation();">
-                <h6 class="fw-semibold mb-2">Confirmer avec le code A2F</h6>
-                <p class="text-sm text-neutral-500 mb-3">Entrez le code à 6 chiffres depuis votre application d'authentification.</p>
-                <input type="text" name="password2faCode" class="form-control radius-8 bg-neutral-50 border-0 p-12 mb-3" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
-                <div class="d-flex justify-content-end gap-2">
-                  <button type="button" class="btn btn-light" onclick="closePassword2FAModal(true)">Annuler</button>
-                  <button type="button" class="btn btn-primary" onclick="confirmPasswordChangeWithCode()">Valider</button>
-                </div>
-              </div>
-            </div>
-
           { icon: 'ri-chat-3-line', label: 'Messagerie', id: 'messages' }
         ],
         teacher: [
