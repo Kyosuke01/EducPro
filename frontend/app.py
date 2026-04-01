@@ -13,6 +13,7 @@ API_URL = "http://backend:5000"
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
 USER_AGENT = "educrpro/1.0"
 
+
 def get_secure_headers():
     return {
         "X-API-Key": API_SECRET_KEY,
@@ -81,7 +82,7 @@ def login():
             if token:
                 start_pending_2fa(token, data.get("user"))
                 return redirect(url_for("two_factor"))
-            error_msg = data.get("error", "Code A2F requis." )
+            error_msg = data.get("error", "Code A2F requis.")
             return redirect(url_for("index", error=error_msg))
         else:
             error_msg = resp.json().get("error", "Identifiants incorrects.")
@@ -131,21 +132,21 @@ def two_factor():
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("index", error="Veuillez vous connecter."))
-        
+
     if session.get("ip") != request.remote_addr or session.get("user_agent") != request.headers.get("User-Agent"):
         session.clear()
         return redirect(url_for("index", error="Session invalide. Veuillez vous reconnecter."))
 
     return render_template("dashboard.html",
-        user_id=session.get("user_id"),
-        first_name=session.get("first_name"),
-        last_name=session.get("last_name"),
-        email=session.get("email"),
-        role=session.get("role"),
-        class_name=session.get("class_name"),
-        topic_name=session.get("topic_name"),
-        has_2fa=session.get("has_2fa", False)
-    )
+                           user_id=session.get("user_id"),
+                           first_name=session.get("first_name"),
+                           last_name=session.get("last_name"),
+                           email=session.get("email"),
+                           role=session.get("role"),
+                           class_name=session.get("class_name"),
+                           topic_name=session.get("topic_name"),
+                           has_2fa=session.get("has_2fa", False)
+                           )
 
 
 # ──────────────────────────────────────────────
@@ -163,13 +164,13 @@ def logout():
 @app.route("/api/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
 def api_proxy(path):
     public_routes = ["auth/forgot-password", "auth/reset-password"]
-    
+
     if path not in public_routes and "user_id" not in session:
         return jsonify({"error": "Non authentifié"}), 401
 
     url = f"{API_URL}/api/{path}"
     headers = get_secure_headers()
-    
+
     # --- ROLE-BASED ACCESS CONTROL (RBAC) ---
     role = session.get("role")
     method = request.method
@@ -182,7 +183,7 @@ def api_proxy(path):
         elif role == "teacher":
             # Les professeurs ne peuvent écrire QUE les présences, notes, et messages
             if first_segment not in ["attendance", "grades", "messages", "edt", "auth", "users"]:
-                 return jsonify({"error": "Action non autorisée pour un enseignant."}), 403
+                return jsonify({"error": "Action non autorisée pour un enseignant."}), 403
     # ----------------------------------------
 
     try:
