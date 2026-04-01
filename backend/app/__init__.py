@@ -22,10 +22,6 @@ def create_app():
 
     db.init_app(app)
 
-    from app.models.user import User
-    from app.models.course import Course
-    from app.models.lesson import Lesson
-
     from app.routes.users import users_bp
     from app.routes.auth import auth_bp
     from app.routes.classes import classes_bp
