@@ -1,0 +1,108 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # ── 01. Flake8 ──────────────────────────────────────────────────────────────
+  flake8:
+    name: "01 · Flake8 — Lint Python"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install flake8
+      - run: flake8 backend/ --max-line-length=120 --exclude=__pycache__,.venv
+      - run: flake8 frontend/ --max-line-length=120 --exclude=__pycache__,.venv
+
+  # ── 02. SonarCloud (SAST) ───────────────────────────────────────────────────
+  sonarlint:
+    name: "02 · SonarCloud — SAST"
+    runs-on: ubuntu-latest
+    needs: flake8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ── 03. pip-audit ───────────────────────────────────────────────────────────
+  pip-audit:
+    name: "03 · pip-audit — Dépendances vulnérables"
+    runs-on: ubuntu-latest
+    needs: flake8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pip-audit
+      - run: pip install -r backend/requirements.txt && pip-audit
+      - run: pip install -r frontend/requirements.txt && pip-audit
+
+  # ── 04. OWASP ZAP (DAST) ───────────────────────────────────────────────────
+  owasp-zap:
+    name: "04 · OWASP ZAP — DAST"
+    runs-on: ubuntu-latest
+    needs: [sonarlint, pip-audit]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d && sleep 15
+      - uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: "http://localhost:5000"
+          cmd_options: "-a"
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: report_html.html
+      - if: always()
+        run: docker compose down
+
+  # ── 05. Build Docker ────────────────────────────────────────────────────────
+  build-docker:
+    name: "05 · Build Docker"
+    runs-on: ubuntu-latest
+    needs: owasp-zap
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push via Docker Compose
+        run: |
+          docker compose build
+          docker compose push
+
+  # ── 06. Déploiement ─────────────────────────────────────────────────────────
+  deploy:
+    name: "06 · Déploiement via Docker Compose"
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/educpro
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
