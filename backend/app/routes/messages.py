@@ -196,9 +196,19 @@ def get_conversation(ticket_id):
                 return jsonify({"error": "Ticket introuvable."}), 404
 
             # Contrôle d'accès minimal
-            if role == "student" and ticket.get("student_id") != user_id and not (ticket.get("created_by_role") == "student" and ticket.get("created_by_id") == user_id):
+            is_student_owner = (
+                ticket.get("student_id") == user_id
+                or (ticket.get("created_by_role") == "student"
+                    and ticket.get("created_by_id") == user_id)
+            )
+            is_teacher_owner = (
+                ticket.get("teacher_id") == user_id
+                or (ticket.get("created_by_role") == "teacher"
+                    and ticket.get("created_by_id") == user_id)
+            )
+            if role == "student" and not is_student_owner:
                 return jsonify({"error": "Accès refusé."}), 403
-            if role == "teacher" and ticket.get("teacher_id") != user_id and not (ticket.get("created_by_role") == "teacher" and ticket.get("created_by_id") == user_id):
+            if role == "teacher" and not is_teacher_owner:
                 return jsonify({"error": "Accès refusé."}), 403
 
             cursor.execute(
@@ -315,9 +325,17 @@ def append_message(ticket_id):
             if not ticket:
                 return jsonify({"error": "Ticket introuvable."}), 404
 
-            if sender_role == "student" and ticket.get("student_id") != sender_id and not (ticket.get("created_by_role") == "student" and ticket.get("created_by_id") == sender_id):
+            is_student_owner = (
+                ticket.get("student_id") == sender_id
+                or (ticket.get("created_by_role") == "student" and ticket.get("created_by_id") == sender_id)
+            )
+            is_teacher_owner = (
+                ticket.get("teacher_id") == sender_id
+                or (ticket.get("created_by_role") == "teacher" and ticket.get("created_by_id") == sender_id)
+            )
+            if sender_role == "student" and not is_student_owner:
                 return jsonify({"error": "Accès refusé."}), 403
-            if sender_role == "teacher" and ticket.get("teacher_id") != sender_id and not (ticket.get("created_by_role") == "teacher" and ticket.get("created_by_id") == sender_id):
+            if sender_role == "teacher" and not is_teacher_owner:
                 return jsonify({"error": "Accès refusé."}), 403
 
             cursor.execute(
