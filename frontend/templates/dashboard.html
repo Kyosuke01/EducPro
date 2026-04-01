@@ -663,8 +663,6 @@
                 
                 <div>
                   <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
-                  <p class="text-xs text-neutral-500 mb-3">Si l'A2F est activée, un code vous sera demandé après avoir cliqué sur «&nbsp;Mettre à jour&nbsp;».</p>
-                  <div id="param-alert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none;"></div>
                   <form onsubmit="changePassword(event)">
                     <div class="mb-3">
                       <label class="form-label text-sm fw-medium">Mot de passe actuel</label>
@@ -673,10 +671,6 @@
                     <div class="mb-4">
                       <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
                       <input type="password" name="new_password" id="new_password" autocomplete="new-password" class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
-                    </div>
-                    <div class="mb-4">
-                      <label class="form-label text-sm fw-medium">Code 2FA (si activé)</label>
-                      <input type="text" name="totp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" class="form-control radius-8 bg-neutral-50 border-0 p-12" placeholder="123456" ${USER.has_2fa ? '' : ''}>
                     </div>
                     <button type="submit" class="btn btn-outline-primary radius-8 mt-3">Mettre à jour le mot de passe</button>
                   </form>
@@ -1472,10 +1466,7 @@
               </div>
             </td>
             <td>
-              <div class="text-sm fw-semibold">${cls.current_size || 0} / ${cls.max_capacity}</div>
-              <div class="progress mt-1" style="height: 6px;">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: ${percent}%" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
+              <div class="text-sm fw-semibold">${cls.current_size || 0}</div>
             </td>
             <td>${capacityBadge}</td>
             <td>
@@ -1608,119 +1599,162 @@
     // ============================================
     // EDT — Admin (toutes les classes)
     // ============================================
-    async function getScheduleContent() {
-      const data = await api('edt');
-      const edtList = data.edt || [];
-
-      let rows = '';
-      edtList.forEach(e => {
-        const start = e.start_time ? e.start_time.substring(0, 16).replace('T', ' ') : '-';
-        const end = e.end_time ? e.end_time.substring(11, 16) || e.end_time.substring(0, 16) : '-';
-        rows += `
-          <tr>
-            <td>${e.class_name}</td>
-            <td>${e.topic_name}</td>
-            <td>${e.teacher_f_name} ${e.teacher_l_name}</td>
-            <td>${e.room_name || '-'}</td>
-            <td>${start}</td>
-            <td>${end}</td>
-          </tr>
-        `;
-      });
-
-      if (!rows) rows = '<tr><td colspan="6" class="text-center text-muted">Aucun créneau trouvé</td></tr>';
-
-      return `
-        <div class="row">
-          <div class="col-12">
-            <div class="card">
-              <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Emploi du Temps</h6>
-                <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>Classe</th>
-                        <th>Matière</th>
-                        <th>Professeur</th>
-                        <th>Salle</th>
-                        <th>Début</th>
-                        <th>Fin</th>
-                      </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // ============================================
-    // MON EDT (Student / Teacher)
-    // ============================================
-    async function getMyScheduleContent() {
-      let data;
-      if (USER.role === 'student') {
-        data = await api(`edt/class/${encodeURIComponent(USER.className)}`);
-      } else {
-        data = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
+    
+      function formatTime(isoStr) {
+        if (!isoStr) return '-';
+        return isoStr.substring(11, 16);
       }
 
-      const edtList = data.edt || [];
+      function getWeekDay(isoStr) {
+        if (!isoStr) return 0;
+        const d = new Date(isoStr);
+        return d.getDay(); // 1=Lundi, 5=Vendredi, 0=Dimanche
+      }
 
-      let rows = '';
-      edtList.forEach(e => {
-        const start = e.start_time ? e.start_time.substring(0, 16).replace('T', ' ') : '-';
-        const end = e.end_time ? e.end_time.substring(11, 16) || e.end_time.substring(0, 16) : '-';
-        rows += `
-          <tr>
-            <td>${e.topic_name}</td>
-            <td>${e.teacher_f_name} ${e.teacher_l_name}</td>
-            <td>${e.room_name || '-'}</td>
-            <td>${e.class_name}</td>
-            <td>${start}</td>
-            <td>${end}</td>
-          </tr>
+      function renderScheduleGrid(className, dataList) {
+        const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+        
+        let headerRow = days.map(d => `<th class="text-center py-3" style="width:20%;">${d}</th>`).join('');
+        
+        let colsHtml = '';
+        
+        for (let i = 1; i <= 5; i++) {
+          const dayEvents = dataList.filter(e => getWeekDay(e.start_time) === i);
+          dayEvents.sort((a,b) => a.start_time.localeCompare(b.start_time));
+          
+          let cardsHtml = dayEvents.map(e => `
+            <div class="card mb-3 border-0 border-start border-4 border-primary shadow-sm" style="border-radius: 8px; background: #fff;">
+              <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="badge bg-primary-50 text-primary-700 text-xs">${formatTime(e.start_time)} - ${formatTime(e.end_time)}</span>
+                </div>
+                <h6 class="text-sm fw-semibold mb-1 text-dark">${e.topic_name}</h6>
+                <div class="text-xs text-secondary-600 mb-1"><i class="ri-user-line me-1"></i>${e.teacher_f_name} ${e.teacher_l_name}</div>
+                <div class="text-xs text-secondary-500"><i class="ri-map-pin-line me-1"></i>${e.room_name || '-'}</div>
+              </div>
+            </div>
+          `).join('');
+          
+          if(!cardsHtml) cardsHtml = `<div class="text-center text-muted text-xs py-4" style="min-height:100px;">Libre</div>`;
+          colsHtml += `<td class="align-top p-2 bg-neutral-50" style="min-width: 180px;">${cardsHtml}</td>`;
+        }
+
+        return `
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-bordered mb-0" style="table-layout: fixed; min-width: 900px;">
+              <thead class="bg-white text-secondary-800">
+                <tr>${headerRow}</tr>
+              </thead>
+              <tbody>
+                <tr>${colsHtml}</tr>
+              </tbody>
+            </table>
+          </div>
         `;
-      });
+      }
 
-      if (!rows) rows = '<tr><td colspan="6" class="text-center text-muted">Aucun créneau trouvé</td></tr>';
+      window.changeScheduleClass = function(cls) {
+        window.currentClass = cls;
+        const tabsDiv = document.getElementById('scheduleTabs');
+        if (tabsDiv) {
+          const btns = tabsDiv.querySelectorAll('button');
+          btns.forEach(btn => {
+            if (btn.textContent === cls) {
+              btn.className = 'btn btn-primary px-4 py-2 me-2 mb-2 rounded-pill shadow-sm';
+            } else {
+              btn.className = 'btn btn-outline-primary px-4 py-2 me-2 mb-2 rounded-pill';
+            }
+          });
+        }
+        
+        const gridContainer = document.getElementById('scheduleGridContainer');
+        if (gridContainer && window.scheduleData) {
+          const filtered = window.scheduleData.filter(e => !cls || e.class_name === cls);
+          gridContainer.innerHTML = renderScheduleGrid(cls, filtered);
+        }
+      };
 
-      return `
-        <div class="row">
-          <div class="col-12">
-            <div class="card">
-              <div class="card-body p-20">
-                <h6 class="text-lg fw-semibold mb-20">Mon Emploi du Temps</h6>
-                <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>Matière</th>
-                        <th>Professeur</th>
-                        <th>Salle</th>
-                        <th>Classe</th>
-                        <th>Début</th>
-                        <th>Fin</th>
-                      </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                  </table>
+
+      // ============================================
+      // EDT — Admin (toutes les classes)
+      // ============================================
+      async function getScheduleContent() {
+        const data = await api('edt');
+        const edtList = data.edt || [];
+        
+        window.scheduleData = edtList;
+        
+        const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].sort();
+        if (uniqueClasses.length === 0) {
+          return '<div class="card p-20 text-center"><div class="text-muted"><i class="ri-calendar-2-line text-4xl mb-2 d-block"></i>Aucun emploi du temps disponible.</div></div>';
+        }
+        
+        window.currentClass = uniqueClasses[0];
+        
+        let tabs = uniqueClasses.map(cls => 
+            `<button class="btn ${cls===window.currentClass ? 'btn-primary px-4 py-2 shadow-sm' : 'btn-outline-primary px-4 py-2'} me-2 mb-2 rounded-pill" onclick="changeScheduleClass('${cls}')">${cls}</button>`
+        ).join('');
+        
+        const initialFiltered = edtList.filter(e => e.class_name === window.currentClass);
+        
+        return `
+          <div class="row">
+            <div class="col-12">
+              <div class="card shadow-sm mb-4 border-0">
+                <div class="card-body p-4">
+                  <h6 class="text-lg fw-semibold mb-3 text-secondary-800 d-flex align-items-center">
+                    <i class="ri-book-read-line me-2 text-primary"></i> Sélectionner une classe
+                  </h6>
+                  <div id="scheduleTabs" class="d-flex flex-wrap gap-1">${tabs}</div>
+                </div>
+              </div>
+              
+              <div class="card shadow-sm border-0">
+                <div class="card-body p-0" id="scheduleGridContainer">
+                  ${renderScheduleGrid(window.currentClass, initialFiltered)}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      `;
-    }
+        `;
+      }
 
-    // ============================================
-    // MES CLASSES (Teacher)
-    // ============================================
-    async function getMyClassesContent() {
+      // ============================================
+      // MON EDT (Student / Teacher)
+      // ============================================
+      async function getMyScheduleContent() {
+        let data;
+        let queryClass = null;
+        if (USER.role === 'student') {
+          data = await api(`edt/class/${encodeURIComponent(USER.className)}`);
+          queryClass = USER.className;
+        } else {
+          data = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
+        }
+        
+        const edtList = data.edt || [];
+        
+        if (edtList.length === 0) {
+          return '<div class="card p-20 text-center"><div class="text-muted"><i class="ri-calendar-2-line text-4xl mb-2 d-block"></i>Votre emploi du temps est vide.</div></div>';
+        }
+        
+        return `
+          <div class="row">
+            <div class="col-12">
+              <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                  ${renderScheduleGrid(queryClass, edtList)}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ============================================
+      // MES CLASSES (Teacher)
+      // ============================================
+      async function getMyClassesContent() {
       const data = await api(`edt/teacher/${encodeURIComponent(USER.lastName)}`);
       const edtList = data.edt || [];
       const uniqueClasses = [...new Set(edtList.map(e => e.class_name))];
@@ -2181,7 +2215,6 @@
                 <h6 class="mb-0 text-lg fw-semibold">Nouveau ticket</h6>
               </div>
               <div class="card-body">
-                <div id="ticketFormAlert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none;"></div>
                 <div class="mb-3">
                   <label class="form-label text-sm fw-medium">Sujet</label>
                   <input type="text" id="ticketSubject" class="form-control radius-8 bg-neutral-50 border-0" placeholder="Objet du ticket">
@@ -2423,8 +2456,7 @@
     }
 
     async function fetchRecipientSuggestions(query) {
-      const type = USER.role === 'teacher' ? 'student' : 'teacher';
-      const data = await api(`messages/recipients?type=${type}&q=${encodeURIComponent(query)}`);
+      const data = await api(`messages/recipients?type=all&q=${encodeURIComponent(query)}`);
       if (data.error) {
         messagingState.recipientSuggestions = [];
       } else {
@@ -2442,15 +2474,15 @@
       }
 
       container.innerHTML = messagingState.recipientSuggestions.map(item => `
-        <button type="button" class="list-group-item list-group-item-action" onclick="selectRecipient(${item.id})">
+        <button type="button" class="list-group-item list-group-item-action" onclick="selectRecipient('${item.role}', ${item.id})">
           <div class="fw-semibold text-sm">${item.first_name} ${item.last_name}</div>
           <div class="text-xs text-neutral-500">${item.email || ''}${item.meta ? ' · ' + item.meta : ''}</div>
         </button>
       `).join('');
     }
 
-    function selectRecipient(id) {
-      const chosen = messagingState.recipientSuggestions.find(item => item.id === id);
+    function selectRecipient(role, id) {
+      const chosen = messagingState.recipientSuggestions.find(item => item.id === id && item.role === role);
       const input = document.getElementById('ticketRecipientSearch');
       const hidden = document.getElementById('ticketRecipientId');
       const preview = document.getElementById('recipientSelectedPreview');
@@ -2458,7 +2490,7 @@
       messagingState.selectedRecipient = chosen;
       input.value = `${chosen.first_name} ${chosen.last_name}`;
       hidden.value = chosen.id;
-      preview.textContent = `Destinataire sélectionné : ${chosen.first_name} ${chosen.last_name}`;
+      preview.textContent = `Destinataire sélectionné : ${chosen.first_name} ${chosen.last_name} (${chosen.role})`;
       preview.style.display = 'block';
       const container = document.getElementById('recipientSuggestions');
       if (container) container.innerHTML = '';
@@ -2479,8 +2511,8 @@
         message,
         starter_role: USER.role,
         starter_id: USER.id,
-        student_id: USER.role === 'teacher' ? recipientId : USER.id,
-        teacher_id: USER.role === 'teacher' ? USER.id : recipientId
+        recipient_id: recipientId,
+        recipient_role: messagingState.selectedRecipient.role
       };
 
       const resp = await api('messages/conversations', {

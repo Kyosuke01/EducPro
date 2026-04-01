@@ -67,29 +67,28 @@ CREATE TABLE IF NOT EXISTS Grade (
 
 -- Table des emplois du temps (EDT)
 CREATE TABLE IF NOT EXISTS EDT (
-  slot_id INT PRIMARY KEY AUTO_INCREMENT,
-  class_name VARCHAR(100),
-  teacher_id INT,
-  day_of_week VARCHAR(20) NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  FOREIGN KEY (class_name) REFERENCES Class(name) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (teacher_id) REFERENCES Teacher(teacher_id) ON DELETE CASCADE
+    edt_id INT PRIMARY KEY AUTO_INCREMENT,
+    class_name VARCHAR(100) NOT NULL,
+    teacher_f_name VARCHAR(100) NOT NULL,
+    teacher_l_name VARCHAR(100) NOT NULL,
+    topic_name VARCHAR(100) NOT NULL,
+    room_name VARCHAR(50) NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des présences (Absences / Retards)
 CREATE TABLE IF NOT EXISTS ATTENDANCE (
   attendance_id INT PRIMARY KEY AUTO_INCREMENT,
   student_id INT NOT NULL,
-  slot_id INT,
-  date_attendance DATE NOT NULL,
-  status ENUM('present', 'absent', 'late') DEFAULT 'present',
-  justified BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
-  FOREIGN KEY (slot_id) REFERENCES EDT(slot_id) ON DELETE SET NULL
+    edt_id INT,
+    date_attendance DATE NOT NULL,
+    status ENUM('present', 'absent', 'late') DEFAULT 'present',
+    justified BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (edt_id) REFERENCES EDT(edt_id) ON DELETE SET NULL
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table tickets (conversation)
 CREATE TABLE IF NOT EXISTS SupportTicket (
   ticket_id INT PRIMARY KEY AUTO_INCREMENT,
   subject VARCHAR(150) NOT NULL,
@@ -215,23 +214,19 @@ INSERT INTO Grade (grade, student_id, topic_name) VALUES
   (13.5, 10, 'Mathématiques');
 
 -- EDT (emploi du temps — semaine type)
-INSERT INTO EDT (class_name, teacher_id, day_of_week, start_time, end_time) VALUES
-  ('1ère S-A', 1, 'lundi', '08:00:00', '09:30:00'),
-  ('1ère S-A', 2, 'lundi', '09:45:00', '11:15:00'),
-  ('1ère S-A', 3, 'lundi', '11:30:00', '13:00:00'),
-  ('1ère S-A', 4, 'lundi', '14:00:00', '15:30:00'),
-  ('1ère S-B', 1, 'mardi', '14:00:00', '15:30:00'),
-  ('1ère S-B', 2, 'mardi', '08:00:00', '09:30:00'),
-  ('Terminale S', 1, 'mardi', '09:45:00', '11:15:00'),
-  ('Terminale S', 2, 'mercredi', '08:00:00', '09:30:00'),
-  ('2nde A', 1, 'mercredi', '09:45:00', '11:15:00'),
-  ('1ère S-A', 3, 'jeudi', '14:00:00', '15:30:00'),
-  ('1ère S-A', 4, 'jeudi', '08:00:00', '09:30:00'),
-  ('1ère S-A', 1, 'vendredi', '09:45:00', '11:15:00');
+INSERT INTO EDT (class_name, teacher_f_name, teacher_l_name, topic_name, room_name, start_time, end_time) VALUES
+    ('3ème A', 'Marie', 'Dupont', 'Mathématiques', 'Salle 101', '2026-04-01 08:00:00', '2026-04-01 10:00:00'),
+    ('3ème A', 'Pierre', 'Lefèvre', 'Français', 'Salle 102', '2026-04-01 10:15:00', '2026-04-01 12:15:00'),
+    ('3ème A', 'Sophie', 'Martin', 'Physique-Chimie', 'Labo 1', '2026-04-01 14:00:00', '2026-04-01 16:00:00'),
+    ('3ème B', 'Jean', 'Bernard', 'Anglais', 'Salle 201', '2026-04-01 08:00:00', '2026-04-01 10:00:00'),
+    ('3ème B', 'Marie', 'Dupont', 'Mathématiques', 'Salle 101', '2026-04-01 10:15:00', '2026-04-01 12:15:00'),
+    ('1ère L', 'Céline', 'Faure', 'Lettres', 'Salle 301', '2026-04-01 08:00:00', '2026-04-01 10:00:00'),
+    ('1ère L', 'Paul', 'Garnier', 'Philosophie', 'Salle 302', '2026-04-01 10:15:00', '2026-04-01 12:15:00'),
+    ('Terminale L', 'Paul', 'Garnier', 'Philosophie', 'Salle 302', '2026-04-01 14:00:00', '2026-04-01 16:00:00'),
+    ('Terminale L', 'Céline', 'Faure', 'Lettres', 'Salle 301', '2026-04-01 16:15:00', '2026-04-01 18:15:00');
 
 -- Absences / Retards (Correction des colonnes)
-INSERT INTO ATTENDANCE (student_id, slot_id, date_attendance, status, justified) VALUES
-  (1, 1, '2026-03-30', 'absent', FALSE),
+  INSERT INTO ATTENDANCE (student_id, edt_id, date_attendance, status, justified) VALUES
   (2, 1, '2026-03-30', 'late', TRUE),
   (3, 2, '2026-03-30', 'absent', FALSE);
 
