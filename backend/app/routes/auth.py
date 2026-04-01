@@ -318,6 +318,7 @@ def get_teacher(id):
 # 2FA & PASSWORD ENDPOINTS
 # ──────────────────────────────────────────────
 
+
 @auth_bp.route("/auth/2fa/generate", methods=["GET"])
 def generate_2fa():
     """
@@ -329,6 +330,7 @@ def generate_2fa():
     email = request.args.get("email", "User")
     uri = pyotp.totp.TOTP(secret).provisioning_uri(name=email, issuer_name="EducPro")
     return jsonify({"secret": secret, "uri": uri}), 200
+
 
 @auth_bp.route("/auth/2fa/verify", methods=["POST"])
 def verify_2fa():
@@ -358,7 +360,9 @@ def verify_2fa():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: conn.close()
+        if conn:
+            conn.close()
+
 
 @auth_bp.route("/auth/forgot-password", methods=["POST"])
 def forgot_password():
@@ -369,17 +373,20 @@ def forgot_password():
     """
     data = request.get_json()
     email = data.get("email")
-    if not email: return jsonify({"error": "Email requis"}), 400
+    if not email:
+        return jsonify({"error": "Email requis"}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
             # Chercher dans Student
-            cursor.execute("SELECT student_id as id, 'student' as role, totp_secret FROM Student WHERE mail_student = %s", (email,))
+            cursor.execute(
+                "SELECT student_id as id, 'student' as role, totp_secret FROM Student WHERE mail_student = %s", (email,))
             user = cursor.fetchone()
             if not user:
-                cursor.execute("SELECT teacher_id as id, 'teacher' as role, totp_secret FROM Teacher WHERE mail_teacher = %s", (email,))
+                cursor.execute(
+                    "SELECT teacher_id as id, 'teacher' as role, totp_secret FROM Teacher WHERE mail_teacher = %s", (email,))
                 user = cursor.fetchone()
 
         if not user:
@@ -394,7 +401,9 @@ def forgot_password():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: conn.close()
+        if conn:
+            conn.close()
+
 
 @auth_bp.route("/auth/reset-password", methods=["POST"])
 def reset_password():
@@ -414,11 +423,13 @@ def reset_password():
         conn = get_db_connection()
         with conn.cursor() as cursor:
             # Identifier la table
-            cursor.execute("SELECT student_id as id, 'Student' as tbl, totp_secret FROM Student WHERE mail_student = %s", (email,))
+            cursor.execute(
+                "SELECT student_id as id, 'Student' as tbl, totp_secret FROM Student WHERE mail_student = %s", (email,))
             user = cursor.fetchone()
             id_field = "student_id"
             if not user:
-                cursor.execute("SELECT teacher_id as id, 'Teacher' as tbl, totp_secret FROM Teacher WHERE mail_teacher = %s", (email,))
+                cursor.execute(
+                    "SELECT teacher_id as id, 'Teacher' as tbl, totp_secret FROM Teacher WHERE mail_teacher = %s", (email,))
                 user = cursor.fetchone()
                 id_field = "teacher_id"
 
@@ -442,7 +453,9 @@ def reset_password():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: conn.close()
+        if conn:
+            conn.close()
+
 
 @auth_bp.route("/users/change-password", methods=["POST"])
 def change_password():
@@ -484,7 +497,9 @@ def change_password():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: conn.close()
+        if conn:
+            conn.close()
+
 
 @auth_bp.route("/auth/2fa/disable", methods=["POST"])
 def disable_2fa():
@@ -492,7 +507,7 @@ def disable_2fa():
     data = request.get_json()
     if not data or not all(k in data for k in ("user_id", "role")):
         return jsonify({"error": "Champs user_id et role requis"}), 400
-        
+
     table = "Teacher" if data["role"] in ["teacher", "admin"] else "Student"
     id_field = "teacher_id" if table == "Teacher" else "student_id"
 
@@ -507,5 +522,5 @@ def disable_2fa():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: conn.close()
-
+        if conn:
+            conn.close()

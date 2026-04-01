@@ -74,7 +74,7 @@ def search_recipients():
                 }
                 if target not in table_conf:
                     return jsonify({"error": "Type de recherche invalide."}), 400
-                    
+
                 cfg = table_conf[target]
                 cursor.execute(
                     f"""
@@ -245,13 +245,19 @@ def create_conversation():
     student_id = None
     teacher_id = None
 
-    if starter_role == "student": student_id = starter_id
-    elif starter_role == "teacher": teacher_id = starter_id
-    elif starter_role == "admin": pass # Pas de colonne dédiée
+    if starter_role == "student":
+        student_id = starter_id
+    elif starter_role == "teacher":
+        teacher_id = starter_id
+    elif starter_role == "admin":
+        pass  # Pas de colonne dédiée
 
-    if recipient_role == "student": student_id = recipient_id
-    elif recipient_role == "teacher": teacher_id = recipient_id
-    elif recipient_role == "admin": pass
+    if recipient_role == "student":
+        student_id = recipient_id
+    elif recipient_role == "teacher":
+        teacher_id = recipient_id
+    elif recipient_role == "admin":
+        pass
 
     # Remove strict student/teacher constraint to allow all role combinations
     conn = None

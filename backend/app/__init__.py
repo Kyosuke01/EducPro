@@ -7,6 +7,7 @@ import os
 load_dotenv()
 db = SQLAlchemy()
 
+
 def create_app():
     app = Flask(__name__)
     CORS(app)
@@ -51,7 +52,7 @@ def create_app():
             user_agent = request.headers.get("User-Agent")
             if user_agent not in ["educrpro/1.0", "educpro-admin/1.0"]:
                 return jsonify({"error": "Forbidden: Invalid User-Agent"}), 403
-            
+
             # Vérification de la clé API
             secret_key = os.getenv("API_SECRET_KEY")
             if request.headers.get("X-API-Key") != secret_key:

@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 # Charger les variables d'environnement
 load_dotenv()
 
+
 def get_db_connection():
     """
     Crée et retourne une connexion à la base de données MySQL.
