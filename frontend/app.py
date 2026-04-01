@@ -21,6 +21,30 @@ def get_secure_headers():
     }
 
 
+def persist_user_session(user: dict):
+    session.permanent = True
+    session["user_id"] = user.get("id")
+    session["first_name"] = user.get("first_name")
+    session["last_name"] = user.get("last_name")
+    session["email"] = user.get("email")
+    session["role"] = user.get("role")
+    session["class_name"] = user.get("class_name")
+    session["topic_name"] = user.get("topic_name")
+    session["has_2fa"] = user.get("has_2fa", False)
+    session["ip"] = request.remote_addr
+    session["user_agent"] = request.headers.get("User-Agent")
+
+
+def clear_pending_2fa():
+    session.pop("pending_2fa_token", None)
+    session.pop("pending_user_preview", None)
+
+
+def start_pending_2fa(token, user_preview=None):
+    session["pending_2fa_token"] = token
+    session["pending_user_preview"] = user_preview or {}
+
+
 # ──────────────────────────────────────────────
 # Page de connexion
 # ──────────────────────────────────────────────
@@ -35,44 +59,69 @@ def index():
 # ──────────────────────────────────────────────
 @app.route("/login", methods=["POST"])
 def login():
+    clear_pending_2fa()
     email = request.form.get("email")
     password = request.form.get("password")
-    code = request.form.get("code") or None
 
     if not email or not password:
         return redirect(url_for("index", error="Veuillez remplir tous les champs."))
 
     try:
         payload = {"email": email, "password": password}
-        if code:
-            payload["code"] = code
-
         resp = requests.post(f"{API_URL}/api/auth/login", headers=get_secure_headers(), json=payload, timeout=5)
 
         if resp.status_code == 200:
             data = resp.json()
             user = data.get("user", {})
-            session.permanent = True
-            session["user_id"] = user.get("id")
-            session["first_name"] = user.get("first_name")
-            session["last_name"] = user.get("last_name")
-            session["email"] = user.get("email")
-            session["role"] = user.get("role")
-            session["class_name"] = user.get("class_name")
-            session["topic_name"] = user.get("topic_name")
-            session["has_2fa"] = user.get("has_2fa", False)
-            
-            # Anti-hijacking
-            session["ip"] = request.remote_addr
-            session["user_agent"] = request.headers.get("User-Agent")
-            
+            persist_user_session(user)
             return redirect(url_for("dashboard"))
+        elif resp.status_code == 202:
+            data = resp.json()
+            token = data.get("pending_token")
+            if token:
+                start_pending_2fa(token, data.get("user"))
+                return redirect(url_for("two_factor"))
+            error_msg = data.get("error", "Code A2F requis." )
+            return redirect(url_for("index", error=error_msg))
         else:
             error_msg = resp.json().get("error", "Identifiants incorrects.")
             return redirect(url_for("index", error=error_msg))
 
     except requests.exceptions.RequestException:
         return redirect(url_for("index", error="Impossible de contacter le serveur. Réessayez."))
+
+
+@app.route("/verify-2fa", methods=["GET", "POST"])
+def two_factor():
+    pending_token = session.get("pending_2fa_token")
+    pending_user = session.get("pending_user_preview", {})
+
+    if not pending_token:
+        clear_pending_2fa()
+        return redirect(url_for("index", error="La vérification A2F a expiré. Veuillez vous reconnecter."))
+
+    if request.method == "GET":
+        return render_template("two_factor.html", user=pending_user, error=None)
+
+    code = (request.form.get("code") or "").strip()
+    if len(code) != 6 or not code.isdigit():
+        return render_template("two_factor.html", user=pending_user, error="Veuillez saisir un code à 6 chiffres.")
+
+    try:
+        payload = {"token": pending_token, "code": code}
+        resp = requests.post(f"{API_URL}/api/auth/login/2fa", headers=get_secure_headers(), json=payload, timeout=5)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            user = data.get("user", {})
+            persist_user_session(user)
+            clear_pending_2fa()
+            return redirect(url_for("dashboard"))
+        else:
+            error_msg = resp.json().get("error", "Code A2F invalide.")
+            return render_template("two_factor.html", user=pending_user, error=error_msg)
+    except requests.exceptions.RequestException:
+        return render_template("two_factor.html", user=pending_user, error="Impossible de contacter le serveur. Réessayez.")
 
 
 # ──────────────────────────────────────────────

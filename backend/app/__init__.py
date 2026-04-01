@@ -11,6 +11,7 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
     app.json.ensure_ascii = False
+    app.config["SECRET_KEY"] = os.getenv("BACKEND_SECRET_KEY", os.getenv("API_SECRET_KEY", "educpro-backend-secret"))
 
     app.config["SQLALCHEMY_DATABASE_URI"] = (
         f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"

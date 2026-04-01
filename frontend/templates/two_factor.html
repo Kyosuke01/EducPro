@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducPro - Vérification A2F</title>
+    <link rel="stylesheet" href="static/assets/css/login.css">
+    <style>
+        .twofa-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+            padding: 24px;
+        }
+        .twofa-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+            padding: 32px;
+            font-family: 'Inter', sans-serif;
+        }
+        .twofa-card h2 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 28px;
+            color: #0f172a;
+        }
+        .twofa-card p {
+            margin-top: 0;
+            color: #475569;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .twofa-card form {
+            margin-top: 24px;
+        }
+        .twofa-card label {
+            display: block;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .twofa-card input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 20px;
+            letter-spacing: 0.4rem;
+            text-align: center;
+            border-radius: 12px;
+            border: 1px solid #cbd5f5;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        .twofa-card input[type="text"]:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+            background: #fff;
+        }
+        .twofa-card button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(120deg, #4f46e5, #4338ca);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .twofa-card button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.25);
+        }
+        .twofa-card .secondary-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: #6366f1;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .twofa-alert {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="twofa-container">
+        <div class="twofa-card">
+            <h2>Vérification A2F</h2>
+            {% set first = user.first_name if user else '' %}
+            {% set last = user.last_name if user else '' %}
+            {% set full_name = (first ~ ' ' ~ last)|trim %}
+            <p>
+                Bonjour {{ full_name if full_name else 'Utilisateur' }},
+                saisissez le code à 6 chiffres de votre application d'authentification pour accéder à votre espace.
+            </p>
+            {% if error %}
+            <div class="twofa-alert">{{ error }}</div>
+            {% endif %}
+            <form method="POST" autocomplete="off">
+                <label for="code">Code de vérification</label>
+                <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="●●●●●●" autofocus>
+                <button type="submit">Valider et continuer</button>
+            </form>
+            <a class="secondary-link" href="/">Revenir à la page de connexion</a>
+        </div>
+    </div>
+    <script>
+        const input = document.getElementById('code');
+        if (input) {
+            input.addEventListener('input', () => {
+                input.value = input.value.replace(/\D/g, '').slice(0, 6);
+            });
+        }
+    </script>
+</body>
+</html>

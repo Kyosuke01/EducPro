@@ -1,11 +1,20 @@
-"""
-routes/messages.py — Routes pour la gestion de la messagerie (Table TICKET).
-"""
+"""routes/messages.py — Messagerie & tickets multi-étapes."""
 
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
 
 messages_bp = Blueprint("messages", __name__)
+
+
+def _serialize_dt(value):
+    if value is None:
+        return None
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+
+def _valid_role(role):
+    return role in {"student", "teacher", "admin"}
+
 
 # ──────────────────────────────────────────────
 # GET /api/notifications
@@ -13,7 +22,6 @@ messages_bp = Blueprint("messages", __name__)
 @messages_bp.route("/notifications", methods=["GET"])
 def get_notifications():
     """Renvoie une petite liste de notifications mockées pour l'UI."""
-    # On autorise un filtre limit tout en restant tolérant
     limit = request.args.get("limit", 5, type=int)
     sample = [
         {"title": "Bienvenue", "body": "Votre compte est prêt.", "type": "system"},
@@ -23,81 +31,293 @@ def get_notifications():
     ]
     return jsonify({"notifications": sample[:limit]}), 200
 
+
 # ──────────────────────────────────────────────
-# GET /api/messages/student/<int:student_id>
+# GET /api/messages/recipients
 # ──────────────────────────────────────────────
-@messages_bp.route("/messages/student/<int:student_id>", methods=["GET"])
-def get_messages_by_student(student_id):
+@messages_bp.route("/messages/recipients", methods=["GET"])
+def search_recipients():
+    target = request.args.get("type", "teacher")
+    query = (request.args.get("q", "") or "").strip()
+    like_query = f"%{query}%"
+    limit = min(request.args.get("limit", 8, type=int), 25)
+
+    table_conf = {
+        "teacher": {
+            "table": "Teacher",
+            "fields": "teacher_id AS id, first_name, last_name, mail_teacher AS email, topic_name AS meta",
+            "email_column": "mail_teacher"
+        },
+        "student": {
+            "table": "Student",
+            "fields": "student_id AS id, first_name, last_name, mail_student AS email, class_name AS meta",
+            "email_column": "mail_student"
+        }
+    }
+
+    if target not in table_conf:
+        return jsonify({"error": "Type de recherche invalide."}), 400
+
+    cfg = table_conf[target]
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = """
-                SELECT t.ticket_id, t.msg_content, t.teacher_id, t.student_id, 
-                       tr.first_name as teacher_first_name, tr.last_name as teacher_last_name
-                FROM TICKET t
-                JOIN Teacher tr ON t.teacher_id = tr.teacher_id
-                WHERE t.student_id = %s
-                ORDER BY t.ticket_id ASC
-            """
-            cursor.execute(sql, (student_id,))
-            messages = cursor.fetchall()
-        return jsonify({"student_id": student_id, "messages": messages}), 200
+            cursor.execute(
+                f"""
+                SELECT {cfg['fields']}
+                FROM {cfg['table']}
+                WHERE %s = '' OR first_name LIKE %s OR last_name LIKE %s OR {cfg['email_column']} LIKE %s
+                ORDER BY last_name ASC, first_name ASC
+                LIMIT %s
+                """,
+                (query, like_query, like_query, like_query, limit)
+            )
+            results = cursor.fetchall()
+
+        return jsonify({"results": results}), 200
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
     finally:
         if conn:
             conn.close()
 
+
 # ──────────────────────────────────────────────
-# GET /api/messages/teacher/<int:teacher_id>
+# GET /api/messages/conversations
 # ──────────────────────────────────────────────
-@messages_bp.route("/messages/teacher/<int:teacher_id>", methods=["GET"])
-def get_messages_by_teacher(teacher_id):
+@messages_bp.route("/messages/conversations", methods=["GET"])
+def list_conversations():
+    role = request.args.get("role")
+    user_id = request.args.get("user_id", type=int)
+
+    if not _valid_role(role) or not user_id:
+        return jsonify({"error": "Paramètres role et user_id requis."}), 400
+
+    filters = []
+    params = []
+    if role == "student":
+        filters.append("st.student_id = %s")
+        params.append(user_id)
+    elif role == "teacher":
+        filters.append("st.teacher_id = %s")
+        params.append(user_id)
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
+
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = """
-                SELECT t.ticket_id, t.msg_content, t.teacher_id, t.student_id, 
-                       s.first_name as student_first_name, s.last_name as student_last_name, s.class_name
-                FROM TICKET t
-                JOIN Student s ON t.student_id = s.student_id
-                WHERE t.teacher_id = %s
-                ORDER BY t.ticket_id ASC
-            """
-            cursor.execute(sql, (teacher_id,))
-            messages = cursor.fetchall()
-        return jsonify({"teacher_id": teacher_id, "messages": messages}), 200
+            cursor.execute(
+                f"""
+                SELECT st.ticket_id, st.subject, st.status, st.priority, st.created_at, st.updated_at,
+                       st.student_id, st.teacher_id,
+                       s.first_name AS student_first_name, s.last_name AS student_last_name,
+                       t.first_name AS teacher_first_name, t.last_name AS teacher_last_name,
+                       lm.last_body AS last_message,
+                       lm.last_created_at AS last_message_at
+                FROM SupportTicket st
+                LEFT JOIN Student s ON st.student_id = s.student_id
+                LEFT JOIN Teacher t ON st.teacher_id = t.teacher_id
+                LEFT JOIN (
+                    SELECT ticket_id,
+                           MAX(created_at) AS last_created_at,
+                           SUBSTRING_INDEX(GROUP_CONCAT(body ORDER BY created_at DESC SEPARATOR '§§'), '§§', 1) AS last_body
+                    FROM SupportMessage
+                    GROUP BY ticket_id
+                ) lm ON lm.ticket_id = st.ticket_id
+                {where_clause}
+                ORDER BY st.updated_at DESC
+                """,
+                params
+            )
+            tickets = cursor.fetchall()
+
+        for ticket in tickets:
+            ticket["last_message_at"] = _serialize_dt(ticket.get("last_message_at"))
+            ticket["created_at"] = _serialize_dt(ticket.get("created_at"))
+            ticket["updated_at"] = _serialize_dt(ticket.get("updated_at"))
+
+        return jsonify({"tickets": tickets}), 200
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
     finally:
         if conn:
             conn.close()
 
+
 # ──────────────────────────────────────────────
-# POST /api/messages
+# GET /api/messages/conversations/<id>
 # ──────────────────────────────────────────────
-@messages_bp.route("/messages", methods=["POST"])
-def send_message():
-    data = request.get_json()
-    msg_content = data.get("msg_content")
-    teacher_id = data.get("teacher_id")
+@messages_bp.route("/messages/conversations/<int:ticket_id>", methods=["GET"])
+def get_conversation(ticket_id):
+    role = request.args.get("role")
+    user_id = request.args.get("user_id", type=int)
+
+    if not _valid_role(role) or not user_id:
+        return jsonify({"error": "Paramètres role et user_id requis."}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT st.ticket_id, st.subject, st.status, st.priority, st.created_at, st.updated_at,
+                       st.student_id, st.teacher_id,
+                       s.first_name AS student_first_name, s.last_name AS student_last_name,
+                       t.first_name AS teacher_first_name, t.last_name AS teacher_last_name
+                FROM SupportTicket st
+                LEFT JOIN Student s ON st.student_id = s.student_id
+                LEFT JOIN Teacher t ON st.teacher_id = t.teacher_id
+                WHERE st.ticket_id = %s
+                """,
+                (ticket_id,)
+            )
+            ticket = cursor.fetchone()
+
+            if not ticket:
+                return jsonify({"error": "Ticket introuvable."}), 404
+
+            # Contrôle d'accès minimal
+            if role == "student" and ticket.get("student_id") != user_id:
+                return jsonify({"error": "Accès refusé."}), 403
+            if role == "teacher" and ticket.get("teacher_id") != user_id:
+                return jsonify({"error": "Accès refusé."}), 403
+
+            cursor.execute(
+                """
+                SELECT message_id, sender_role, sender_id, body, created_at
+                FROM SupportMessage
+                WHERE ticket_id = %s
+                ORDER BY created_at ASC
+                """,
+                (ticket_id,)
+            )
+            messages = cursor.fetchall()
+
+        ticket["created_at"] = _serialize_dt(ticket.get("created_at"))
+        ticket["updated_at"] = _serialize_dt(ticket.get("updated_at"))
+        for msg in messages:
+            msg["created_at"] = _serialize_dt(msg.get("created_at"))
+
+        return jsonify({"ticket": ticket, "messages": messages}), 200
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ──────────────────────────────────────────────
+# POST /api/messages/conversations
+# ──────────────────────────────────────────────
+@messages_bp.route("/messages/conversations", methods=["POST"])
+def create_conversation():
+    data = request.get_json() or {}
+    subject = (data.get("subject") or "Demande d'assistance").strip()
+    message = (data.get("message") or "").strip()
+    starter_role = data.get("starter_role")
+    starter_id = data.get("starter_id")
     student_id = data.get("student_id")
+    teacher_id = data.get("teacher_id")
 
-    if not msg_content or not teacher_id or not student_id:
-        return jsonify({"error": "Champs manquants"}), 400
+    if not subject or not message or not _valid_role(starter_role) or not starter_id:
+        return jsonify({"error": "Champs subject, message, starter_role et starter_id requis."}), 400
+
+    if starter_role == "student":
+        student_id = starter_id
+        teacher_id = teacher_id or data.get("recipient_id")
+    else:
+        teacher_id = teacher_id or (starter_id if starter_role == "teacher" else data.get("teacher_id"))
+        student_id = student_id or data.get("recipient_id")
+
+    if not student_id or not teacher_id:
+        return jsonify({"error": "teacher_id et student_id sont requis pour créer un ticket."}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = "INSERT INTO TICKET (msg_content, teacher_id, student_id) VALUES (%s, %s, %s)"
-            cursor.execute(sql, (msg_content, teacher_id, student_id))
+            cursor.execute("SELECT student_id FROM Student WHERE student_id = %s", (student_id,))
+            if not cursor.fetchone():
+                return jsonify({"error": "Étudiant introuvable."}), 404
+
+            cursor.execute("SELECT teacher_id FROM Teacher WHERE teacher_id = %s", (teacher_id,))
+            if not cursor.fetchone():
+                return jsonify({"error": "Professeur introuvable."}), 404
+
+            cursor.execute(
+                """
+                INSERT INTO SupportTicket (subject, student_id, teacher_id, created_by_role, created_by_id)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (subject, student_id, teacher_id, starter_role, starter_id)
+            )
+            ticket_id = cursor.lastrowid
+
+            cursor.execute(
+                "INSERT INTO SupportMessage (ticket_id, sender_role, sender_id, body) VALUES (%s, %s, %s, %s)",
+                (ticket_id, starter_role, starter_id, message)
+            )
+
             conn.commit()
-            new_id = cursor.lastrowid
-        return jsonify({"success": True, "ticket_id": new_id, "message": "Message envoyé"}), 201
+
+        return jsonify({"ticket_id": ticket_id, "message": "Ticket créé."}), 201
     except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ──────────────────────────────────────────────
+# POST /api/messages/conversations/<id>/messages
+# ──────────────────────────────────────────────
+@messages_bp.route("/messages/conversations/<int:ticket_id>/messages", methods=["POST"])
+def append_message(ticket_id):
+    data = request.get_json() or {}
+    body = (data.get("body") or "").strip()
+    sender_role = data.get("sender_role")
+    sender_id = data.get("sender_id")
+
+    if not body or not _valid_role(sender_role) or not sender_id:
+        return jsonify({"error": "Champs body, sender_role et sender_id requis."}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT student_id, teacher_id FROM SupportTicket WHERE ticket_id = %s",
+                (ticket_id,)
+            )
+            ticket = cursor.fetchone()
+            if not ticket:
+                return jsonify({"error": "Ticket introuvable."}), 404
+
+            if sender_role == "student" and ticket.get("student_id") != sender_id:
+                return jsonify({"error": "Accès refusé."}), 403
+            if sender_role == "teacher" and ticket.get("teacher_id") != sender_id:
+                return jsonify({"error": "Accès refusé."}), 403
+
+            cursor.execute(
+                "INSERT INTO SupportMessage (ticket_id, sender_role, sender_id, body) VALUES (%s, %s, %s, %s)",
+                (ticket_id, sender_role, sender_id, body)
+            )
+            cursor.execute(
+                "UPDATE SupportTicket SET updated_at = CURRENT_TIMESTAMP WHERE ticket_id = %s",
+                (ticket_id,)
+            )
+            conn.commit()
+
+        return jsonify({"message": "Réponse ajoutée."}), 201
+    except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
     finally:
         if conn:

@@ -9,12 +9,74 @@ Endpoints :
     GET  /api/teachers/<int:id>       — Infos d'un professeur
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.db import get_db_connection
 import bcrypt
 import pyotp
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 auth_bp = Blueprint("auth", __name__)
+
+
+def _format_user_payload(record, role):
+    payload = {
+        "id": record["student_id"] if role == "student" else record["teacher_id"],
+        "first_name": record["first_name"],
+        "last_name": record["last_name"],
+        "role": role,
+        "has_2fa": bool(record.get("totp_secret"))
+    }
+
+    if role == "student":
+        payload["email"] = record["mail_student"]
+        payload["class_name"] = record.get("class_name")
+    else:
+        payload["email"] = record["mail_teacher"]
+        payload["topic_name"] = record.get("topic_name")
+
+    return payload
+
+
+def _login_success_response(payload):
+    return jsonify({
+        "message": "Connexion réussie.",
+        "user": payload
+    }), 200
+
+
+def _get_2fa_serializer():
+    secret = current_app.config.get("SECRET_KEY")
+    return URLSafeTimedSerializer(secret, salt="login-2fa")
+
+
+def _issue_pending_token(user_id, role):
+    return _get_2fa_serializer().dumps({"user_id": user_id, "role": role})
+
+
+def _process_login_for_user(record, role, code):
+    user_payload = _format_user_payload(record, role)
+    totp_secret = record.get("totp_secret")
+
+    if not totp_secret:
+        return _login_success_response(user_payload)
+
+    if code:
+        if not pyotp.TOTP(totp_secret).verify(code):
+            return jsonify({"error": "Code 2FA invalide"}), 401
+        return _login_success_response(user_payload)
+
+    pending_token = _issue_pending_token(user_payload["id"], role)
+    return jsonify({
+        "message": "Code 2FA requis",
+        "require_2fa": True,
+        "pending_token": pending_token,
+        "user": user_payload
+    }), 202
+
+
+def _load_pending_token(token):
+    serializer = _get_2fa_serializer()
+    return serializer.loads(token, max_age=300)
 
 
 # ──────────────────────────────────────────────
@@ -56,25 +118,7 @@ def login():
             student = cursor.fetchone()
 
             if student and bcrypt.checkpw(password.encode('utf-8'), student["password"].encode('utf-8')):
-                # Si A2F activée, exiger le code TOTP
-                if student.get("totp_secret"):
-                    if not code:
-                        return jsonify({"error": "Code 2FA requis"}), 401
-                    if not pyotp.TOTP(student["totp_secret"]).verify(code):
-                        return jsonify({"error": "Code 2FA invalide"}), 401
-
-                return jsonify({
-                    "message": "Connexion réussie.",
-                    "user": {
-                        "id": student["student_id"],
-                        "first_name": student["first_name"],
-                        "last_name": student["last_name"],
-                        "email": student["mail_student"],
-                        "class_name": student.get("class_name"),
-                        "role": "student",
-                        "has_2fa": bool(student.get("totp_secret"))
-                    }
-                }), 200
+                return _process_login_for_user(student, "student", code)
 
             # 2) Chercher dans Teacher
             cursor.execute(
@@ -86,30 +130,71 @@ def login():
 
             if teacher and bcrypt.checkpw(password.encode('utf-8'), teacher["password"].encode('utf-8')):
                 role = "admin" if teacher.get("is_admin") else "teacher"
-
-                # Si A2F activée, exiger le code TOTP
-                if teacher.get("totp_secret"):
-                    if not code:
-                        return jsonify({"error": "Code 2FA requis"}), 401
-                    if not pyotp.TOTP(teacher["totp_secret"]).verify(code):
-                        return jsonify({"error": "Code 2FA invalide"}), 401
-
-                return jsonify({
-                    "message": "Connexion réussie.",
-                    "user": {
-                        "id": teacher["teacher_id"],
-                        "first_name": teacher["first_name"],
-                        "last_name": teacher["last_name"],
-                        "email": teacher["mail_teacher"],
-                        "topic_name": teacher.get("topic_name"),
-                        "role": role,
-                        "has_2fa": bool(teacher.get("totp_secret"))
-                    }
-                }), 200
+                return _process_login_for_user(teacher, role, code)
 
             # Aucun match ou mauvais mot de passe
             return jsonify({"error": "Email ou mot de passe incorrect."}), 401
 
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@auth_bp.route("/auth/login/2fa", methods=["POST"])
+def finalize_login_2fa():
+    """Valide un défi 2FA déclenché après l'étape mot de passe."""
+    data = request.get_json() or {}
+    token = data.get("token")
+    code = data.get("code")
+
+    if not token or not code:
+        return jsonify({"error": "Les champs 'token' et 'code' sont requis."}), 400
+
+    try:
+        pending = _load_pending_token(token)
+    except SignatureExpired:
+        return jsonify({"error": "Le défi 2FA a expiré. Veuillez recommencer."}), 401
+    except BadSignature:
+        return jsonify({"error": "Jeton 2FA invalide."}), 401
+
+    user_id = pending.get("user_id")
+    role = pending.get("role")
+
+    if not user_id or role not in {"student", "teacher", "admin"}:
+        return jsonify({"error": "Jeton 2FA invalide."}), 401
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            if role == "student":
+                cursor.execute(
+                    "SELECT student_id, first_name, last_name, mail_student, class_name, totp_secret "
+                    "FROM Student WHERE student_id = %s",
+                    (user_id,)
+                )
+            else:
+                cursor.execute(
+                    "SELECT teacher_id, first_name, last_name, mail_teacher, is_admin, topic_name, totp_secret "
+                    "FROM Teacher WHERE teacher_id = %s",
+                    (user_id,)
+                )
+            user = cursor.fetchone()
+
+        if not user or not user.get("totp_secret"):
+            return jsonify({"error": "Utilisateur introuvable ou A2F désactivée."}), 404
+
+        if not pyotp.TOTP(user["totp_secret"]).verify(code):
+            return jsonify({"error": "Code 2FA invalide"}), 401
+
+        if role == "student":
+            final_role = "student"
+        else:
+            final_role = "admin" if user.get("is_admin") else "teacher"
+
+        return _login_success_response(_format_user_payload(user, final_role))
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
     finally:

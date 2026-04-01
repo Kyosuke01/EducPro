@@ -5,12 +5,6 @@
 SET NAMES 'utf8mb4';
 SET CHARACTER SET utf8mb4;
 
--- Table des classes
-CREATE TABLE IF NOT EXISTS Class (
-  class_id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) UNIQUE NOT NULL
-) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Table des professeurs
 CREATE TABLE IF NOT EXISTS Teacher (
   teacher_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -21,6 +15,17 @@ CREATE TABLE IF NOT EXISTS Teacher (
   is_admin BOOLEAN DEFAULT FALSE,
   topic_name VARCHAR(100),
   totp_secret VARCHAR(32) DEFAULT NULL
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des classes
+CREATE TABLE IF NOT EXISTS Class (
+  class_id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) UNIQUE NOT NULL,
+  max_capacity INT NOT NULL DEFAULT 35,
+  homeroom_teacher_id INT NULL,
+  FOREIGN KEY (homeroom_teacher_id) REFERENCES Teacher(teacher_id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table des étudiants
@@ -84,12 +89,28 @@ CREATE TABLE IF NOT EXISTS ATTENDANCE (
   FOREIGN KEY (slot_id) REFERENCES EDT(slot_id) ON DELETE SET NULL
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Table tickets
-CREATE TABLE IF NOT EXISTS TICKET (
+-- Table tickets (conversation)
+CREATE TABLE IF NOT EXISTS SupportTicket (
   ticket_id INT PRIMARY KEY AUTO_INCREMENT,
-  msg_content VARCHAR(255),
-  teacher_id INT,
-  student_id INT
+  subject VARCHAR(150) NOT NULL,
+  student_id INT NULL,
+  teacher_id INT NULL,
+  created_by_role ENUM('student','teacher','admin') NOT NULL,
+  created_by_id INT NOT NULL,
+  status ENUM('open','pending','closed') DEFAULT 'open',
+  priority ENUM('normal','high','urgent') DEFAULT 'normal',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS SupportMessage (
+  message_id INT PRIMARY KEY AUTO_INCREMENT,
+  ticket_id INT NOT NULL,
+  sender_role ENUM('student','teacher','admin') NOT NULL,
+  sender_id INT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (ticket_id) REFERENCES SupportTicket(ticket_id) ON DELETE CASCADE
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -97,8 +118,12 @@ CREATE TABLE IF NOT EXISTS TICKET (
 -- ============================================
 
 -- Classes
-INSERT INTO Class (name) VALUES
-  ('1ère S-A'), ('1ère S-B'), ('Terminale S'), ('2nde A'), ('BTS SIO');
+INSERT INTO Class (name, max_capacity) VALUES
+  ('1ère S-A', 35),
+  ('1ère S-B', 35),
+  ('Terminale S', 35),
+  ('2nde A', 35),
+  ('BTS SIO', 35);
 
 -- Professeurs (password hashé via bcrypt cost 14)
 INSERT INTO Teacher (first_name, last_name, mail_teacher, password, is_admin, topic_name) VALUES
@@ -106,7 +131,15 @@ INSERT INTO Teacher (first_name, last_name, mail_teacher, password, is_admin, to
   ('Pierre', 'Lefèvre', 'lefevre@educpro.com', '$2b$14$mra1iK7vuHQJZTvVFf.zve6qZLhc86CUvq1QFrhKyVbdmQh0DcHvq', 0, 'Français'),
   ('Sophie', 'Martin', 'martin@educpro.com', '$2b$14$mra1iK7vuHQJZTvVFf.zve6qZLhc86CUvq1QFrhKyVbdmQh0DcHvq', 0, 'Physique-Chimie'),
   ('Jean', 'Bernard', 'bernard@educpro.com', '$2b$14$mra1iK7vuHQJZTvVFf.zve6qZLhc86CUvq1QFrhKyVbdmQh0DcHvq', 0, 'Anglais'),
-  ('Claire', 'Admin', 'admin@educpro.com', '$2b$14$BdNIHMf1NPgzR.U/2oxx3.BxWUdS45AJZCceege8ShLlXDK2/DoyK', 1, NULL);
+  ('Claire', 'Admin', 'admin@educpro.com', '$2b$14$BdNIHMf1NPgzR.U/2oxx3.BxWUdS45AJZCceege8ShLlXDK2/DoyK', 1, NULL),
+  ('Alex', 'SuperAdmin', 'alex.superadmin@educpro.com', '$2b$12$uL1kdPrul3ZK5WqLXRaEpuqQuY0SSz8nIvEEAW0sszMlx.t7hjbOm', 1, NULL);
+
+-- Attribution des professeurs principaux aux classes
+UPDATE Class SET homeroom_teacher_id = (SELECT teacher_id FROM Teacher WHERE mail_teacher = 'dupont@educpro.com') WHERE name = '1ère S-A';
+UPDATE Class SET homeroom_teacher_id = (SELECT teacher_id FROM Teacher WHERE mail_teacher = 'lefevre@educpro.com') WHERE name = '1ère S-B';
+UPDATE Class SET homeroom_teacher_id = (SELECT teacher_id FROM Teacher WHERE mail_teacher = 'martin@educpro.com') WHERE name = 'Terminale S';
+UPDATE Class SET homeroom_teacher_id = (SELECT teacher_id FROM Teacher WHERE mail_teacher = 'bernard@educpro.com') WHERE name = '2nde A';
+UPDATE Class SET homeroom_teacher_id = (SELECT teacher_id FROM Teacher WHERE mail_teacher = 'admin@educpro.com') WHERE name = 'BTS SIO';
 
 -- Étudiants (password hashé via bcrypt cost 14)
 INSERT INTO Student (first_name, last_name, mail_student, password, class_name, dob) VALUES

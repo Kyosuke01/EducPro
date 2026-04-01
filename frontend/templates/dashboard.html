@@ -241,6 +241,15 @@
     }
 
     let current2FASecret = "";
+    let passwordChangeContext = null;
+    const messagingState = {
+      conversations: [],
+      activeTicketId: null,
+      activeTicket: null,
+      selectedRecipient: null,
+      searchTimeout: null,
+      recipientSuggestions: []
+    };
 
     async function toggle2FASection() {
       const isChecked = document.getElementById('switch2FA').checked;
@@ -297,6 +306,61 @@
       box.style.display = 'flex';
     }
 
+    function openPassword2FAModal(payload, formRef) {
+      passwordChangeContext = { payload, formRef };
+      const modal = document.getElementById('password2faModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      const input = modal.querySelector('input[name="password2faCode"]');
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 50);
+      }
+    }
+
+    function closePassword2FAModal(reset = false) {
+      const modal = document.getElementById('password2faModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+      if (reset) {
+        passwordChangeContext = null;
+      }
+    }
+
+    async function submitPasswordChange(payload, code, formRef) {
+      try {
+        const res = await fetch('/api/users/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, code: code || undefined })
+        });
+
+        if (res.ok) {
+          showNotice('warning', 'Mot de passe mis à jour.');
+          formRef?.reset?.();
+          closePassword2FAModal(true);
+        } else {
+          const err = await res.json();
+          showNotice('error', err.error || 'Erreur lors de la mise à jour.');
+        }
+      } catch (ex) {
+        showNotice('error', 'Erreur serveur.');
+      }
+    }
+
+    function confirmPasswordChangeWithCode() {
+      const modal = document.getElementById('password2faModal');
+      if (!modal || !passwordChangeContext) return;
+      const input = modal.querySelector('input[name="password2faCode"]');
+      const code = (input?.value || '').trim();
+      if (code.length !== 6) {
+        input?.focus();
+        return showNotice('warning', 'Veuillez saisir un code à 6 chiffres.');
+      }
+      submitPasswordChange(passwordChangeContext.payload, code, passwordChangeContext.formRef);
+    }
+
     async function validate2FA() {
       const inputs = document.querySelectorAll('#dashboard-otp-container .otp-input');
       const code = Array.from(inputs).map(i => i.value).join('');
@@ -344,33 +408,21 @@
 
     async function changePassword(e) {
       e.preventDefault();
-      const pwdInputs = e.target.querySelectorAll('input[type="password"]');
-      const old_password = pwdInputs[0].value;
-      const new_password = pwdInputs[1].value;
-      const totpInput = e.target.querySelector('input[name="totp_code"]');
-      const totpCode = totpInput ? totpInput.value.trim() : '';
+      const form = e.target;
+      const pwdInputs = form.querySelectorAll('input[type="password"]');
+      const old_password = pwdInputs[0]?.value || '';
+      const new_password = pwdInputs[1]?.value || '';
 
       if (new_password.length < 6) return showNotice('warning', 'Le nouveau mot de passe est trop court.');
-      if (USER.has_2fa && totpCode.length !== 6) return showNotice('warning', 'Code 2FA requis pour modifier le mot de passe.');
 
-      try {
-        const res = await fetch('/api/users/change-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: USER.id, role: USER.role, old_password: old_password, new_password: new_password, code: totpCode || undefined
-          })
-        });
-        if (res.ok) {
-          showNotice('warning', 'Mot de passe mis à jour.');
-          e.target.reset();
-        } else {
-          const err = await res.json();
-          showNotice('error', err.error || 'Erreur lors de la mise à jour.');
-        }
-      } catch (ex) {
-        showNotice('error', 'Erreur serveur.');
+      const payload = { user_id: USER.id, role: USER.role, old_password, new_password };
+
+      if (USER.has_2fa) {
+        openPassword2FAModal(payload, form);
+        return;
       }
+
+      submitPasswordChange(payload, null, form);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -587,6 +639,7 @@
                       <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
                       <input type="password" name="new_password" id="new_password" autocomplete="new-password" class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
                     </div>
+                            <div id="param-alert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none;"></div>
                     <div class="mb-4">
                       <label class="form-label text-sm fw-medium">Code 2FA (si activé)</label>
                       <input type="text" name="totp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" class="form-control radius-8 bg-neutral-50 border-0 p-12" placeholder="123456" ${USER.has_2fa ? '' : ''}>
@@ -607,6 +660,24 @@
     // API helper
     // ============================================
     async function api(path, options = {}) {
+                  .param-modal {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(15, 23, 42, 0.55);
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1100;
+                    padding: 16px;
+                  }
+                  .param-modal__card {
+                    background: #fff;
+                    border-radius: 16px;
+                    padding: 24px;
+                    width: 100%;
+                    max-width: 420px;
+                    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+                  }
       try {
         const resp = await fetch(`/api/${path}`, {
           headers: { 'Content-Type': 'application/json' },
@@ -618,7 +689,7 @@
           return await resp.json();
         } else {
           const text = await resp.text();
-          return { error: `Réponse inattendue (non-JSON): ${text.substring(0, 50)}...` };
+                  <form onsubmit="changePassword(event)" data-password-form="true">
         }
       } catch (e) {
         console.error('API Error:', e);
@@ -627,10 +698,7 @@
     }
 
     // ============================================
-    // Sidebar menu based on role
-    // ============================================
-    function generateSidebarMenu(role) {
-      const menus = {
+                    <p class="text-xs text-neutral-500 mb-3">Si l'A2F est activée, un code vous sera demandé après avoir cliqué sur "Mettre à jour".</p>
         admin: [
           { icon: 'ri-home-4-line', label: 'Tableau de Bord', id: 'dashboard' },
           { icon: 'ri-user-add-line', label: 'Ajouter Utilisateur', id: 'createUser' },
@@ -638,6 +706,18 @@
           { icon: 'ri-user-follow-line', label: 'Professeurs', id: 'teachers' },
           { icon: 'ri-book-2-line', label: 'Classes', id: 'classes' },
           { icon: 'ri-calendar-check-line', label: 'Emploi du Temps', id: 'schedule' },
+            <div id="password2faModal" class="param-modal" onclick="closePassword2FAModal(true)">
+              <div class="param-modal__card" onclick="event.stopPropagation();">
+                <h6 class="fw-semibold mb-2">Confirmer avec le code A2F</h6>
+                <p class="text-sm text-neutral-500 mb-3">Entrez le code à 6 chiffres depuis votre application d'authentification.</p>
+                <input type="text" name="password2faCode" class="form-control radius-8 bg-neutral-50 border-0 p-12 mb-3" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
+                <div class="d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-light" onclick="closePassword2FAModal(true)">Annuler</button>
+                  <button type="button" class="btn btn-primary" onclick="confirmPasswordChangeWithCode()">Valider</button>
+                </div>
+              </div>
+            </div>
+
           { icon: 'ri-chat-3-line', label: 'Messagerie', id: 'messages' }
         ],
         teacher: [
@@ -1365,35 +1445,41 @@
       const classes = data.classes || [];
 
       let rows = '';
-      for (const cls of classes) {
-        const studData = await api(`classes/${encodeURIComponent(cls.name)}/students`);
-        const nbStudents = studData.students ? studData.students.length : 0;
+      classes.forEach(cls => {
+        const percent = cls.max_capacity ? Math.min(100, Math.round((cls.current_size || 0) / cls.max_capacity * 100)) : 0;
+        const teacherName = cls.teacher_first_name ? `${cls.teacher_first_name} ${cls.teacher_last_name}` : 'Non assigné';
+        const capacityBadge = (cls.current_size || 0) >= cls.max_capacity
+          ? '<span class="badge bg-danger-100 text-danger-600">Complet</span>'
+          : '<span class="badge bg-success-100 text-success-600">Disponible</span>';
 
-        const colorClass = ['primary', 'success', 'warning', 'info', 'danger'][Math.floor(Math.random() * 5)];
         rows += `
           <tr class="align-middle">
             <td class="ps-24">
               <div class="d-flex align-items-center gap-3">
-                <div class="w-40-px h-40-px rounded-3 bg-${colorClass}-100 text-${colorClass}-600 d-flex justify-content-center align-items-center fw-bold">
+                <div class="w-40-px h-40-px rounded-3 bg-primary-100 text-primary-600 d-flex justify-content-center align-items-center fw-bold">
                   <i class="ri-book-3-line text-lg"></i>
                 </div>
-                <h6 class="text-sm fw-medium mb-0">${cls.name}</h6>
+                <div>
+                  <h6 class="text-sm fw-medium mb-0">${cls.name}</h6>
+                  <small class="text-neutral-500">${teacherName}</small>
+                </div>
               </div>
             </td>
             <td>
-              <span class="d-flex align-items-center gap-2 text-sm text-neutral-600">
-                <i class="ri-group-line text-neutral-400"></i> ${nbStudents} étudiants
-              </span>
+              <div class="text-sm fw-semibold">${cls.current_size || 0} / ${cls.max_capacity}</div>
+              <div class="progress mt-1" style="height: 6px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: ${percent}%" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
             </td>
-            <td><span class="badge bg-success-100 text-success-600 px-12 py-6 rounded-pill"><i class="ri-checkbox-circle-line me-1"></i>Active</span></td>
+            <td>${capacityBadge}</td>
             <td>
-              <button onclick="showClassDetail('${cls.name}')" class="btn btn-sm btn-light radius-8 d-flex align-items-center gap-2">
+              <button onclick="showClassDetail('${cls.name.replace(/'/g, "\\'")}')" class="btn btn-sm btn-light radius-8 d-flex align-items-center gap-2">
                 <i class="ri-eye-line"></i> Voir
               </button>
             </td>
           </tr>
         `;
-      }
+      });
 
       if (!rows) rows = '<tr><td colspan="4" class="text-center text-muted py-24">Aucune classe trouvée</td></tr>';
 
@@ -1426,8 +1512,15 @@
     }
 
     async function showClassDetail(className) {
-      const data = await api(`classes/${encodeURIComponent(className)}/students`);
-      const students = data.students || [];
+      const [classData, teacherData] = await Promise.all([
+        api(`classes/${encodeURIComponent(className)}/students`),
+        USER.role === 'admin' ? api('teachers') : Promise.resolve({})
+      ]);
+
+      const students = classData.students || [];
+      const classInfo = classData.class_info || {};
+      const currentSize = classData.current_size || students.length;
+      const teacherName = classInfo.teacher_first_name ? `${classInfo.teacher_first_name} ${classInfo.teacher_last_name}` : 'Non assigné';
 
       let rows = '';
       students.forEach(s => {
@@ -1436,15 +1529,41 @@
 
       if (!rows) rows = '<tr><td colspan="2" class="text-center text-muted">Aucun étudiant</td></tr>';
 
+      let assignmentBlock = `<p class="text-sm text-neutral-500 mb-0">Professeur principal : <strong>${teacherName}</strong></p>`;
+      if (USER.role === 'admin') {
+        const teachers = (teacherData.teachers || []).map(t => {
+          const selected = classInfo.homeroom_teacher_id === t.teacher_id ? 'selected' : '';
+          return `<option value="${t.teacher_id}" ${selected}>${t.first_name} ${t.last_name}${t.topic_name ? ' · ' + t.topic_name : ''}</option>`;
+        }).join('');
+
+        assignmentBlock = `
+          <label class="form-label text-sm fw-medium">Professeur principal</label>
+          <select id="classTeacherSelect" class="form-select mb-2">
+            <option value="">Sélectionner</option>
+            ${teachers}
+          </select>
+          <button class="btn btn-sm btn-outline-primary" onclick="assignTeacherToClass(${classInfo.class_id}, '${className.replace(/'/g, "\\'")}')">Enregistrer</button>
+        `;
+      }
+
       document.getElementById('contentArea').innerHTML = `
         <div class="row">
-          <div class="col-12">
-            <div class="card">
+          <div class="col-12 mb-3">
+            <button class="btn btn-sm btn-outline-primary" onclick="loadSection('classes', event)">← Retour</button>
+          </div>
+          <div class="col-lg-4">
+            <div class="card shadow-1 mb-4">
+              <div class="card-body">
+                <h6 class="fw-semibold mb-2">${className}</h6>
+                <p class="text-sm text-neutral-500 mb-2">Effectif : ${currentSize} / ${classInfo.max_capacity || 35}</p>
+                ${assignmentBlock}
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-8">
+            <div class="card shadow-1">
               <div class="card-body p-20">
-                <div class="d-flex align-items-center gap-3 mb-20">
-                  <button class="btn btn-sm btn-outline-primary" onclick="loadSection('classes', event)">← Retour</button>
-                  <h6 class="text-lg fw-semibold mb-0">Classe : ${className}</h6>
-                </div>
+                <h6 class="text-lg fw-semibold mb-3">Étudiants</h6>
                 <div class="table-responsive">
                   <table class="table table-hover">
                     <thead><tr><th>Nom</th><th>Email</th></tr></thead>
@@ -1456,6 +1575,28 @@
           </div>
         </div>
       `;
+    }
+
+    async function assignTeacherToClass(classId, className) {
+      const select = document.getElementById('classTeacherSelect');
+      if (!select) return;
+      const teacherId = parseInt(select.value || '0', 10);
+      if (!teacherId) {
+        alert('Veuillez sélectionner un professeur.');
+        return;
+      }
+
+      const res = await api(`classes/${classId}/assign-teacher`, {
+        method: 'PUT',
+        body: JSON.stringify({ teacher_id: teacherId })
+      });
+
+      if (res && !res.error) {
+        alert('Professeur assigné.');
+        showClassDetail(className);
+      } else {
+        alert(res?.error || 'Impossible d\'assigner ce professeur.');
+      }
     }
 
     // ============================================
@@ -1995,127 +2136,368 @@
     // APPLICATIF: Messagerie
     // ============================================
     async function getMessagesContent() {
-      let endpoint = USER.role === 'teacher' ? `messages/teacher/${USER.id}` : `messages/student/${USER.id}`;
-      let contactsData = [];
-
-      try {
-        const messagesData = await api(endpoint);
-        const messages = messagesData.messages || [];
-
-        // Obtenir la liste des destinataires potentiels
-        if (USER.role === 'student' || USER.role === 'admin') {
-          const tData = await api('teachers');
-          contactsData = tData.teachers || [];
-        } else {
-          // Simplification pour le prof : on liste tous les étudiants de la plateforme
-          const sData = await api('students');
-          contactsData = sData.students || [];
-        }
-
-        let contactOptions = '<option value="">-- Sélectionnez un destinataire --</option>';
-        contactsData.forEach(c => {
-          let cid = USER.role === 'teacher' ? c.student_id : c.teacher_id;
-          contactOptions += `<option value="${cid}">${c.first_name} ${c.last_name} ${c.topic_name ? '(' + c.topic_name + ')' : ''}</option>`;
-        });
-
-        let msgHtml = '';
-        if (messages.length === 0) {
-          msgHtml = '<div class="text-center text-muted py-24"><i class="ri-chat-3-line text-4xl mb-3 d-block"></i>Aucun message récent.</div>';
-        } else {
-          messages.forEach(m => {
-            const isMe = (USER.role === 'teacher' && m.teacher_id === USER.id) || (USER.role === 'student' && m.student_id === USER.id);
-            // Pour simplifier l'affichage bidirectionnel avec le format actuel de TICKET
-            // On affiche simplement tous les tickets impliquant l'utilisateur
-            const senderName = USER.role === 'teacher' ? `${m.student_first_name} ${m.student_last_name}` : `${m.teacher_first_name} ${m.teacher_last_name}`;
-
-            msgHtml += `
-              <div class="d-flex align-items-start gap-3 mb-24 ${false ? 'flex-row-reverse' : ''}">
-                <div class="w-40-px h-40-px rounded-circle bg-primary-100 text-primary-600 d-flex justify-content-center align-items-center fw-bold flex-shrink-0">
-                  ${senderName.charAt(0)}
-                </div>
-                <div class="bg-neutral-50 p-16 radius-12 shadow-1" style="max-width: 80%;">
-                  <div class="d-flex justify-content-between align-items-center mb-8">
-                    <h6 class="text-sm fw-semibold mb-0">${senderName}</h6>
-                    <span class="text-xs text-neutral-400 ms-3">Ticket #${m.ticket_id}</span>
-                  </div>
-                  <p class="text-neutral-600 text-sm mb-0">${m.msg_content}</p>
-                </div>
+      setTimeout(() => initMessagingCenter(), 0);
+      return `
+        <div class="row">
+          <div class="col-lg-3">
+            <div class="card shadow-1 h-100">
+              <div class="card-header border-bottom bg-white">
+                <h6 class="mb-0 text-lg fw-semibold">Tickets</h6>
               </div>
-            `;
-          });
-        }
-
-        return `
-          <div class="row">
-            <!-- Historique des Messages -->
-            <div class="col-lg-8">
-              <div class="card shadow-1 min-h-400-px">
-                <div class="card-header border-bottom bg-white d-flex justify-content-between align-items-center">
-                  <h6 class="mb-0 text-lg fw-semibold">Historique des communications</h6>
-                </div>
-                <div class="card-body p-24" style="max-height: 500px; overflow-y: auto;">
-                  ${msgHtml}
-                </div>
-              </div>
-            </div>
-
-            <!-- Nouveau Message -->
-            <div class="col-lg-4">
-              <div class="card shadow-1">
-                <div class="card-header border-bottom bg-white">
-                  <h6 class="mb-0 text-lg fw-semibold">Nouveau Ticket</h6>
-                </div>
-                <div class="card-body p-24">
-                  <div class="mb-3">
-                    <label class="form-label text-sm fw-medium">Destinataire</label>
-                    <select id="msgRecipient" class="form-select radius-8 bg-neutral-50 border-0 p-12">
-                      ${contactOptions}
-                    </select>
-                  </div>
-                  <div class="mb-4">
-                    <label class="form-label text-sm fw-medium">Message</label>
-                    <textarea id="msgContent" class="form-control radius-8 bg-neutral-50 border-0 p-12" rows="4" placeholder="Saisissez votre demande..."></textarea>
-                  </div>
-                  <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" onclick="sendMessage()">
-                    <i class="ri-send-plane-fill"></i> Envoyer
-                  </button>
+              <div class="card-body p-0" style="max-height: 520px; overflow-y: auto;">
+                <div id="ticketListPanel" class="list-group list-group-flush">
+                  <div class="text-center py-4"><span class="spinner-border text-primary"></span></div>
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="col-lg-6 mt-4 mt-lg-0">
+            <div class="card shadow-1 h-100">
+              <div class="card-header border-bottom bg-white">
+                <h6 class="mb-0 text-lg fw-semibold" id="ticketThreadHeader">Sélectionnez un ticket</h6>
+              </div>
+              <div class="card-body d-flex flex-column p-0" style="min-height: 500px;">
+                <div id="ticketMessagesPanel" class="flex-grow-1 p-24" style="overflow-y: auto;">
+                  <div class="text-center text-muted py-5">Aucune conversation sélectionnée.</div>
+                </div>
+                <div class="border-top p-16" id="ticketComposer">
+                  <textarea id="ticketReplyInput" class="form-control radius-8 bg-neutral-50 border-0 mb-2" rows="3" placeholder="Écrire une réponse..." disabled></textarea>
+                  <button class="btn btn-primary" onclick="sendConversationReply()" disabled>Envoyer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 mt-4 mt-lg-0">
+            <div class="card shadow-1 h-100">
+              <div class="card-header border-bottom bg-white">
+                <h6 class="mb-0 text-lg fw-semibold">Nouveau ticket</h6>
+              </div>
+              <div class="card-body">
+                <div id="ticketFormAlert" class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="display:none;"></div>
+                <div class="mb-3">
+                  <label class="form-label text-sm fw-medium">Sujet</label>
+                  <input type="text" id="ticketSubject" class="form-control radius-8 bg-neutral-50 border-0" placeholder="Objet du ticket">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label text-sm fw-medium">Destinataire</label>
+                  <input type="text" id="ticketRecipientSearch" class="form-control radius-8 bg-neutral-50 border-0" placeholder="Rechercher..." oninput="handleRecipientInput(event)">
+                  <input type="hidden" id="ticketRecipientId">
+                  <small id="recipientSelectedPreview" class="text-success d-block mt-1" style="display:none;"></small>
+                  <div id="recipientSuggestions" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label text-sm fw-medium">Message</label>
+                  <textarea id="ticketMessageInput" class="form-control radius-8 bg-neutral-50 border-0" rows="4" placeholder="Expliquez votre demande..."></textarea>
+                </div>
+                <button class="btn btn-outline-primary w-100" onclick="submitNewTicket()">Créer le ticket</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function initMessagingCenter() {
+      const listPanel = document.getElementById('ticketListPanel');
+      if (!listPanel) return;
+      listPanel.innerHTML = '<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>';
+
+      const data = await api(`messages/conversations?role=${USER.role}&user_id=${USER.id}`);
+      if (data.error) {
+        listPanel.innerHTML = `<div class="alert alert-danger m-3">${data.error}</div>`;
+        return;
+      }
+
+      messagingState.conversations = data.tickets || [];
+      const stillExists = messagingState.conversations.some(t => t.ticket_id === messagingState.activeTicketId);
+      if (!stillExists) {
+        messagingState.activeTicketId = null;
+      }
+      renderConversationList();
+
+      if (messagingState.conversations.length === 0) {
+        renderEmptyConversation();
+      } else if (!messagingState.activeTicketId) {
+        openConversation(messagingState.conversations[0].ticket_id);
+      }
+
+      renderRecipientSuggestions();
+    }
+
+    function renderConversationList() {
+      const listPanel = document.getElementById('ticketListPanel');
+      if (!listPanel) return;
+
+      if (!messagingState.conversations.length) {
+        listPanel.innerHTML = '<div class="text-center text-muted py-4">Aucun ticket pour l\'instant.</div>';
+        return;
+      }
+
+      const html = messagingState.conversations.map(ticket => {
+        const statusText = (ticket.status || 'open').toUpperCase();
+        const active = ticket.ticket_id === messagingState.activeTicketId ? 'active' : '';
+        const contact = USER.role === 'teacher'
+          ? `${ticket.student_first_name || ''} ${ticket.student_last_name || ''}`.trim() || 'Étudiant'
+          : `${ticket.teacher_first_name || ''} ${ticket.teacher_last_name || ''}`.trim() || 'Enseignant';
+        const badgeClass = ticket.status === 'closed'
+          ? 'badge bg-success-100 text-success-600'
+          : ticket.status === 'pending'
+            ? 'badge bg-warning-100 text-warning-600'
+            : 'badge bg-primary-100 text-primary-600';
+        const preview = ticket.last_message ? ticket.last_message.substring(0, 70) : 'Pas encore de message.';
+        const time = ticket.last_message_at ? new Date(ticket.last_message_at).toLocaleString() : '';
+
+        return `
+          <button type="button" class="list-group-item list-group-item-action ${active}" onclick="openConversation(${ticket.ticket_id})">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div>
+                <div class="fw-semibold text-sm">${ticket.subject}</div>
+                <div class="text-xs text-neutral-500">${contact}</div>
+              </div>
+                <span class="${badgeClass} text-xxs text-uppercase">${statusText}</span>
+            </div>
+            <div class="text-xs text-neutral-500">${preview}</div>
+            <div class="text-xxs text-neutral-400 mt-1">${time}</div>
+          </button>
         `;
-      } catch (e) {
-        return `<div class="alert alert-danger">Erreur chargement messagerie : ${e.message}</div>`;
+      }).join('');
+
+      listPanel.innerHTML = html;
+    }
+
+    function renderEmptyConversation() {
+      const header = document.getElementById('ticketThreadHeader');
+      const panel = document.getElementById('ticketMessagesPanel');
+      const textarea = document.getElementById('ticketReplyInput');
+      const button = document.querySelector('#ticketComposer button');
+      if (header) header.textContent = 'Sélectionnez un ticket';
+      if (panel) panel.innerHTML = '<div class="text-center text-muted py-5">Aucune conversation sélectionnée.</div>';
+      if (textarea) textarea.disabled = true;
+      if (button) button.disabled = true;
+    }
+
+    async function openConversation(ticketId) {
+      messagingState.activeTicketId = ticketId;
+      renderConversationList();
+
+      const header = document.getElementById('ticketThreadHeader');
+      const panel = document.getElementById('ticketMessagesPanel');
+      const textarea = document.getElementById('ticketReplyInput');
+      const button = document.querySelector('#ticketComposer button');
+
+      if (!header || !panel || !textarea || !button) return;
+
+      header.textContent = 'Chargement du ticket...';
+      panel.innerHTML = '<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>';
+      textarea.disabled = true;
+      button.disabled = true;
+
+      const details = await api(`messages/conversations/${ticketId}?role=${USER.role}&user_id=${USER.id}`);
+      if (details.error) {
+        panel.innerHTML = `<div class="alert alert-danger m-3">${details.error}</div>`;
+        header.textContent = 'Ticket indisponible';
+        return;
+      }
+
+      messagingState.activeTicket = details.ticket;
+      renderConversationDetail(details.ticket, details.messages || []);
+    }
+
+    function renderConversationDetail(ticket, messages) {
+      const header = document.getElementById('ticketThreadHeader');
+      const panel = document.getElementById('ticketMessagesPanel');
+      const textarea = document.getElementById('ticketReplyInput');
+      const button = document.querySelector('#ticketComposer button');
+
+      if (!header || !panel || !textarea || !button) return;
+
+      const contact = USER.role === 'teacher'
+        ? `${ticket.student_first_name || ''} ${ticket.student_last_name || ''}`.trim() || 'Étudiant'
+        : `${ticket.teacher_first_name || ''} ${ticket.teacher_last_name || ''}`.trim() || 'Enseignant';
+      const badgeClass = ticket.status === 'closed'
+        ? 'badge bg-success-100 text-success-600'
+        : ticket.status === 'pending'
+          ? 'badge bg-warning-100 text-warning-600'
+          : 'badge bg-primary-100 text-primary-600';
+      const statusText = (ticket.status || 'open').toUpperCase();
+
+      header.innerHTML = `
+        <div>
+          <div class="fw-semibold">${ticket.subject}</div>
+          <div class="text-sm text-neutral-500">${contact}</div>
+        </div>
+        <span class="${badgeClass} text-uppercase text-xxs">${statusText}</span>
+      `;
+
+      const timeline = messages.map(msg => {
+        const mine = msg.sender_role === USER.role;
+        const align = mine ? 'flex-row-reverse text-end' : '';
+        const bubble = mine ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-900';
+        const name = mine ? 'Moi' : msg.sender_role === 'teacher' ? 'Professeur' : 'Étudiant';
+        const date = msg.created_at ? new Date(msg.created_at).toLocaleString() : '';
+
+        return `
+          <div class="d-flex ${align} mb-3">
+            <div class="p-3 radius-12 ${bubble}" style="max-width: 80%;">
+              <div class="fw-semibold text-xs mb-1">${name}</div>
+              <div class="text-sm mb-1">${msg.body}</div>
+              <div class="text-xxs">${date}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      panel.innerHTML = timeline || '<div class="text-center text-muted py-5">Aucun message pour le moment.</div>';
+
+      const isClosed = (ticket.status || '').toLowerCase() === 'closed';
+      textarea.disabled = isClosed;
+      button.disabled = isClosed;
+      textarea.value = '';
+    }
+
+    async function sendConversationReply() {
+      if (!messagingState.activeTicketId) return;
+      const textarea = document.getElementById('ticketReplyInput');
+      const button = document.querySelector('#ticketComposer button');
+      const body = (textarea?.value || '').trim();
+      if (!body) return;
+
+      textarea.disabled = true;
+      button.disabled = true;
+
+      const resp = await api(`messages/conversations/${messagingState.activeTicketId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ sender_role: USER.role, sender_id: USER.id, body })
+      });
+
+      if (resp && !resp.error) {
+        await initMessagingCenter();
+        await openConversation(messagingState.activeTicketId);
+      } else {
+        alert(resp?.error || 'Erreur lors de l\'envoi');
+        textarea.disabled = false;
+        button.disabled = false;
       }
     }
 
-    async function sendMessage() {
-      const recipientId = document.getElementById('msgRecipient').value;
-      const content = document.getElementById('msgContent').value;
+    function notifyTicketForm(type, message) {
+      const box = document.getElementById('ticketFormAlert');
+      if (!box) return;
+      if (!message) {
+        box.style.display = 'none';
+        return;
+      }
+      const classes = type === 'error'
+        ? 'alert alert-danger d-flex align-items-center gap-2 mb-3'
+        : 'alert alert-warning d-flex align-items-center gap-2 mb-3';
+      box.className = classes;
+      box.innerHTML = `<i class="ri-information-line"></i><span>${message}</span>`;
+      box.style.display = 'flex';
+    }
 
-      if (!recipientId || !content.trim()) {
-        alert("Veuillez sélectionner un destinataire et écrire un message.");
+    function handleRecipientInput(event) {
+      const value = event.target.value || '';
+      messagingState.selectedRecipient = null;
+      const hidden = document.getElementById('ticketRecipientId');
+      const preview = document.getElementById('recipientSelectedPreview');
+      if (hidden) hidden.value = '';
+      if (preview) {
+        preview.style.display = 'none';
+        preview.textContent = '';
+      }
+      if (messagingState.searchTimeout) clearTimeout(messagingState.searchTimeout);
+      if (value.trim().length < 2) {
+        messagingState.recipientSuggestions = [];
+        renderRecipientSuggestions();
+        return;
+      }
+      messagingState.searchTimeout = setTimeout(() => fetchRecipientSuggestions(value.trim()), 250);
+    }
+
+    async function fetchRecipientSuggestions(query) {
+      const type = USER.role === 'teacher' ? 'student' : 'teacher';
+      const data = await api(`messages/recipients?type=${type}&q=${encodeURIComponent(query)}`);
+      if (data.error) {
+        messagingState.recipientSuggestions = [];
+      } else {
+        messagingState.recipientSuggestions = data.results || [];
+      }
+      renderRecipientSuggestions();
+    }
+
+    function renderRecipientSuggestions() {
+      const container = document.getElementById('recipientSuggestions');
+      if (!container) return;
+      if (!messagingState.recipientSuggestions.length) {
+        container.innerHTML = '<div class="text-xs text-neutral-400">Commencez à taper pour rechercher.</div>';
+        return;
+      }
+
+      container.innerHTML = messagingState.recipientSuggestions.map(item => `
+        <button type="button" class="list-group-item list-group-item-action" onclick="selectRecipient(${item.id})">
+          <div class="fw-semibold text-sm">${item.first_name} ${item.last_name}</div>
+          <div class="text-xs text-neutral-500">${item.email || ''}${item.meta ? ' · ' + item.meta : ''}</div>
+        </button>
+      `).join('');
+    }
+
+    function selectRecipient(id) {
+      const chosen = messagingState.recipientSuggestions.find(item => item.id === id);
+      const input = document.getElementById('ticketRecipientSearch');
+      const hidden = document.getElementById('ticketRecipientId');
+      const preview = document.getElementById('recipientSelectedPreview');
+      if (!chosen || !input || !hidden || !preview) return;
+      messagingState.selectedRecipient = chosen;
+      input.value = `${chosen.first_name} ${chosen.last_name}`;
+      hidden.value = chosen.id;
+      preview.textContent = `Destinataire sélectionné : ${chosen.first_name} ${chosen.last_name}`;
+      preview.style.display = 'block';
+      const container = document.getElementById('recipientSuggestions');
+      if (container) container.innerHTML = '';
+    }
+
+    async function submitNewTicket() {
+      const subject = (document.getElementById('ticketSubject')?.value || '').trim();
+      const message = (document.getElementById('ticketMessageInput')?.value || '').trim();
+      const recipientId = parseInt(document.getElementById('ticketRecipientId')?.value || '0', 10);
+
+      if (!subject || !message || !recipientId) {
+        notifyTicketForm('error', 'Veuillez renseigner un sujet, un destinataire et un message.');
         return;
       }
 
       const payload = {
-        msg_content: content.trim(),
-        teacher_id: USER.role === 'teacher' ? USER.id : parseInt(recipientId),
-        student_id: USER.role === 'student' ? USER.id : parseInt(recipientId)
+        subject,
+        message,
+        starter_role: USER.role,
+        starter_id: USER.id,
+        student_id: USER.role === 'teacher' ? recipientId : USER.id,
+        teacher_id: USER.role === 'teacher' ? USER.id : recipientId
       };
 
-      try {
-        const resp = await api('messages', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        if (resp.success) {
-          loadSection('messages'); // recharge la vue
-        } else {
-          alert(resp.error || "Erreur lors de l'envoi");
+      const resp = await api('messages/conversations', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (resp && !resp.error) {
+        notifyTicketForm('warning', 'Ticket créé avec succès.');
+        document.getElementById('ticketSubject').value = '';
+        document.getElementById('ticketRecipientSearch').value = '';
+        document.getElementById('ticketRecipientId').value = '';
+        document.getElementById('ticketMessageInput').value = '';
+        const preview = document.getElementById('recipientSelectedPreview');
+        if (preview) {
+          preview.style.display = 'none';
+          preview.textContent = '';
         }
-      } catch (e) {
-        alert("Erreur réseau");
+        messagingState.selectedRecipient = null;
+        messagingState.activeTicketId = null;
+        initMessagingCenter();
+      } else {
+        notifyTicketForm('error', resp?.error || 'Impossible de créer le ticket.');
       }
     }
 

@@ -4,6 +4,28 @@ import bcrypt
 
 users_bp = Blueprint("users", __name__)
 
+
+def _class_has_capacity(conn, class_name, exclude_student_id=None):
+    if not class_name:
+        return False
+
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT max_capacity FROM Class WHERE name = %s", (class_name,))
+        class_row = cursor.fetchone()
+        if not class_row:
+            raise ValueError("Classe introuvable")
+
+        query = "SELECT COUNT(*) AS total FROM Student WHERE class_name = %s"
+        params = [class_name]
+        if exclude_student_id:
+            query += " AND student_id <> %s"
+            params.append(exclude_student_id)
+
+        cursor.execute(query, params)
+        total = cursor.fetchone()["total"] or 0
+
+        return total < class_row["max_capacity"]
+
 # GET tous les utilisateurs (Étudiants + Professeurs)
 @users_bp.route("/", methods=["GET"])
 def get_users():
@@ -59,7 +81,12 @@ def create_user():
                 class_name = data.get("class_name")
                 if not class_name:
                     return jsonify({"error": "La classe est requise pour un étudiant."}), 400
-                
+                try:
+                    if not _class_has_capacity(conn, class_name):
+                        return jsonify({"error": "Cette classe a atteint sa capacité maximale (35 élèves)."}), 400
+                except ValueError as err:
+                    return jsonify({"error": str(err)}), 400
+
                 cursor.execute(
                     "INSERT INTO Student (first_name, last_name, mail_student, password, class_name) VALUES (%s, %s, %s, %s, %s)",
                     (first_name, last_name, email, hashed_password, class_name)
@@ -101,6 +128,12 @@ def update_user(user_type, user_id):
         with conn.cursor() as cursor:
             if user_type == "student":
                 class_name = data.get("class_name")
+                if class_name:
+                    try:
+                        if not _class_has_capacity(conn, class_name, exclude_student_id=user_id):
+                            return jsonify({"error": "Impossible de déplacer l'étudiant : classe complète."}), 400
+                    except ValueError as err:
+                        return jsonify({"error": str(err)}), 400
                 cursor.execute(
                     "UPDATE Student SET first_name=%s, last_name=%s, mail_student=%s, class_name=%s WHERE student_id=%s",
                     (first_name, last_name, email, class_name, user_id)
