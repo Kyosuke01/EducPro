@@ -28,6 +28,14 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+## Pour les tests, veuillez démarrer le script python qui permet de remplir les tables de la base de données avec des données de test
+
+```bash
+pip install -r backend/requirements.txt
+pip install python-dotenv bcrypt mysql-connector-python
+python seed.py
+```
+
 
 ## Accéder au projet
 
