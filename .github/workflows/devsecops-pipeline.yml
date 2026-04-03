@@ -117,30 +117,30 @@ jobs:
           docker compose push
 
   # ── 06. Déploiement ─────────────────────────────────────────────────────────
-  deploy:
-    name: "06 · Déploiement via Docker Compose"
-    runs-on: ubuntu-latest
-    needs: build-docker
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
+  # deploy:
+  #   name: "06 · Déploiement via Docker Compose"
+  #   runs-on: ubuntu-latest
+  #   needs: build-docker
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Déployer sur le serveur
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          ROOT_ENV: ${{ secrets.ROOT_ENV }}
-          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
-          FRONTEND_ENV: ${{ secrets.FRONTEND_ENV }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: ROOT_ENV,BACKEND_ENV,FRONTEND_ENV
-          script: |
-            cd /opt/educpro
-            printf '%s\n' "$ROOT_ENV" > .env
-            printf '%s\n' "$BACKEND_ENV" > ./backend/.env
-            printf '%s\n' "$FRONTEND_ENV" > ./frontend/.env
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker image prune -f
+  #     - name: Déployer sur le serveur
+  #       uses: appleboy/ssh-action@v1.0.3
+  #       env:
+  #         ROOT_ENV: ${{ secrets.ROOT_ENV }}
+  #         BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+  #         FRONTEND_ENV: ${{ secrets.FRONTEND_ENV }}
+  #       with:
+  #         host: ${{ secrets.SSH_HOST }}
+  #         username: ${{ secrets.SSH_USER }}
+  #         key: ${{ secrets.SSH_PRIVATE_KEY }}
+  #         envs: ROOT_ENV,BACKEND_ENV,FRONTEND_ENV
+  #         script: |
+  #           cd /opt/educpro
+  #           printf '%s\n' "$ROOT_ENV" > .env
+  #           printf '%s\n' "$BACKEND_ENV" > ./backend/.env
+  #           printf '%s\n' "$FRONTEND_ENV" > ./frontend/.env
+  #           docker compose pull
+  #           docker compose up -d --remove-orphans
+  #           docker image prune -f

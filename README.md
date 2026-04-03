@@ -18,6 +18,7 @@ Copie les fichiers d'environnement et remplis les variables :
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+cp .env.example .env
 ```
 
 
