@@ -1,0 +1,43 @@
+<!-- Template : Détail d'une Classe -->
+<div class="row">
+  <div class="col-12 mb-3">
+    <button class="btn btn-sm btn-outline-primary" onclick="loadSection('classes', event)">
+      ← Retour
+    </button>
+  </div>
+
+  <!-- Infos de la classe + assignation professeur -->
+  <div class="col-lg-4">
+    <div class="card shadow-1 mb-4">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-2" id="classDetailName"></h6>
+        <p class="text-sm text-neutral-500 mb-2" id="classDetailEffectif"></p>
+        <div id="classAssignmentBlock">
+          <!-- Info prof ou formulaire d'assignation (admin) injecté par classes.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des étudiants -->
+  <div class="col-lg-8">
+    <div class="card shadow-1">
+      <div class="card-body p-20">
+        <h6 class="text-lg fw-semibold mb-3">Étudiants</h6>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody id="classDetailStudentsBody">
+              <!-- Lignes injectées par classes.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

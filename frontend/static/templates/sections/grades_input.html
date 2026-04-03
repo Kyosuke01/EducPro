@@ -1,0 +1,23 @@
+<!-- Template : Saisie des Notes (Professeur) -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body p-20">
+        <h6 class="text-lg fw-semibold mb-20">Saisir les Notes</h6>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Classe</label>
+            <select class="form-select" id="gradeClassSelect" onchange="loadGradeStudents()">
+              <!-- Options injectées par grades.js -->
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Matière</label>
+            <input type="text" class="form-control" id="gradeTopicInput" readonly>
+          </div>
+        </div>
+        <div id="gradeStudentsArea"></div>
+      </div>
+    </div>
+  </div>
+</div>

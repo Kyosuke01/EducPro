@@ -1,0 +1,30 @@
+<!-- Template : Sous-template 2FA Setup (injecté dans #setup2FAContent) -->
+<!-- Utilisé quand 2FA est à configurer (pas encore activé) -->
+<h6 class="text-sm fw-semibold mb-3">1. Scannez ce QR Code avec votre application d'authentification</h6>
+<div class="text-center mb-4">
+  <img id="qr-code-img" src="" alt="QR Code A2F" class="radius-8 shadow-sm">
+  <p class="text-xs text-neutral-500 mt-2 d-flex align-items-center justify-content-center gap-2">
+    Clé manuelle :
+    <span id="manual-key-text"
+      style="filter: blur(5px); cursor: pointer; transition: 0.3s;"
+      onclick="this.style.filter='none'">Génération...</span>
+    <button type="button"
+      class="btn btn-sm btn-light py-0 px-2 border-0 shadow-sm"
+      style="border-radius:20px;"
+      onclick="document.getElementById('manual-key-text').style.filter = document.getElementById('manual-key-text').style.filter === 'none' ? 'blur(5px)' : 'none'">
+      <i class="ri-eye-line text-neutral-500"></i>
+    </button>
+  </p>
+</div>
+<h6 class="text-sm fw-semibold mb-3">2. Entrez le code à 6 chiffres généré</h6>
+<div class="d-flex justify-content-center mb-4" id="dashboard-otp-container">
+  <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+  <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+  <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+  <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+  <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+  <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+</div>
+<div class="text-center">
+  <button class="btn btn-primary radius-8" onclick="validate2FA()">Valider l'activation</button>
+</div>

@@ -1,0 +1,59 @@
+<!-- Template : Paramètres (Sécurité / 2FA / Mot de passe) -->
+<div class="row">
+  <div class="col-12 col-md-8 offset-md-2">
+    <div class="card shadow-1 radius-12 border-0 mb-4">
+      <div class="card-header border-bottom bg-white p-24">
+        <h6 class="text-lg fw-semibold mb-0">
+          <i class="ri-lock-password-line text-primary me-2"></i>Sécurité &amp; Authentification
+        </h6>
+      </div>
+      <div class="card-body p-24">
+        <div id="param-alert" style="display:none;"></div>
+
+        <!-- Bloc 2FA -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <div>
+            <h6 class="text-md fw-medium mb-1">Authentification à Double Facteur (2FA)</h6>
+            <p class="text-sm text-neutral-500 mb-0">
+              Ajoutez une couche de sécurité supplémentaire à votre compte en activant le 2FA (Google Authenticator).
+            </p>
+          </div>
+          <div class="cursor-pointer d-flex align-items-center mb-0">
+            <input class="custom-switch-clean" type="checkbox" role="switch"
+              id="switch2FA" onchange="toggle2FASection()">
+          </div>
+        </div>
+
+        <!-- Section de setup 2FA -->
+        <div id="setup2FASection" style="display:none;" class="bg-neutral-50 p-20 radius-8 mb-4 border">
+          <!-- Contenu injecté par profile.js selon état has_2fa -->
+          <div id="setup2FAContent"></div>
+        </div>
+
+        <hr class="border-neutral-200 my-4">
+
+        <!-- Bloc changement de mot de passe -->
+        <div>
+          <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
+          <form onsubmit="changePassword(event)">
+            <div class="mb-3">
+              <label class="form-label text-sm fw-medium">Mot de passe actuel</label>
+              <input type="password" name="current_password" id="current_password"
+                autocomplete="current-password"
+                class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
+              <input type="password" name="new_password" id="new_password"
+                autocomplete="new-password"
+                class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
+            </div>
+            <button type="submit" class="btn btn-outline-primary radius-8 mt-3">
+              Mettre à jour le mot de passe
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

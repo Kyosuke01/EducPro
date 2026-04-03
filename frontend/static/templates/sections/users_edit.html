@@ -1,0 +1,60 @@
+<!-- Template : Formulaire d'édition utilisateur -->
+<div class="row">
+  <div class="col-12 col-md-8 offset-md-2">
+    <div class="card shadow-1 radius-12 border-0">
+      <div class="card-header border-bottom bg-white p-24">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-sm btn-light radius-8" id="editUserBackBtn">
+            <i class="ri-arrow-left-line"></i> Retour
+          </button>
+          <h6 class="text-lg fw-semibold mb-0" id="editUserTitle">
+            <i class="ri-edit-line text-primary me-2"></i>Éditer l'utilisateur
+          </h6>
+        </div>
+      </div>
+      <div class="card-body p-24">
+        <div id="editUserAlert"></div>
+        <form id="editUserForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-sm fw-medium">Prénom</label>
+              <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+                id="editUserFirstName" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-sm fw-medium">Nom</label>
+              <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+                id="editUserLastName" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-sm fw-medium">Email</label>
+            <input type="email" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+              id="editUserEmail" required>
+          </div>
+
+          <!-- Champ classe (étudiant) -->
+          <div class="mb-3" id="editStudentFields" style="display:none;">
+            <label class="form-label text-sm fw-medium">Classe</label>
+            <select class="form-select radius-8 bg-neutral-50 border-0 p-12" id="editUserClass" required>
+              <!-- Options injectées par users.js -->
+            </select>
+          </div>
+
+          <!-- Champ matière (professeur) -->
+          <div class="mb-3" id="editTeacherFields" style="display:none;">
+            <label class="form-label text-sm fw-medium">Matière</label>
+            <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+              id="editUserTopic" placeholder="Ex: Informatique" required>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-primary radius-8" id="editUserBtn">
+              <i class="ri-save-line me-2"></i>Mettre à jour
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

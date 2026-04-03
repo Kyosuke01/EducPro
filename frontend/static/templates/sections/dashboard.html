@@ -1,0 +1,90 @@
+<!-- Template : Tableau de Bord -->
+<!-- Les stats, le graphique et l'activité récente sont injectés par JS -->
+
+<div class="row gy-4 mb-4">
+  <div class="col-xxl-12">
+    <!-- Cartes de statistiques (4 cartes) -->
+    <div class="row gy-4" id="dashboardStatsCards">
+      <!-- Injecté dynamiquement par dashboard_section.js -->
+    </div>
+  </div>
+</div>
+
+<!-- Graphique principal -->
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="card shadow-1 radius-12">
+      <div class="card-body p-24">
+        <h6 class="text-lg fw-semibold mb-20" id="dashboardChartTitle">
+          <i class="ri-bar-chart-fill text-primary me-2"></i>
+          <span id="dashboardChartTitleText"></span>
+        </h6>
+        <div id="mainChart" style="min-height: 300px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Activités récentes -->
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="card shadow-1 radius-12">
+      <div class="card-header border-bottom bg-white p-24">
+        <h6 class="text-lg fw-semibold mb-0">
+          <i class="ri-history-line text-warning me-2"></i>Activités Récentes
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-borderless mb-0">
+            <thead class="bg-neutral-50 border-bottom text-neutral-500 text-xs text-uppercase fw-semibold">
+              <tr>
+                <th class="ps-24 py-16">Action</th>
+                <th class="py-16">Détail</th>
+                <th class="py-16">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="align-middle">
+                <td class="ps-24">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="w-40-px h-40-px rounded-circle bg-success-100 text-success-600 d-flex justify-content-center align-items-center">
+                      <i class="ri-login-circle-line text-lg"></i>
+                    </div>
+                    <h6 class="text-sm fw-medium mb-0">Connexion Réussie</h6>
+                  </div>
+                </td>
+                <td><span class="text-xs text-neutral-500">IP: 192.168.1.1 - Localhost</span></td>
+                <td><span class="badge bg-neutral-100 text-neutral-600 px-12 py-6 rounded-pill">Aujourd'hui</span></td>
+              </tr>
+              <tr class="align-middle">
+                <td class="ps-24">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="w-40-px h-40-px rounded-circle bg-primary-100 text-primary-600 d-flex justify-content-center align-items-center">
+                      <i class="ri-file-text-line text-lg"></i>
+                    </div>
+                    <h6 class="text-sm fw-medium mb-0">Mise à jour du système</h6>
+                  </div>
+                </td>
+                <td><span class="text-xs text-neutral-500">Mise en place du format utf8mb4</span></td>
+                <td><span class="badge bg-neutral-100 text-neutral-600 px-12 py-6 rounded-pill">A l'instant</span></td>
+              </tr>
+              <tr class="align-middle">
+                <td class="ps-24">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="w-40-px h-40-px rounded-circle bg-info-100 text-info-600 d-flex justify-content-center align-items-center">
+                      <i class="ri-mail-send-line text-lg"></i>
+                    </div>
+                    <h6 class="text-sm fw-medium mb-0">Messagerie synchronisée</h6>
+                  </div>
+                </td>
+                <td><span class="text-xs text-neutral-500">API Messaging Connectée</span></td>
+                <td><span class="badge bg-neutral-100 text-neutral-600 px-12 py-6 rounded-pill">Il y a 2h</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

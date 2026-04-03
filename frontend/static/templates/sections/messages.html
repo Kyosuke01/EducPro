@@ -1,0 +1,76 @@
+<!-- Template : Messagerie -->
+<div class="row">
+
+  <!-- Panneau gauche : liste des tickets -->
+  <div class="col-lg-3">
+    <div class="card shadow-1 h-100">
+      <div class="card-header border-bottom bg-white">
+        <h6 class="mb-0 text-lg fw-semibold">Tickets</h6>
+      </div>
+      <div class="card-body p-0" style="max-height: 520px; overflow-y: auto;">
+        <div id="ticketListPanel" class="list-group list-group-flush">
+          <div class="text-center py-4">
+            <span class="spinner-border text-primary"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panneau central : conversation -->
+  <div class="col-lg-6 mt-4 mt-lg-0">
+    <div class="card shadow-1 h-100">
+      <div class="card-header border-bottom bg-white">
+        <h6 class="mb-0 text-lg fw-semibold" id="ticketThreadHeader">Sélectionnez un ticket</h6>
+      </div>
+      <div class="card-body d-flex flex-column p-0" style="min-height: 500px;">
+        <div id="ticketMessagesPanel" class="flex-grow-1 p-24" style="overflow-y: auto;">
+          <div class="text-center text-muted py-5">Aucune conversation sélectionnée.</div>
+        </div>
+        <div class="border-top p-16" id="ticketComposer">
+          <textarea id="ticketReplyInput" class="form-control radius-8 bg-neutral-50 border-0 mb-2"
+            rows="3" placeholder="Écrire une réponse..." disabled></textarea>
+          <button class="btn btn-primary" onclick="sendConversationReply()" disabled>Envoyer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panneau droit : nouveau ticket -->
+  <div class="col-lg-3 mt-4 mt-lg-0">
+    <div class="card shadow-1 h-100">
+      <div class="card-header border-bottom bg-white">
+        <h6 class="mb-0 text-lg fw-semibold">Nouveau ticket</h6>
+      </div>
+      <div class="card-body">
+        <div id="ticketFormAlert" style="display:none;"></div>
+
+        <div class="mb-3">
+          <label class="form-label text-sm fw-medium">Sujet</label>
+          <input type="text" id="ticketSubject" class="form-control radius-8 bg-neutral-50 border-0"
+            placeholder="Objet du ticket">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label text-sm fw-medium">Destinataire</label>
+          <input type="text" id="ticketRecipientSearch"
+            class="form-control radius-8 bg-neutral-50 border-0"
+            placeholder="Rechercher..."
+            oninput="handleRecipientInput(event)">
+          <input type="hidden" id="ticketRecipientId">
+          <small id="recipientSelectedPreview" class="text-success d-block mt-1" style="display:none;"></small>
+          <div id="recipientSuggestions" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label text-sm fw-medium">Message</label>
+          <textarea id="ticketMessageInput" class="form-control radius-8 bg-neutral-50 border-0"
+            rows="4" placeholder="Expliquez votre demande..."></textarea>
+        </div>
+
+        <button class="btn btn-outline-primary w-100" onclick="submitNewTicket()">Créer le ticket</button>
+      </div>
+    </div>
+  </div>
+
+</div>

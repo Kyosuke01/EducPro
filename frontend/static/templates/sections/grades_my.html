@@ -1,0 +1,37 @@
+<!-- Template : Mes Notes (Étudiant) -->
+<div class="row">
+  <!-- Carte moyenne générale -->
+  <div class="col-12 mb-3">
+    <div class="card bg-primary-600 text-white">
+      <div class="card-body p-20">
+        <h6 class="text-white mb-1">Moyenne Générale</h6>
+        <h3 class="text-white mb-0" id="myGradesAverage">—</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tableau des notes -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body p-20">
+        <h6 class="text-lg fw-semibold mb-20">Mes Notes</h6>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Matière</th>
+                <th>Classe</th>
+                <th>Note</th>
+                <th>Moyenne</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="myGradesTableBody">
+              <!-- Lignes injectées par grades.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

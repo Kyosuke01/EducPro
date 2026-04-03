@@ -1,0 +1,34 @@
+<!-- Template : Emploi du Temps (Admin — toutes classes) -->
+<div class="row">
+  <div class="col-12">
+
+    <!-- Sélecteur de classe (onglets) -->
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="ri-book-read-line text-primary fs-5"></i>
+          <h6 class="text-md fw-semibold mb-0 text-secondary-800">Sélectionner une classe</h6>
+        </div>
+        <div id="scheduleTabs" class="d-flex flex-wrap gap-2">
+          <!-- Onglets injectés par schedule.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Titre de la grille -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h6 class="fw-semibold mb-0" id="scheduleGridTitle">
+          <i class="ri-calendar-check-line text-primary me-2"></i>
+          Emploi du temps — <span id="scheduleCurrentClass"></span>
+        </h6>
+      </div>
+    </div>
+
+    <!-- Conteneur de la grille (rempli par renderScheduleGrid) -->
+    <div id="scheduleGridContainer">
+      <!-- Grille injectée par schedule.js -->
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,73 @@
+<!-- Template : Créer un Utilisateur (Admin) -->
+<div class="row">
+  <div class="col-12 col-md-8 offset-md-2">
+    <div class="card shadow-1 radius-12 border-0">
+      <div class="card-header border-bottom bg-white p-24">
+        <h6 class="text-lg fw-semibold mb-0">
+          <i class="ri-user-add-line text-primary me-2"></i>Ajouter un Utilisateur
+        </h6>
+      </div>
+      <div class="card-body p-24">
+        <div id="createUserAlert"></div>
+        <form id="createUserForm" onsubmit="submitCreateUser(event)">
+
+          <div class="mb-3">
+            <label class="form-label text-sm fw-medium">Rôle</label>
+            <select class="form-select radius-8 bg-neutral-50 border-0 p-12"
+              id="newUserType" onchange="toggleUserTypeFields()" required>
+              <option value="student" selected>Étudiant</option>
+              <option value="teacher">Professeur</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-sm fw-medium">Prénom</label>
+              <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+                id="newUserFirstName" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-sm fw-medium">Nom</label>
+              <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+                id="newUserLastName" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-sm fw-medium">Email</label>
+            <input type="email" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+              id="newUserEmail" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-sm fw-medium">Mot de passe provisoire</label>
+            <input type="password" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+              id="newUserPassword" required minlength="6">
+          </div>
+
+          <!-- Champ étudiant : Classe -->
+          <div class="mb-3" id="studentFields">
+            <label class="form-label text-sm fw-medium">Classe</label>
+            <select class="form-select radius-8 bg-neutral-50 border-0 p-12"
+              id="newUserClass" required>
+              <!-- Options injectées par users.js -->
+            </select>
+          </div>
+
+          <!-- Champ professeur : Matière -->
+          <div class="mb-3 d-none" id="teacherFields">
+            <label class="form-label text-sm fw-medium">Matière</label>
+            <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
+              id="newUserTopic" placeholder="Ex: Mathématiques">
+          </div>
+
+          <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-primary radius-8" id="createUserBtn">
+              <i class="ri-user-add-line me-2"></i>Créer l'utilisateur
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -152,6 +152,20 @@ def dashboard():
 # ──────────────────────────────────────────────
 # Logout
 # ──────────────────────────────────────────────
+# ──────────────────────────────────────────────
+# Synchronisation de session — 2FA
+# ──────────────────────────────────────────────
+@app.route("/session/sync-2fa", methods=["POST"])
+def sync_2fa_session():
+    """Met à jour l'état has_2fa dans la session Flask après activation/désactivation."""
+    if "user_id" not in session:
+        return jsonify({"error": "Non authentifié"}), 401
+    data = request.get_json(silent=True) or {}
+    # Le frontend envoie {"has_2fa": true/false}
+    session["has_2fa"] = bool(data.get("has_2fa", False))
+    return jsonify({"ok": True, "has_2fa": session["has_2fa"]}), 200
+
+
 @app.route("/logout")
 def logout():
     session.clear()
