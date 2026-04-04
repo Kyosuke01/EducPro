@@ -224,5 +224,20 @@ def api_proxy(path):
         return jsonify({"error": f"Erreur de communication avec le backend : {str(e)}"}), 502
 
 
+# ──────────────────────────────────────────────
+# Pages Légales
+# ──────────────────────────────────────────────
+@app.route("/legal")
+def legal():
+    """Page des Mentions Légales"""
+    return render_template("legal.html")
+
+
+@app.route("/privacy")
+def privacy():
+    """Page de la Politique de Confidentialité"""
+    return render_template("privacy.html")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000, debug=True)
