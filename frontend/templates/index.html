@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="fr" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -20,22 +20,7 @@
         <div class="login-brand-section">
             <div class="brand-content">
                 <div class="logo-wrapper">
-                    <svg class="logo-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#818CF8;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#3730A3;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <!-- Book/Education icon -->
-                        <path
-                            d="M50 10 C 30 10, 20 20, 20 35 L 20 80 C 20 85, 25 90, 30 90 L 70 90 C 75 90, 80 85, 80 80 L 80 35 C 80 20, 70 10, 50 10 M 50 20 C 65 20, 70 25, 70 35 L 70 80 L 30 80 L 30 35 C 30 25, 35 20, 50 20 M 45 35 L 45 75 M 55 35 L 55 75 M 35 50 L 65 50"
-                            fill="url(#logoGradient)" stroke="url(#logoGradient)" stroke-width="2"
-                            stroke-linejoin="round" />
-                        <!-- Circle around -->
-                        <circle cx="50" cy="50" r="48" fill="none" stroke="url(#logoGradient)" stroke-width="1.5"
-                            opacity="0.3" />
-                    </svg>
+                    <img src="static/assets/img/edu.png" alt="EducPro Logo" class="logo-icon">
                 </div>
                 <h1 class="brand-title">EducPro</h1>
                 <p class="brand-subtitle">Plateforme de gestion scolaire</p>
@@ -49,7 +34,7 @@
                 <p class="form-subtitle">Connectez-vous à votre compte</p>
 
                 {% if error %}
-                <div style="background: #fee2e2; border: 1px solid #fca5a5; color: #dc2626; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                <div style="background: rgba(220, 38, 38, 0.15); border: 1px solid #dc2626; color: #ff7f7f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
                     {{ error }}
                 </div>
                 {% endif %}
@@ -83,7 +68,7 @@
                         </div>
                     </div>
 
-                    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">
+                    <p style="font-size: 12px; color: #a4b0f5; margin-bottom: 16px; opacity: 0.8;">
                         Si votre compte utilise l'A2F, vous saisirez votre code après cette étape.
                     </p>
 
@@ -92,7 +77,7 @@
                             <input type="checkbox" name="remember" id="remember">
                             <span>Se souvenir de moi</span>
                         </label>
-                        <a href="#" onclick="document.getElementById('password-reset-modal').style.display='flex'; return false;" class="forgot-password">Mot de passe oublié?</a>
+                        <a href="#" onclick="document.getElementById('password-reset-modal').classList.add('active'); return false;" class="forgot-password">Mot de passe oublié?</a>
                     </div>
 
                     <button type="submit" class="submit-button">Se connecter</button>
@@ -101,8 +86,7 @@
 
 
                 <div class="footer-links">
-                    <p>Version: 1.0 | <a href="#">Mentions légales</a> | <a href="#">Politique de confidentialité</a>
-                    </p>
+                    <p>Version: 1.0 | <a href="/legal">Mentions légales</a> | <a href="/privacy">Politique de confidentialité</a></p>
                 </div>
             </div>
         </div>
@@ -110,47 +94,26 @@
     </div>
 
     <!-- Password Reset Modal -->
-    <div id="password-reset-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
-        <style>
-          .otp-input {
-            width: 45px;
-            height: 55px;
-            font-size: 24px;
-            text-align: center;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            margin: 0 4px;
-            font-weight: 600;
-            color: #1e293b;
-            background-color: #f8fafc;
-            transition: all 0.2s ease;
-          }
-          .otp-input:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-            background-color: #fff;
-          }
-        </style>
-        <div style="background: white; padding: 24px; border-radius: 12px; width: 400px; max-width: 90%; font-family: 'Inter', sans-serif; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-            <h3 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 8px;">Réinitialiser le mot de passe</h3>
+    <div id="password-reset-modal">
+        <div class="reset-modal-box">
+            <h3>Réinitialiser le mot de passe</h3>
             
             <!-- Étape 1 : Email -->
             <div id="reset-modal-step1">
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Entrez l'adresse email de votre compte EducPro.</p>
-                <input type="email" id="reset-email" placeholder="Votre adresse email" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; font-size: 14px; outline: none;" required>
+                <p>Entrez l'adresse email de votre compte EducPro.</p>
+                <input type="email" id="reset-email" placeholder="Votre adresse email" class="reset-modal-input" required>
                 
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button onclick="document.getElementById('password-reset-modal').style.display='none';" style="padding: 10px 16px; background: #f1f5f9; border: none; color: #475569; cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.2s;">Annuler</button>
-                    <button onclick="verifyEmailForReset()" style="padding: 10px 16px; background: #4f46e5; border: none; color: white; cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.2s;">Suivant</button>
+                <div class="reset-modal-buttons">
+                    <button onclick="document.getElementById('password-reset-modal').classList.remove('active');" class="reset-modal-btn-cancel">Annuler</button>
+                    <button onclick="verifyEmailForReset()" class="reset-modal-btn-primary">Suivant</button>
                 </div>
             </div>
             
             <!-- Étape 2 : Code TOTP (A2F) -->
             <div id="reset-modal-step2" style="display: none;">
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Vérification 2FA requise : Entrez le code à 6 chiffres de votre application Google Authenticator.</p>
+                <p>Vérification 2FA requise : Entrez le code à 6 chiffres de votre application Google Authenticator.</p>
                 
-                <div style="display: flex; justify-content: center; margin-bottom: 20px;" id="reset-otp-container">
+                <div id="reset-otp-container">
                     <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
                     <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
                     <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
@@ -159,30 +122,30 @@
                     <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
                 </div>
 
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button onclick="document.getElementById('password-reset-modal').style.display='none'; document.getElementById('reset-modal-step2').style.display='none'; document.getElementById('reset-modal-step1').style.display='block';" style="padding: 10px 16px; background: #f1f5f9; border: none; color: #475569; cursor: pointer; border-radius: 8px; font-weight: 500;">Annuler</button>
-                    <button onclick="verifyResetOTP()" style="padding: 10px 16px; background: #4f46e5; border: none; color: white; cursor: pointer; border-radius: 8px; font-weight: 500;">Vérifier le code</button>
+                <div class="reset-modal-buttons">
+                    <button onclick="document.getElementById('password-reset-modal').classList.remove('active'); document.getElementById('reset-modal-step2').style.display='none'; document.getElementById('reset-modal-step1').style.display='block';" class="reset-modal-btn-cancel">Annuler</button>
+                    <button onclick="verifyResetOTP()" class="reset-modal-btn-primary">Vérifier le code</button>
                 </div>
             </div>
 
             <!-- Étape 3 : Nouveau mot de passe -->
             <div id="reset-modal-step3" style="display: none;">
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Créez votre nouveau mot de passe.</p>
-                <input type="password" id="reset-new-password" name="new_password" autocomplete="new-password" placeholder="Nouveau mot de passe" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; font-size: 14px; outline: none;" required>
+                <p>Créez votre nouveau mot de passe.</p>
+                <input type="password" id="reset-new-password" name="new_password" autocomplete="new-password" placeholder="Nouveau mot de passe" class="reset-modal-input" required>
                 
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button onclick="submitNewPassword()" style="padding: 10px 16px; background: #10b981; border: none; color: white; cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.2s;">Enregistrer</button>
+                <div class="reset-modal-buttons">
+                    <button onclick="submitNewPassword()" class="reset-modal-btn-success">Enregistrer</button>
                 </div>
             </div>
 
             <!-- Message de succès -->
             <div id="reset-modal-success" style="display: none;">
-                <p style="color: #10b981; font-weight: 500; font-size: 14px; margin-bottom: 20px; padding: 16px; background: #ecfdf5; border-radius: 8px; border: 1px solid #a7f3d0;">
+                <p style="color: #10b981; font-weight: 500; font-size: 14px; margin-bottom: 20px; padding: 16px; background: #ecfdf5; border: 2px solid #10b981;">
                     <svg style="width: 20px; height: 20px; display: inline; vertical-align: middle; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Votre mot de passe a été réinitialisé avec succès !
                 </p>
-                <div style="display: flex; justify-content: flex-end;">
-                    <button onclick="document.getElementById('password-reset-modal').style.display='none'; document.getElementById('reset-modal-success').style.display='none'; document.getElementById('reset-modal-step1').style.display='block'; document.getElementById('reset-email').value='';" style="padding: 10px 16px; background: #f1f5f9; border: none; color: #475569; cursor: pointer; border-radius: 8px; font-weight: 500;">Fermer</button>
+                <div class="reset-modal-buttons">
+                    <button onclick="document.getElementById('password-reset-modal').classList.remove('active'); document.getElementById('reset-modal-success').style.display='none'; document.getElementById('reset-modal-step1').style.display='block'; document.getElementById('reset-email').value='';" class="reset-modal-btn-cancel">Fermer</button>
                 </div>
             </div>
 
