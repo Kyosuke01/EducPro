@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.db import get_db_connection
+from app.rbac import require_role
 import bcrypt
 
 users_bp = Blueprint("users", __name__)
@@ -63,6 +64,7 @@ def get_users():
 
 
 @users_bp.route("/", methods=["POST"])
+@require_role('admin')
 def create_user():
     data = request.get_json()
     if not data:
@@ -124,6 +126,7 @@ def create_user():
 
 
 @users_bp.route("/<user_type>/<int:user_id>", methods=["PUT"])
+@require_role('admin')
 def update_user(user_type, user_id):
     data = request.get_json()
     first_name = data.get("first_name")
@@ -168,6 +171,7 @@ def update_user(user_type, user_id):
 
 
 @users_bp.route("/<user_type>/<int:user_id>", methods=["DELETE"])
+@require_role('admin')
 def delete_user(user_type, user_id):
     conn = None
     try:

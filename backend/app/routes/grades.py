@@ -10,6 +10,7 @@ Endpoints :
 
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
+from app.rbac import require_role
 
 grades_bp = Blueprint("grades", __name__)
 
@@ -94,6 +95,7 @@ def get_grades_by_class(class_name):
 # POST /api/grades
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades", methods=["POST"])
+@require_role('admin', 'teacher')
 def create_grade():
     """Ajoute une nouvelle note pour un étudiant."""
     data = request.get_json()

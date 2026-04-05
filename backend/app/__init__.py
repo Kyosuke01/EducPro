@@ -38,7 +38,7 @@ def create_app():
     app.register_blueprint(grades_bp, url_prefix="/api")
     app.register_blueprint(messages_bp, url_prefix="/api")
 
-    from flask import request, jsonify
+    from flask import request, jsonify, render_template
 
     @app.before_request
     def require_api_key_and_ua():
@@ -57,5 +57,20 @@ def create_app():
     @app.route("/health")
     def health():
         return {"status": "ok"}, 200
+
+    # Error handler pour 403 Forbidden
+    @app.errorhandler(403)
+    def forbidden(error):
+        """Gère les erreurs 403 avec une belle page**"""
+        if request.path.startswith("/api/"):
+            return jsonify({
+                "error": "Forbidden",
+                "message": "Vous n'avez pas les permissions pour accéder à cette ressource.",
+                "status": 403
+            }), 403
+        try:
+            return render_template("403.html"), 403
+        except:
+            return "403 - Forbidden", 403
 
     return app

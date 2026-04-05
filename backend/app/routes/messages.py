@@ -110,13 +110,18 @@ def list_conversations():
     filters = []
     params = []
     if role == "student":
-        filters.append("(st.student_id = %s OR (st.created_by_role = 'student' AND st.created_by_id = %s))")
+        # Étudiant voit seulement ses propres tickets
+        # (où il est student OU qu'il a créé en tant que student)
+        filters.append("(st.student_id = %s OR (st.created_by_id = %s AND st.created_by_role = 'student'))")
         params.extend([user_id, user_id])
     elif role == "teacher":
-        filters.append("(st.teacher_id = %s OR (st.created_by_role = 'teacher' AND st.created_by_id = %s))")
+        # Prof voit les tickets où il est teacher
+        # (ou qu'il a créé en tant que teacher)
+        filters.append("(st.teacher_id = %s OR (st.created_by_id = %s AND st.created_by_role = 'teacher'))")
         params.extend([user_id, user_id])
     elif role == "admin":
-        filters.append("((st.student_id IS NULL AND st.teacher_id IS NULL) OR st.created_by_role = 'admin')")
+        # Les admins voient TOUS les tickets (gestion globale du support)
+        pass  # Pas de filtre
 
     where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
 
@@ -349,6 +354,64 @@ def append_message(ticket_id):
             conn.commit()
 
         return jsonify({"message": "Réponse ajoutée."}), 201
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ──────────────────────────────────────────────
+# DELETE /api/messages/conversations/<id>
+# ──────────────────────────────────────────────
+@messages_bp.route("/messages/conversations/<int:ticket_id>", methods=["DELETE"])
+def delete_conversation(ticket_id):
+    """Supprime un ticket et tous ses messages (fermeture de la conversation)."""
+    role = request.args.get("role")
+    user_id = request.args.get("user_id", type=int)
+
+    if not _valid_role(role) or not user_id:
+        return jsonify({"error": "Paramètres role et user_id requis."}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            # Récupérer le ticket pour contrôle d'accès
+            cursor.execute(
+                "SELECT student_id, teacher_id, created_by_role, created_by_id FROM SupportTicket WHERE ticket_id = %s",
+                (ticket_id,)
+            )
+            ticket = cursor.fetchone()
+            if not ticket:
+                return jsonify({"error": "Ticket introuvable."}), 404
+
+            # Contrôle d'accès : vérifier que l'utilisateur est propriétaire ou admin
+            is_student_owner = (
+                ticket.get("student_id") == user_id
+                or (ticket.get("created_by_role") == "student" and ticket.get("created_by_id") == user_id)
+            )
+            is_teacher_owner = (
+                ticket.get("teacher_id") == user_id
+                or (ticket.get("created_by_role") == "teacher" and ticket.get("created_by_id") == user_id)
+            )
+            is_admin = role == "admin"
+
+            # Seuls les propriétaires et les admins peuvent supprimer
+            if not (is_admin or (role == "student" and is_student_owner) or (role == "teacher" and is_teacher_owner)):
+                return jsonify({"error": "Accès refusé."}), 403
+
+            # Supprimer tous les messages du ticket
+            cursor.execute("DELETE FROM SupportMessage WHERE ticket_id = %s", (ticket_id,))
+
+            # Supprimer le ticket
+            cursor.execute("DELETE FROM SupportTicket WHERE ticket_id = %s", (ticket_id,))
+
+            conn.commit()
+
+        return jsonify({"message": "Ticket supprimé avec succès."}), 200
     except Exception as e:
         if conn:
             conn.rollback()

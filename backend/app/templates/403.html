@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>403 - Accès Refusé | EducPro</title>
+    <link rel="icon" type="image/png" href="/static/assets/img/edu.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 16px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #F0EBD8;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .error-container {
+            display: flex;
+            width: 90%;
+            max-width: 1000px;
+            height: auto;
+            max-height: 600px;
+            background: #ffffff;
+            box-shadow: 0 0 60px rgba(99, 102, 241, 0.2), 0 0 100px rgba(139, 92, 246, 0.15), 6px 6px 0px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Error Icon Section (Left) */
+        .error-icon-section {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .error-icon-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px);
+            pointer-events: none;
+        }
+
+        .error-icon-section::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+            pointer-events: none;
+        }
+
+        .icon-wrapper {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 160px;
+            height: 160px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .lock-icon {
+            font-size: 80px;
+            color: #ef4444;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        /* Content Section (Right) */
+        .error-content-section {
+            flex: 1;
+            background: #1D2D44;
+            padding: 50px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .error-message-box {
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .error-code {
+            font-family: 'Poppins', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a4b0f5, #F0EBD8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .error-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #F0EBD8;
+        }
+
+        .error-subtitle {
+            font-size: 14px;
+            color: #B8B8D4;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        .error-description {
+            font-size: 14px;
+            color: #B8B8D4;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(164, 176, 245, 0.1);
+            border-left: 4px solid #a4b0f5;
+            border-radius: 8px;
+        }
+
+        .error-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .action-btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .btn-home {
+            background: linear-gradient(135deg, #a4b0f5, #667eea);
+            color: #fff;
+        }
+
+        .btn-home:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(164, 176, 245, 0.3);
+        }
+
+        .btn-back {
+            background: rgba(164, 176, 245, 0.2);
+            color: #a4b0f5;
+            border: 2px solid #a4b0f5;
+        }
+
+        .btn-back:hover {
+            background: rgba(164, 176, 245, 0.3);
+            transform: translateY(-3px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .error-container {
+                flex-direction: column;
+                height: auto;
+                max-height: none;
+            }
+
+            .error-icon-section {
+                min-height: 250px;
+            }
+
+            .error-content-section {
+                padding: 40px 30px;
+                min-height: 300px;
+            }
+
+            .icon-wrapper {
+                width: 120px;
+                height: 120px;
+            }
+
+            .lock-icon {
+                font-size: 60px;
+            }
+
+            .error-title {
+                font-size: 20px;
+            }
+
+            .error-code {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <!-- Error Icon Section (Left) -->
+        <div class="error-icon-section">
+            <div class="icon-wrapper">
+                <div class="lock-icon">🔒</div>
+            </div>
+        </div>
+
+        <!-- Error Content Section (Right) -->
+        <div class="error-content-section">
+            <div class="error-message-box">
+                <div class="error-code">403</div>
+                <h1 class="error-title">Accès Refusé</h1>
+                <p class="error-subtitle">Vous n'avez pas la permission</p>
+
+                <div class="error-description">
+                    Votre rôle utilisateur ne vous autorise pas à accéder à cette ressource. Contactez un administrateur si vous pensez que c'est une erreur.
+                </div>
+
+                <div class="error-actions">
+                    <a href="/" class="action-btn btn-home">Retourner à l'accueil</a>
+                    <button class="action-btn btn-back" onclick="window.history.back()">Retour précédent</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

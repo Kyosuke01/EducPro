@@ -10,6 +10,7 @@ Endpoints :
 
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
+from app.rbac import require_role
 
 edt_bp = Blueprint("edt", __name__)
 
@@ -114,6 +115,7 @@ def get_edt_by_teacher(teacher_l_name):
 # POST /api/edt
 # ──────────────────────────────────────────────
 @edt_bp.route("/edt", methods=["POST"])
+@require_role('admin')
 def create_edt_entry():
     """Ajoute une nouvelle entrée dans l'emploi du temps."""
     data = request.get_json()
