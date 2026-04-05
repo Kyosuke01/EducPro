@@ -10,7 +10,7 @@ Endpoints :
 
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
-from app.rbac import require_role
+from app.rbac import require_role, check_idor_access
 
 grades_bp = Blueprint("grades", __name__)
 
@@ -20,7 +20,18 @@ grades_bp = Blueprint("grades", __name__)
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades/student/<int:student_id>", methods=["GET"])
 def get_grades_by_student(student_id):
-    """Récupère toutes les notes d'un étudiant donné."""
+    """
+    Récupère toutes les notes d'un étudiant donné.
+    SECURITY: Vérification IDOR - Un étudiant ne peut voir que ses propres notes
+    """
+    # SECURITY: Vérifier que l'utilisateur ne contourne pas IDOR
+    is_allowed, idor_response = check_idor_access(
+        student_id,
+        error_message="Vous ne pouvez voir que vos propres notes"
+    )
+    if not is_allowed:
+        return idor_response
+    
     conn = None
     try:
         conn = get_db_connection()
@@ -42,8 +53,9 @@ def get_grades_by_student(student_id):
 # GET /api/grades/topic/<string:topic_name>
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades/topic/<string:topic_name>", methods=["GET"])
+@require_role('teacher', 'admin')
 def get_grades_by_topic(topic_name):
-    """Récupère toutes les notes pour une matière spécifique."""
+    """Récupère toutes les notes pour une matière spécifique (teacher/admin seulement)."""
     conn = None
     try:
         conn = get_db_connection()
@@ -65,8 +77,9 @@ def get_grades_by_topic(topic_name):
 # GET /api/grades/class/<string:class_name>
 # ──────────────────────────────────────────────
 @grades_bp.route("/grades/class/<string:class_name>", methods=["GET"])
+@require_role('teacher', 'admin')
 def get_grades_by_class(class_name):
-    """Récupère toutes les notes des étudiants d'une classe."""
+    """Récupère toutes les notes des étudiants d'une classe (teacher/admin seulement)."""
     conn = None
     try:
         conn = get_db_connection()

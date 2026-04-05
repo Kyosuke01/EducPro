@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.db import get_db_connection
-from app.rbac import require_role
+from app.rbac import require_role, check_idor_access
 import bcrypt
 
 users_bp = Blueprint("users", __name__)

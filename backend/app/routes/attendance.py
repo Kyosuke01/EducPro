@@ -10,7 +10,7 @@ Endpoints :
 
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
-from app.rbac import require_role
+from app.rbac import require_role, check_idor_access
 
 attendance_bp = Blueprint("attendance", __name__)
 
@@ -54,7 +54,18 @@ def get_attendance_stats():
 # ──────────────────────────────────────────────
 @attendance_bp.route("/attendance/student/<int:student_id>", methods=["GET"])
 def get_attendance_by_student(student_id):
-    """Récupère les retards et absences d'un étudiant donné."""
+    """
+    Récupère les retards et absences d'un étudiant donné.
+    SECURITY: Vérification IDOR - Un étudiant ne peut voir que ses propres absences
+    """
+    # SECURITY: Vérifier que l'utilisateur ne contourne pas IDOR
+    is_allowed, idor_response = check_idor_access(
+        student_id,
+        error_message="Vous ne pouvez voir que vos propres données d'assiduité"
+    )
+    if not is_allowed:
+        return idor_response
+    
     conn = None
     try:
         conn = get_db_connection()
