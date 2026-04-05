@@ -14,10 +14,11 @@ async function getDashboardContent() {
 async function initDashboard() {
   try {
     if (USER.role === 'admin') {
-      const [studentsData, teachersData, classesData] = await Promise.all([
+      const [studentsData, teachersData, classesData, attendanceStatsData] = await Promise.all([
         api('students'),
         api('teachers'),
-        api('classes')
+        api('classes'),
+        getAttendanceStats() // Récupère stats d'attendance globales
       ]);
       const nbStudents = (studentsData && studentsData.students) ? studentsData.students.length : 0;
       const nbTeachers = (teachersData && teachersData.teachers) ? teachersData.teachers.length : 0;
@@ -26,7 +27,8 @@ async function initDashboard() {
       window.dashboardChartData = {
         role: 'admin',
         categories: ['Étudiants', 'Professeurs', 'Classes'],
-        series: [{ name: 'Total', data: [nbStudents, nbTeachers, nbClasses] }]
+        series: [{ name: 'Total', data: [nbStudents, nbTeachers, nbClasses] }],
+        attendanceStats: attendanceStatsData
       };
 
       renderStatsCards([
@@ -38,7 +40,10 @@ async function initDashboard() {
       setChartTitle('Répartition de la plateforme');
 
     } else if (USER.role === 'teacher') {
-      const edtData = await api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`);
+      const [edtData, attendanceStatsData] = await Promise.all([
+        api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`),
+        getAttendanceStats(USER.className) // Stats de la classe du prof
+      ]);
       const edtList = (edtData && edtData.edt) ? edtData.edt : [];
       const nbSlots = edtList.length;
       const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].length;
@@ -46,7 +51,8 @@ async function initDashboard() {
       window.dashboardChartData = {
         role: 'teacher',
         categories: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
-        series: [{ name: 'Heures de cours', data: [4, 6, 2, 8, 4] }]
+        series: [{ name: 'Heures de cours', data: [4, 6, 2, 8, 4] }],
+        attendanceStats: attendanceStatsData
       };
 
       renderStatsCards([
@@ -72,7 +78,13 @@ async function initDashboard() {
       window.dashboardChartData = {
         role: 'student',
         categories: grades.map(g => g.topic_name.substring(0, 6)),
-        series: [{ name: 'Mes Notes', data: grades.map(g => g.grade) }]
+        series: [{ name: 'Mes Notes', data: grades.map(g => g.grade) }],
+        attendanceStats: {
+          onTime: att.absent === 0 ? 1 : 0, // Si pas absent, en retard ou à l'heure
+          late: att.late || 0,
+          absent: att.absent || 0,
+          total: Math.max(1, (att.late || 0) + (att.absent || 0))
+        }
       };
 
       renderStatsCards([
@@ -89,6 +101,41 @@ async function initDashboard() {
   } catch (e) {
     const area = document.getElementById('dashboardStatsCards');
     if (area) area.innerHTML = `<div class="alert alert-danger col-12">Erreur dashboard : ${e.message}</div>`;
+  }
+}
+
+// Récupère les statistiques d'attendance (retards globaux)
+async function getAttendanceStats(className = null) {
+  try {
+    let url = 'attendance/stats';
+    if (className) {
+      url = `attendance/class/${encodeURIComponent(className)}`;
+    }
+    
+    const data = await api(url);
+    
+    if (className && data.attendance) {
+      // Calcul des stats pour une classe
+      const lateCount = data.attendance.filter(a => a.late > 0).length;
+      const onTimeCount = data.attendance.filter(a => a.late === 0).length;
+      return { late: lateCount, onTime: onTimeCount, total: data.attendance.length };
+    } else if (data.stats) {
+      // Réponse depuis endpoint stats
+      return data.stats;
+    } else if (data.attendance) {
+      // Fallback pour stats globales
+      let totalLate = 0, totalAbsent = 0;
+      data.attendance.forEach(a => {
+        totalLate += a.late || 0;
+        totalAbsent += a.absent || 0;
+      });
+      return { late: totalLate, absent: totalAbsent, onTime: Math.max(1, data.attendance.length - totalLate) };
+    }
+    
+    return { late: 0, onTime: 100, total: 100 };
+  } catch (e) {
+    console.warn('Erreur stats attendance:', e);
+    return { late: 0, onTime: 100, total: 100 };
   }
 }
 
@@ -130,7 +177,7 @@ function renderDashboardCharts() {
       toolbar: { show: false },
       fontFamily: 'Inter, sans-serif'
     },
-    colors: ['#4F46E5'],
+    colors: ['#F0EBD8'],
     fill: {
       type: data.role === 'student' ? 'gradient' : 'solid',
       gradient: {
@@ -148,6 +195,90 @@ function renderDashboardCharts() {
 
   const chartEl = document.querySelector('#mainChart');
   if (!chartEl) return;
+  const chart = new ApexCharts(chartEl, options);
+  chart.render();
+
+  // Graphique Doughnut pour les retards (visible pour tous les rôles)
+  renderAttendanceChart();
+}
+
+function renderAttendanceChart() {
+  const chartEl = document.querySelector('#attendanceChart');
+  if (!chartEl) return;
+
+  // Récupère les vraies données d'attendance depuis le dashboard
+  const stats = window.dashboardChartData?.attendanceStats || { late: 0, onTime: 100, absent: 0, total: 100 };
+  
+  // Calcul des valeurs en fonction du rôle
+  let lateCount = stats.late || 0;
+  let onTimeCount = stats.onTime || 0;
+  
+  // Si c'est un étudiant avec données détaillées
+  if (stats.absent !== undefined) {
+    onTimeCount = Math.max(0, (stats.total || 1) - lateCount - (stats.absent || 0));
+  }
+  
+  // Évite la division par zéro
+  const totalCount = Math.max(1, lateCount + onTimeCount);
+
+  const options = {
+    series: [onTimeCount, lateCount],
+    chart: {
+      type: 'donut',
+      height: 320,
+      toolbar: { show: false },
+      fontFamily: 'Inter, sans-serif'
+    },
+    labels: ['À l\'heure', 'En retard'],
+    colors: ['#12664f', '#a4b0f5'],
+    dataLabels: {
+      enabled: true,
+      formatter: function(val) {
+        return Math.round(val) + '%';
+      },
+      style: {
+        colors: ['#f0ebd8'],
+        fontSize: '14px',
+        fontWeight: 'bold'
+      },
+      dropShadow: {
+        enabled: true,
+        color: '#000000',
+        top: 1,
+        left: 1,
+        blur: 2,
+        opacity: 0.8
+      }
+    },
+    stroke: {
+      width: 3,
+      colors: ['#0d1321']
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '65%'
+        }
+      }
+    },
+    legend: {
+      position: 'bottom',
+      labels: {
+        colors: '#a4b0f5',
+        fontSize: '12px'
+      }
+    },
+    tooltip: {
+      theme: 'dark',
+      y: {
+        formatter: function(val) {
+          const percentage = Math.round((val / totalCount) * 100);
+          return val + ' étudiants (' + percentage + '%)';
+        }
+      }
+    }
+  };
+
   const chart = new ApexCharts(chartEl, options);
   chart.render();
 }

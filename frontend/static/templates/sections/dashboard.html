@@ -5,14 +5,68 @@
   <div class="col-xxl-12">
     <!-- Cartes de statistiques (4 cartes) -->
     <div class="row gy-4" id="dashboardStatsCards">
-      <!-- Injecté dynamiquement par dashboard_section.js -->
+      <div class="col-xxl-3 col-sm-6">
+        <div class="card shadow-1 radius-8 h-100">
+          <div class="card-body p-20">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-16">
+              <div class="w-44-px h-44-px bg-warning-600 rounded-circle d-flex justify-content-center align-items-center text-white">
+                <i class="ri-graduation-cap-line text-xl"></i>
+              </div>
+              <p class="fw-medium text-primary-light mb-1">Total Étudiants</p>
+            </div>
+            <h6 class="mb-0">210</h6>
+          </div>
+        </div>
+      </div>
+    
+      <div class="col-xxl-3 col-sm-6">
+        <div class="card shadow-1 radius-8 h-100">
+          <div class="card-body p-20">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-16">
+              <div class="w-44-px h-44-px bg-blue-600 rounded-circle d-flex justify-content-center align-items-center text-white">
+                <i class="ri-user-follow-line text-xl"></i>
+              </div>
+              <p class="fw-medium text-primary-light mb-1">Total Professeurs</p>
+            </div>
+            <h6 class="mb-0">26</h6>
+          </div>
+        </div>
+      </div>
+    
+      <div class="col-xxl-3 col-sm-6">
+        <div class="card shadow-1 radius-8 h-100">
+          <div class="card-body p-20">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-16">
+              <div class="w-44-px h-44-px bg-purple-600 rounded-circle d-flex justify-content-center align-items-center text-white">
+                <i class="ri-book-2-line text-xl"></i>
+              </div>
+              <p class="fw-medium text-primary-light mb-1">Total Classes</p>
+            </div>
+            <h6 class="mb-0">7</h6>
+          </div>
+        </div>
+      </div>
+    
+      <div class="col-xxl-3 col-sm-6">
+        <div class="card shadow-1 radius-8 h-100">
+          <div class="card-body p-20">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-16">
+              <div class="w-44-px h-44-px bg-success-600 rounded-circle d-flex justify-content-center align-items-center text-white">
+                <i class="ri-check-double-line text-xl"></i>
+              </div>
+              <p class="fw-medium text-primary-light mb-1">Plateforme</p>
+            </div>
+            <h6 class="mb-0">Active</h6>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- Graphique principal -->
 <div class="row mt-5">
-  <div class="col-12">
+  <div class="col-12 col-lg-8">
     <div class="card shadow-1 radius-12">
       <div class="card-body p-24">
         <h6 class="text-lg fw-semibold mb-20" id="dashboardChartTitle">
@@ -20,6 +74,18 @@
           <span id="dashboardChartTitleText"></span>
         </h6>
         <div id="mainChart" style="min-height: 300px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphique Doughnut - Retards des étudiants -->
+  <div class="col-12 col-lg-4">
+    <div class="card shadow-1 radius-12">
+      <div class="card-body p-24">
+        <h6 class="text-lg fw-semibold mb-20">
+          <i class="ri-time-line text-warning me-2"></i>Retards des Étudiants
+        </h6>
+        <div id="attendanceChart" style="min-height: 300px;"></div>
       </div>
     </div>
   </div>

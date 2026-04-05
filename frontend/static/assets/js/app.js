@@ -16,11 +16,12 @@
     item.toggleClass("dropdown-open");
   });
 
-  $(".sidebar-toggle").on("click", function () {
-    $(this).toggleClass("active");
-    $(".sidebar").toggleClass("active");
-    $(".dashboard-main").toggleClass("active");
-  });
+  // DISABLED: Sidebar toggle collapse feature (causes bugs)
+  // $(".sidebar-toggle").on("click", function () {
+  //   $(this).toggleClass("active");
+  //   $(".sidebar").toggleClass("active");
+  //   $(".dashboard-main").toggleClass("active");
+  // });
 
   const openSidebar = (e) => {
     e.stopPropagation();
@@ -69,10 +70,8 @@
    * Utility function to calculate the current theme setting based on localStorage.
    */
   function calculateSettingAsThemeString({ localStorageTheme }) {
-    if (localStorageTheme !== null) {
-      return localStorageTheme;
-    }
-    return "light"; // default to light theme if nothing is stored
+    // Force dark mode only
+    return "dark";
   }
 
   /**
@@ -115,13 +114,8 @@
      * 4. Add an event listener to toggle the theme.
      */
     button.addEventListener("click", (event) => {
-      const newTheme = currentThemeSetting === "dark" ? "light" : "dark";
-
-      localStorage.setItem("theme", newTheme);
-      updateButton({ buttonEl: button, isDark: newTheme === "dark" });
-      updateThemeOnHtmlEl({ theme: newTheme });
-
-      currentThemeSetting = newTheme;
+      // Dark mode only - prevent theme toggle
+      event.preventDefault();
     });
   } else {
     // If no button is found, just apply the current theme to the page

@@ -213,7 +213,7 @@ async function initStudentsList() {
             </div>
             <div>
               <h6 class="text-sm fw-medium mb-0">${s.last_name} ${s.first_name}</h6>
-              <span class="text-xs text-neutral-400">${s.mail_student || '-'}</span>
+              <span class="text-xs" style="color: #f0ebd8;">${s.mail_student || '-'}</span>
             </div>
           </div>
         </td>
@@ -274,7 +274,7 @@ async function initTeachersList() {
             </div>
             <div>
               <h6 class="text-sm fw-medium mb-0">${t.last_name} ${t.first_name}</h6>
-              <span class="text-xs text-neutral-400">${t.mail_teacher || '-'}</span>
+              <span class="text-xs" style="color: #f0ebd8;">${t.mail_teacher || '-'}</span>
             </div>
           </div>
         </td>

@@ -46,15 +46,53 @@ function getMonProfilContent() {
 }
 
 function initMonProfil() {
+  const roleText = USER.role === 'admin' ? 'Administrateur' : (USER.role === 'teacher' ? 'Professeur' : 'Étudiant');
+  
   const fields = {
     profileLastName: USER.lastName || '-',
     profileFirstName: USER.firstName || '-',
     profileEmail: USER.email || '-',
-    profileRole: USER.role === 'admin' ? 'Administrateur' : (USER.role === 'teacher' ? 'Professeur' : 'Étudiant')
+    profileRole: roleText,
+    profileFullName: `${USER.firstName || ''} ${USER.lastName || ''}`.trim() || '--',
+    profileRoleBadge: roleText
   };
+
   for (const [id, val] of Object.entries(fields)) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
+  }
+
+  // Ajouter les initiales
+  const initialsEl = document.getElementById('profileInitials');
+  if (initialsEl) {
+    const firstName = USER.firstName || '';
+    const lastName = USER.lastName || '';
+    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || '--';
+    initialsEl.textContent = initials;
+  }
+
+  // Afficher classe pour les étudiants uniquement
+  const classRow = document.getElementById('classRow');
+  if (classRow) {
+    if (USER.role === 'student') {
+      classRow.style.display = 'flex';
+      const classEl = document.getElementById('profileClass');
+      if (classEl) classEl.textContent = USER.className || '-';
+    } else {
+      classRow.style.display = 'none';
+    }
+  }
+
+  // Afficher spécialité pour les professeurs uniquement
+  const specialtyRow = document.getElementById('specialtyRow');
+  if (specialtyRow) {
+    if (USER.role === 'teacher') {
+      specialtyRow.style.display = 'flex';
+      const specialtyEl = document.getElementById('profileSpecialty');
+      if (specialtyEl) specialtyEl.textContent = USER.specialty || '-';
+    } else {
+      specialtyRow.style.display = 'none';
+    }
   }
 }
 

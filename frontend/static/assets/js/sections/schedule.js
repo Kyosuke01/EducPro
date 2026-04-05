@@ -79,8 +79,8 @@ function openCourseModal(courseJson) {
         <div class="edt-modal-header">
           <button class="edt-modal-close" onclick="closeCourseModal()"><i class="ri-close-line"></i></button>
           <div id="edtModalBadge" style="display:inline-flex; align-items:center; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:10px;"></div>
-          <div id="edtModalTitle" style="font-size:22px; font-weight:800; color:#1e293b; line-height:1.2;"></div>
-          <div id="edtModalDay" style="font-size:13px; color:#64748b; margin-top:4px; font-weight:500;"></div>
+          <div id="edtModalTitle" style="font-size:22px; font-weight:800; color:#f0ebd8; line-height:1.2;"></div>
+          <div id="edtModalDay" style="font-size:13px; color:#a4b0f5; margin-top:4px; font-weight:500;"></div>
         </div>
         <div class="edt-modal-body">
           <div class="edt-modal-row">
@@ -186,7 +186,7 @@ function renderScheduleGrid(className, dataList) {
   for (let h = EDT_START_HOUR; h <= EDT_END_HOUR; h++) {
     const top = (h - EDT_START_HOUR) * EDT_CELL_HEIGHT;
     const isEven = (h - EDT_START_HOUR) % 2 === 0;
-    gridLines += `<div class="edt-grid-line" style="top: ${top}px; background: ${isEven ? 'rgba(248,250,252,0.8)' : 'transparent'};"></div>`;
+    gridLines += `<div class="edt-grid-line" style="top: ${top}px; height: 0.5px; background: ${isEven ? 'rgba(164,176,245,0.3)' : 'rgba(45,65,105,0.4)'};"></div>`;
   }
 
   // Colonnes des jours
@@ -217,7 +217,6 @@ function renderScheduleGrid(className, dataList) {
           height: ${heightPx}px;
           background: ${color.bg};
           border-left: 4px solid ${color.border};
-          border-radius: 10px;
           cursor: pointer;
         " onclick="openCourseModal('${courseData}')" title="Cliquer pour les détails">
           <div class="edt-course-time" style="background:${color.badge}; color:${color.badgeText};">${timeLabel}</div>

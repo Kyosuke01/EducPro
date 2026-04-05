@@ -15,7 +15,7 @@
   font-weight: 600;
   color: #1e293b;
   background-color: #f8fafc;
-  transition: all 0.2s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 .otp-input:focus {
   outline: none;
@@ -35,7 +35,7 @@
   cursor: pointer;
   outline: none;
   border: none !important;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
   margin: 0 !important;
   flex-shrink: 0;
 }
@@ -298,11 +298,12 @@
 #edtCourseModal .edt-modal-card {
   position: relative;
   z-index: 1;
-  background: #fff;
-  border-radius: 20px;
+  background: #0D1321;
+  border: 1px solid #1d2d44;
+  border-radius: 8px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5), 6px 6px 0 rgba(0, 0, 0, 0.3), 0 20px 50px rgba(0, 0, 0, 0.8);
   overflow: hidden;
   animation: edtSlideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -313,6 +314,8 @@
 #edtCourseModal .edt-modal-header {
   padding: 24px 24px 20px;
   position: relative;
+  background: rgba(29, 45, 68, 0.5);
+  border-bottom: 1px solid rgba(164, 176, 245, 0.1);
 }
 #edtCourseModal .edt-modal-close {
   position: absolute;
@@ -322,17 +325,17 @@
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(15, 23, 42, 0.07);
+  background: rgba(164, 176, 245, 0.1);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #64748b;
+  color: #a4b0f5;
   transition: background 0.15s;
 }
 #edtCourseModal .edt-modal-close:hover {
-  background: rgba(15, 23, 42, 0.13);
+  background: rgba(164, 176, 245, 0.2);
 }
 #edtCourseModal .edt-modal-accent {
   height: 5px;
@@ -346,7 +349,7 @@
   align-items: flex-start;
   gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(164, 176, 245, 0.1);
 }
 #edtCourseModal .edt-modal-row:last-child {
   border-bottom: none;
@@ -366,11 +369,11 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: #a4b0f5;
   margin-bottom: 2px;
 }
 #edtCourseModal .edt-modal-value {
   font-size: 15px;
   font-weight: 700;
-  color: #1e293b;
+  color: #f0ebd8;
 }

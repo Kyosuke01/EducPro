@@ -167,4 +167,84 @@ async function initMyGrades() {
   }
 
   tbody.innerHTML = rows.join('');
+
+  // Rendre le graphique Radar
+  renderRadarChart(byTopic);
+}
+
+function renderRadarChart(byTopic) {
+  const chartEl = document.getElementById('gradesRadarChart');
+  if (!chartEl) return;
+
+  // Préparer les données pour le graphique Radar
+  const categories = Object.keys(byTopic);
+  const averages = Object.values(byTopic).map(notes => 
+    (notes.reduce((s, n) => s + n, 0) / notes.length).toFixed(1)
+  );
+
+  if (categories.length === 0) {
+    chartEl.innerHTML = '<div class="text-center text-secondary-light py-5">Aucune note disponible</div>';
+    return;
+  }
+
+  const options = {
+    series: [{
+      name: 'Moyenne par Matière',
+      data: averages
+    }],
+    chart: {
+      type: 'radar',
+      height: 450,
+      toolbar: { show: false },
+      fontFamily: 'Inter, sans-serif'
+    },
+    colors: ['#f0ebd8'],
+    stroke: {
+      width: 2
+    },
+    fill: {
+      opacity: 0.15
+    },
+    markers: {
+      size: 5,
+      colors: ['#f0ebd8'],
+      strokeColors: '#fff',
+      strokeWidth: 2
+    },
+    xaxis: {
+      categories: categories,
+      labels: {
+        show: true,
+        style: {
+          colors: '#a4b0f5',
+          fontSize: '12px'
+        }
+      }
+    },
+    yaxis: {
+      min: 0,
+      max: 20,
+      tickAmount: 4,
+      labels: {
+        style: {
+          colors: '#a4b0f5',
+          fontSize: '12px'
+        }
+      }
+    },
+    tooltip: {
+      theme: 'dark',
+      y: {
+        formatter: function(val) {
+          return val.toFixed(1) + '/20';
+        }
+      }
+    },
+    grid: {
+      borderColor: 'rgba(164, 176, 245, 0.1)'
+    }
+  };
+
+  const radarChart = new ApexCharts(chartEl, options);
+  radarChart.render();
 }

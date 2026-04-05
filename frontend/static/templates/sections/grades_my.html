@@ -1,7 +1,7 @@
 <!-- Template : Mes Notes (Étudiant) -->
-<div class="row">
+<div class="row gy-4">
   <!-- Carte moyenne générale -->
-  <div class="col-12 mb-3">
+  <div class="col-12">
     <div class="card bg-primary-600 text-white">
       <div class="card-body p-20">
         <h6 class="text-white mb-1">Moyenne Générale</h6>
@@ -10,11 +10,25 @@
     </div>
   </div>
 
+  <!-- Graphique Radar Chart - Notes par matière -->
+  <div class="col-12">
+    <div class="card shadow-1 radius-12">
+      <div class="card-header border-bottom bg-white p-24">
+        <h6 class="text-lg fw-semibold mb-0">
+          <i class="ri-radar-chart-line text-primary me-2"></i>Performance par Matière
+        </h6>
+      </div>
+      <div class="card-body p-24">
+        <div id="gradesRadarChart" style="min-height: 450px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tableau des notes -->
   <div class="col-12">
     <div class="card">
       <div class="card-body p-20">
-        <h6 class="text-lg fw-semibold mb-20">Mes Notes</h6>
+        <h6 class="text-lg fw-semibold mb-20">Détail des Notes</h6>
         <div class="table-responsive">
           <table class="table table-hover">
             <thead>

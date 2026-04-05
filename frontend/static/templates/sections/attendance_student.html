@@ -1,24 +1,37 @@
 <!-- Template : Assiduité Étudiant -->
-<div class="row gy-4">
-  <div class="col-sm-6">
-    <div class="card shadow-1 radius-8 h-100">
-      <div class="card-body p-20 text-center">
-        <div class="w-64-px h-64-px bg-danger-100 rounded-circle d-flex justify-content-center align-items-center text-danger-600 mx-auto mb-12">
-          <i class="ri-calendar-x-line text-2xl"></i>
-        </div>
-        <h3 id="attendanceAbsent">—</h3>
-        <p class="text-secondary-light">Absences</p>
+<div class="row gy-4 mb-4">
+  <div class="col-12">
+    <div class="card shadow-1 radius-12">
+      <div class="card-header border-bottom bg-white p-24">
+        <h6 class="text-lg fw-semibold mb-0">
+          <i class="ri-check-double-line text-success me-2"></i>Assiduité
+        </h6>
       </div>
-    </div>
-  </div>
-  <div class="col-sm-6">
-    <div class="card shadow-1 radius-8 h-100">
-      <div class="card-body p-20 text-center">
-        <div class="w-64-px h-64-px bg-warning-100 rounded-circle d-flex justify-content-center align-items-center text-warning-600 mx-auto mb-12">
-          <i class="ri-time-line text-2xl"></i>
+      <div class="card-body p-24">
+        <div class="row gy-4">
+          <div class="col-sm-6">
+            <div class="d-flex align-items-center gap-3 p-16 rounded-8 bg-danger-50">
+              <div class="w-64-px h-64-px bg-danger-100 rounded-circle d-flex justify-content-center align-items-center text-danger-600 flex-shrink-0">
+                <i class="ri-calendar-x-line text-2xl"></i>
+              </div>
+              <div>
+                <h3 id="attendanceAbsent" class="fw-bold text-danger mb-2" style="color: #ffffff !important;">0</h3>
+                <p class="text-secondary-light mb-0">Absences</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex align-items-center gap-3 p-16 rounded-8 bg-warning-50">
+              <div class="w-64-px h-64-px bg-warning-100 rounded-circle d-flex justify-content-center align-items-center text-warning-600 flex-shrink-0">
+                <i class="ri-time-line text-2xl"></i>
+              </div>
+              <div>
+                <h3 id="attendanceLate" class="fw-bold text-warning mb-2" style="color: #ffffff !important;">0</h3>
+                <p class="text-secondary-light mb-0">Retards</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <h3 id="attendanceLate">—</h3>
-        <p class="text-secondary-light">Retards</p>
       </div>
     </div>
   </div>
