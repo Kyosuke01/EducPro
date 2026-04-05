@@ -1,28 +1,108 @@
 <!-- Template : Mon Profil -->
-<div class="row">
-  <div class="col-12 col-md-8 offset-md-2">
-    <div class="card shadow-1 radius-12 border-0">
+<div class="row gy-4">
+  <!-- Carte Profil moderne avec initiales -->
+  <div class="col-12 col-md-4">
+    <div class="profile-card-container">
+      <div class="card shadow-1 radius-16 border-0 overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card-body p-24 text-center text-white position-relative" style="min-height: 320px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+          <!-- Arrière-plan avec motif -->
+          <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.1;">
+            <div style="position: absolute; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.3), transparent); top: -50px; right: -50px; border-radius: 50%;"></div>
+            <div style="position: absolute; width: 150px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.3), transparent); bottom: -30px; left: -30px; border-radius: 50%;"></div>
+          </div>
+
+          <!-- Hover effect tiles -->
+          <div class="profile-tiles">
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+            <div class="profile-tile"></div>
+          </div>
+
+          <!-- Hover effect lines -->
+          <div class="profile-lines">
+            <div class="profile-line-h"></div>
+            <div class="profile-line-h"></div>
+            <div class="profile-line-h"></div>
+            <div class="profile-line-v"></div>
+            <div class="profile-line-v"></div>
+            <div class="profile-line-v"></div>
+          </div>
+
+          <!-- Shine effect -->
+          <div class="profile-shine"></div>
+
+          <!-- Contenu principal -->
+          <div style="position: relative; z-index: 2;">
+            <!-- Avatar avec initiales -->
+            <div class="w-100-px h-100-px rounded-circle bg-white d-flex align-items-center justify-content-center mx-auto mb-20" style="box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+              <span class="fw-bold text-center" id="profileInitials" style="font-size: 36px; color: #667eea;">--</span>
+            </div>
+
+            <!-- Nom et Prénom -->
+            <h5 class="text-white fw-semibold mb-1" id="profileFullName">--</h5>
+            
+            <!-- Rôle -->
+            <div class="badge bg-white text-dark fw-semibold px-12 py-6 mb-16" id="profileRoleBadge">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Informations détaillées -->
+  <div class="col-12 col-md-8">
+    <div class="card shadow-1 radius-12 border-0 h-100">
       <div class="card-header border-bottom bg-white p-24">
         <h6 class="text-lg fw-semibold mb-0">
           <i class="ri-user-3-line text-primary me-2"></i>Informations de profil
         </h6>
       </div>
       <div class="card-body p-24">
-        <div class="row mb-3">
-          <div class="col-sm-4 fw-medium text-neutral-500">Nom:</div>
-          <div class="col-sm-8 fw-semibold" id="profileLastName">—</div>
+        <div class="mb-4 d-flex align-items-center gap-3">
+          <span class="fw-medium text-neutral-500" style="min-width: 100px;">Nom:</span>
+          <span class="fw-semibold" id="profileLastName">—</span>
         </div>
-        <div class="row mb-3">
-          <div class="col-sm-4 fw-medium text-neutral-500">Prénom:</div>
-          <div class="col-sm-8 fw-semibold" id="profileFirstName">—</div>
+        <div class="mb-4 d-flex align-items-center gap-3">
+          <span class="fw-medium text-neutral-500" style="min-width: 100px;">Prénom:</span>
+          <span class="fw-semibold" id="profileFirstName">—</span>
         </div>
-        <div class="row mb-3">
-          <div class="col-sm-4 fw-medium text-neutral-500">Email:</div>
-          <div class="col-sm-8 fw-semibold" id="profileEmail">—</div>
+        <div class="mb-4 d-flex align-items-center gap-3">
+          <span class="fw-medium text-neutral-500" style="min-width: 100px;">Email:</span>
+          <span class="fw-semibold" id="profileEmail">—</span>
         </div>
-        <div class="row mb-3">
-          <div class="col-sm-4 fw-medium text-neutral-500">Rôle:</div>
-          <div class="col-sm-8 fw-semibold" id="profileRole">—</div>
+        <div class="mb-4 d-flex align-items-center gap-3" id="classRow" style="display: none;">
+          <span class="fw-medium text-neutral-500" style="min-width: 100px;">Classe:</span>
+          <span class="fw-semibold" id="profileClass">—</span>
+        </div>
+        <div class="mb-4 d-flex align-items-center gap-3" id="specialtyRow" style="display: none;">
+          <span class="fw-medium text-neutral-500" style="min-width: 100px;">Spécialité:</span>
+          <span class="fw-semibold" id="profileSpecialty">—</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <span class="fw-medium text-neutral-500" style="min-width: 100px;">Rôle:</span>
+          <span class="fw-semibold" id="profileRole">—</span>
         </div>
       </div>
     </div>

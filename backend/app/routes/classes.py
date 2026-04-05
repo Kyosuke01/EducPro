@@ -9,6 +9,7 @@ Endpoints :
 
 from flask import Blueprint, jsonify, request
 from app.db import get_db_connection
+from app.rbac import require_role
 
 classes_bp = Blueprint("classes", __name__)
 
@@ -125,6 +126,7 @@ def get_all_topics():
 
 
 @classes_bp.route("/classes/<int:class_id>/assign-teacher", methods=["PUT"])
+@require_role('admin')
 def assign_teacher(class_id):
     data = request.get_json() or {}
     teacher_id = data.get("teacher_id")

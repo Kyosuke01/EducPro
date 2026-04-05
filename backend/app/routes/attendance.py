@@ -2,6 +2,7 @@
 routes/attendance.py — Routes pour la gestion des absences et retards.
 
 Endpoints :
+    GET  /api/attendance/stats              — Stats globales d'assiduité (tous les étudiants)
     GET  /api/attendance/student/<student_id>   — Absences/retards d'un étudiant
     GET  /api/attendance/class/<class_name>     — Absences/retards d'une classe entière
     POST /api/attendance                        — Ajouter ou mettre à jour une absence/retard
@@ -9,8 +10,43 @@ Endpoints :
 
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
+from app.rbac import require_role
 
 attendance_bp = Blueprint("attendance", __name__)
+
+
+# ──────────────────────────────────────────────
+# GET /api/attendance/stats
+# ──────────────────────────────────────────────
+@attendance_bp.route("/attendance/stats", methods=["GET"])
+def get_attendance_stats():
+    """Récupère les statistiques globales d'assiduité (tous les étudiants)."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT COUNT(*) as total,
+                       SUM(CASE WHEN late > 0 THEN 1 ELSE 0 END) as late_count,
+                       SUM(CASE WHEN late = 0 THEN 1 ELSE 0 END) as on_time_count
+                FROM Attendance
+            """
+            cursor.execute(sql)
+            result = cursor.fetchone()
+
+        stats = {
+            'total': result['total'] or 0,
+            'late': result['late_count'] or 0,
+            'onTime': result['on_time_count'] or 0
+        }
+
+        return jsonify({"stats": stats}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
 
 
 # ──────────────────────────────────────────────
@@ -70,6 +106,7 @@ def get_attendance_by_class(class_name):
 # POST /api/attendance
 # ──────────────────────────────────────────────
 @attendance_bp.route("/attendance", methods=["POST"])
+@require_role('admin', 'teacher')
 def create_or_update_attendance():
     """Ajoute ou met à jour une entrée d'assiduité pour un étudiant."""
     data = request.get_json()

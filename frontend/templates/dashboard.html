@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr" data-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EducPro - Tableau de Bord</title>
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%234f46e5'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial' font-size='28' text-anchor='middle' fill='white' font-weight='700'%3EE%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="/static/assets/img/edu.png">
 
   <!-- CSS Libraries -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
@@ -70,24 +69,19 @@
       <i class="ri-close-2-line"></i>
     </button>
 
-    <div class="sidebar-logo d-flex align-items-center justify-content-between">
-      <a href="#" class="">
-        <img src="/static/assets/images/logo/Educpro LOGO.png" alt="EducPro" class="light-logo"
-          style="max-height: 40px;">
-        <img src="/static/assets/images/logo/Educpro LOGO.png" alt="EducPro" class="dark-logo"
-          style="max-height: 40px;">
-      </a>
-      <button type="button" class="text-xxl d-xl-flex d-none line-height-1 sidebar-toggle text-neutral-500"
-        aria-label="Collapse Sidebar">
-        <i class="ri-contract-left-line"></i>
-      </button>
+    <div class="sidebar-logo d-flex align-items-center gap-12" style="background-color: #0D1321; padding: 16px;">
+      <div class="logo-box d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: white; border-radius: 8px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(13, 19, 33, 0.3);">
+        <img src="/static/assets/img/edu.png" alt="EducPro" style="max-height: 40px; width: auto;">
+      </div>
+      <span class="fw-bold d-none d-md-block" style="color: #f0ebd8; font-size: 1.1rem; letter-spacing: -0.5px;">EducPro</span>
     </div>
+    <div style="border-bottom: 2px solid #1d2d44;"></div>
 
     <!-- User Profile -->
     <div class="mx-16 py-12">
       <div class="dropdown profile-dropdown">
         <button type="button"
-          class="profile-dropdown__button d-flex align-items-center justify-content-between p-10 w-100 overflow-hidden bg-neutral-50 radius-12"
+          class="profile-dropdown__button d-flex align-items-center justify-content-between p-10 w-100 overflow-hidden"
           data-bs-toggle="dropdown">
           <span class="d-flex align-items-start gap-10">
             <div
@@ -143,26 +137,27 @@
       <div class="row align-items-center justify-content-between">
         <div class="col-auto">
           <div class="d-flex flex-wrap align-items-center gap-4">
-            <button type="button" class="sidebar-mobile-toggle" aria-label="Sidebar Toggle">
+            <button type="button" class="sidebar-mobile-toggle" aria-label="Sidebar Toggle" style="color: #a4b0f5;">
               <iconify-icon icon="heroicons:bars-3-solid" class="icon"></iconify-icon>
             </button>
-            <form class="navbar-search">
-              <input type="text" class="bg-transparent" name="search" placeholder="Rechercher...">
-              <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
+            <form class="navbar-search" id="searchForm" style="position: relative; display: flex; align-items: center;">
+              <input type="text" class="bg-transparent" id="searchInput" name="search" placeholder="Rechercher une personne..." style="color: #f0ebd8; border: 1px solid #a4b0f5; padding: 8px 12px; width: 200px; padding-right: 36px; border-radius: 0px; transition: border 0.2s ease;">
+              <iconify-icon icon="ion:search-outline" style="color: #a4b0f5; position: absolute; right: 8px; cursor: pointer;"></iconify-icon>
+              <div id="searchResults" style="position: absolute; top: 100%; left: 0; background: #1d2d44; border: 1px solid #a4b0f5; border-radius: 0px; width: 100%; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; margin-top: 4px;"></div>
             </form>
           </div>
         </div>
         <div class="col-auto">
           <div class="d-flex flex-wrap align-items-center gap-3">
+            <div style="color: #a4b0f5; font-size: 0.9rem; font-weight: 500;" id="currentDate"></div>
             <div class="dropdown">
               <button
-                class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center position-relative"
-                type="button" data-bs-toggle="dropdown">
-                <iconify-icon icon="iconoir:bell" class="text-primary-light text-xl"></iconify-icon>
+                class="has-indicator w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center position-relative"
+                type="button" data-bs-toggle="dropdown" style="background-color: #1d2d44; color: #a4b0f5;">
+                <iconify-icon icon="iconoir:bell" class="text-xl"></iconify-icon>
                 <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0 radius-12" id="notificationDropdown"
-                style="width: 300px;">
+              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0" id="notificationDropdown" style="width: 300px; background-color: #0D1321; border: 2px solid #a4b0f5; border-radius: 0px;">
                 <div class="p-16 border-bottom">
                   <h6 class="text-md fw-semibold mb-0">Notifications</h6>
                 </div>
@@ -191,6 +186,11 @@
       </div>
     </div>
   </main>
+
+  <!-- Footer -->
+  <footer style="background-color: #0D1321; padding: 16px; text-align: right; border-top: 2px solid #1d2d44;">
+    <p class="mb-0" style="color: #a4b0f5; font-size: 0.85rem;">© 2026 EducPro - Tous droits réservés | v1.0</p>
+  </footer>
 
   <!-- Password confirmation modal (2FA) -->
   <div id="password2faModal" class="param-modal" onclick="closePassword2FAModal(true)">
