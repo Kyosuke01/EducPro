@@ -254,6 +254,6 @@ def privacy():
 
 
 if __name__ == "__main__":
-    host = os.getenv("FRONTEND_HOST", "127.0.0.1")
+    host = os.getenv("FRONTEND_HOST", "0.0.0.0")
     debug_mode = os.getenv("DEBUG", "False").lower() == "true"
     app.run(host=host, port=3000, debug=debug_mode)
