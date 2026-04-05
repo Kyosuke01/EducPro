@@ -14,11 +14,11 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
     app.json.ensure_ascii = False
-    
+
     # SECURITY: Avoid hard-coded credentials (S2068)
     # Secret key should ALWAYS come from environment variables in production
     secret_key = os.getenv("BACKEND_SECRET_KEY") or os.getenv("API_SECRET_KEY")
-    
+
     if not secret_key:
         # In production, SECRET_KEY MUST be set. Fail loudly and immediately.
         if os.getenv("FLASK_ENV") == "production" or os.getenv("ENVIRONMENT") == "production":
@@ -29,7 +29,7 @@ def create_app():
         secret_key = secrets.token_hex(32)
         print("⚠️  WARNING: Using auto-generated SECRET_KEY for development only!", file=sys.stderr)
         print("⚠️  Set BACKEND_SECRET_KEY in .env for production!", file=sys.stderr)
-    
+
     app.config["SECRET_KEY"] = secret_key
 
     app.config["SQLALCHEMY_DATABASE_URI"] = (
@@ -72,7 +72,7 @@ def create_app():
             secret_key = os.getenv("API_SECRET_KEY")
             if request.headers.get("X-API-Key") != secret_key:
                 return jsonify({"error": "Unauthorized: Invalid API Key"}), 401
-            
+
             # SECURITY: Validation de la session (User-Agent + IP)
             is_valid, response = validate_session_security()
             if not is_valid:
@@ -99,23 +99,23 @@ def create_app():
             "base-uri 'self'; "
             "form-action 'self'"
         )
-        
+
         # Prévention du clickjacking
         response.headers['X-Frame-Options'] = 'DENY'
-        
+
         # Prévention du MIME type sniffing (XSS via fichiers)
         response.headers['X-Content-Type-Options'] = 'nosniff'
-        
+
         # Protection XSS du navigateur (legacy)
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        
+
         # Force HTTPS en production
         if os.getenv("ENVIRONMENT") == "production":
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-        
+
         # Désactiver le referrer policy pour éviter les fuites d'info
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        
+
         return response
 
     @app.route("/health")

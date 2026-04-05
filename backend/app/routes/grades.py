@@ -31,7 +31,7 @@ def get_grades_by_student(student_id):
     )
     if not is_allowed:
         return idor_response
-    
+
     conn = None
     try:
         conn = get_db_connection()

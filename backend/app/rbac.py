@@ -64,25 +64,25 @@ def get_current_user_role():
 def check_idor_access(resource_owner_id, error_message="Accès refusé"):
     """
     SECURITY: Vérification IDOR - Empêche un utilisateur d'accéder à des ressources d'autres utilisateurs.
-    
+
     Les étudiants ne peuvent accéder qu'à leurs propres ressources.
     Les admins/professeurs peuvent accéder à n'importe quoi.
-    
+
     Args:
         resource_owner_id: L'ID du propriétaire de la ressource
         error_message: Message d'erreur personnalisé
-        
+
     Returns:
         Tuple (True, None) si accès autorisé
         Tuple (False, response) si accès refusé avec réponse JSON
     """
     current_user_id = get_current_user_id()
     current_role = get_current_user_role()
-    
+
     # Les admins/teachers peuvent accéder à toutes les ressources
     if current_role in ['admin', 'teacher']:
         return True, None
-    
+
     # Les étudiants ne peuvent accéder qu'à leurs propres ressources
     if current_role == 'student' and current_user_id != int(resource_owner_id):
         safe_attempt = sanitize_log_data(f"Student {current_user_id} tried to access resource of user {resource_owner_id}")
@@ -92,7 +92,7 @@ def check_idor_access(resource_owner_id, error_message="Accès refusé"):
             "message": error_message,
             "status": 403
         }), 403
-    
+
     return True, None
 
 
@@ -100,7 +100,7 @@ def validate_session_security():
     """
     SECURITY: Valide la stabilité de la session (User-Agent, IP).
     Prévient la session hijacking.
-    
+
     Returns:
         Tuple (True, None) si session valide
         Tuple (False, response) si session compromise
@@ -108,11 +108,10 @@ def validate_session_security():
     current_user_id = get_current_user_id()
     if not current_user_id:
         return True, None  # Pas d'utilisateur authentifié
-    
+
     # Vérifier User-Agent
     user_agent = request.headers.get('User-Agent', '')
-    stored_ua = request.headers.get('X-Session-UA', '')
-    
+
     # Note: En production, stocker le User-Agent dans la session server-side
     # Pour maintenant, juste valider sa présence
     if not user_agent:
@@ -122,7 +121,7 @@ def validate_session_security():
             "message": "Invalid session",
             "status": 403
         }), 403
-    
+
     return True, None
 
 
@@ -155,7 +154,7 @@ def require_role(*allowed_roles):
                 safe_path = sanitize_log_data(request.path, 100)
                 safe_method = sanitize_log_data(request.method, 20)
                 safe_ip = sanitize_log_data(str(request.remote_addr), 20)
-                
+
                 security_logger.warning(
                     f"403 FORBIDDEN - User ID: {safe_user_id} | Role: {user_role} | "
                     f"Required: {allowed_roles} | Path: {safe_path} | "
