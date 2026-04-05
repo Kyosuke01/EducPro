@@ -5,6 +5,11 @@ from app.db import get_db_connection
 
 messages_bp = Blueprint("messages", __name__)
 
+# Constants for common error messages
+ERROR_ROLE_USER_ID_REQUIRED = "Paramètres role et user_id requis."
+ERROR_TICKET_NOT_FOUND = "Ticket introuvable."
+ERROR_ACCESS_DENIED = "Accès refusé."
+
 
 def _serialize_dt(value):
     if value is None:
@@ -105,7 +110,7 @@ def list_conversations():
     user_id = request.args.get("user_id", type=int)
 
     if not _valid_role(role) or not user_id:
-        return jsonify({"error": "Paramètres role et user_id requis."}), 400
+        return jsonify({"error": ERROR_ROLE_USER_ID_REQUIRED}), 400
 
     filters = []
     params = []
@@ -176,7 +181,7 @@ def get_conversation(ticket_id):
     user_id = request.args.get("user_id", type=int)
 
     if not _valid_role(role) or not user_id:
-        return jsonify({"error": "Paramètres role et user_id requis."}), 400
+        return jsonify({"error": ERROR_ROLE_USER_ID_REQUIRED}), 400
 
     conn = None
     try:
@@ -198,7 +203,7 @@ def get_conversation(ticket_id):
             ticket = cursor.fetchone()
 
             if not ticket:
-                return jsonify({"error": "Ticket introuvable."}), 404
+                return jsonify({"error": ERROR_TICKET_NOT_FOUND}), 404
 
             # Contrôle d'accès minimal
             is_student_owner = (
@@ -212,9 +217,9 @@ def get_conversation(ticket_id):
                     and ticket.get("created_by_id") == user_id)
             )
             if role == "student" and not is_student_owner:
-                return jsonify({"error": "Accès refusé."}), 403
+                return jsonify({"error": ERROR_ACCESS_DENIED}), 403
             if role == "teacher" and not is_teacher_owner:
-                return jsonify({"error": "Accès refusé."}), 403
+                return jsonify({"error": ERROR_ACCESS_DENIED}), 403
 
             cursor.execute(
                 """
@@ -328,7 +333,7 @@ def append_message(ticket_id):
             )
             ticket = cursor.fetchone()
             if not ticket:
-                return jsonify({"error": "Ticket introuvable."}), 404
+                return jsonify({"error": ERROR_TICKET_NOT_FOUND}), 404
 
             is_student_owner = (
                 ticket.get("student_id") == sender_id
@@ -339,9 +344,9 @@ def append_message(ticket_id):
                 or (ticket.get("created_by_role") == "teacher" and ticket.get("created_by_id") == sender_id)
             )
             if sender_role == "student" and not is_student_owner:
-                return jsonify({"error": "Accès refusé."}), 403
+                return jsonify({"error": ERROR_ACCESS_DENIED}), 403
             if sender_role == "teacher" and not is_teacher_owner:
-                return jsonify({"error": "Accès refusé."}), 403
+                return jsonify({"error": ERROR_ACCESS_DENIED}), 403
 
             cursor.execute(
                 "INSERT INTO SupportMessage (ticket_id, sender_role, sender_id, body) VALUES (%s, %s, %s, %s)",
@@ -373,7 +378,7 @@ def delete_conversation(ticket_id):
     user_id = request.args.get("user_id", type=int)
 
     if not _valid_role(role) or not user_id:
-        return jsonify({"error": "Paramètres role et user_id requis."}), 400
+        return jsonify({"error": ERROR_ROLE_USER_ID_REQUIRED}), 400
 
     conn = None
     try:
@@ -386,7 +391,7 @@ def delete_conversation(ticket_id):
             )
             ticket = cursor.fetchone()
             if not ticket:
-                return jsonify({"error": "Ticket introuvable."}), 404
+                return jsonify({"error": ERROR_TICKET_NOT_FOUND}), 404
 
             # Contrôle d'accès : vérifier que l'utilisateur est propriétaire ou admin
             is_student_owner = (
@@ -401,7 +406,7 @@ def delete_conversation(ticket_id):
 
             # Seuls les propriétaires et les admins peuvent supprimer
             if not (is_admin or (role == "student" and is_student_owner) or (role == "teacher" and is_teacher_owner)):
-                return jsonify({"error": "Accès refusé."}), 403
+                return jsonify({"error": ERROR_ACCESS_DENIED}), 403
 
             # Supprimer tous les messages du ticket
             cursor.execute("DELETE FROM SupportMessage WHERE ticket_id = %s", (ticket_id,))

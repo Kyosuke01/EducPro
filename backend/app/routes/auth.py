@@ -17,6 +17,9 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 auth_bp = Blueprint("auth", __name__)
 
+# Constants
+ERROR_INVALID_2FA_CODE = "Code 2FA invalide"
+
 
 def _format_user_payload(record, role):
     payload = {
@@ -62,7 +65,7 @@ def _process_login_for_user(record, role, code):
 
     if code:
         if not pyotp.TOTP(totp_secret).verify(code):
-            return jsonify({"error": "Code 2FA invalide"}), 401
+            return jsonify({"error": ERROR_INVALID_2FA_CODE}), 401
         return _login_success_response(user_payload)
 
     pending_token = _issue_pending_token(user_payload["id"], role)
@@ -187,7 +190,7 @@ def finalize_login_2fa():
             return jsonify({"error": "Utilisateur introuvable ou A2F désactivée."}), 404
 
         if not pyotp.TOTP(user["totp_secret"]).verify(code):
-            return jsonify({"error": "Code 2FA invalide"}), 401
+            return jsonify({"error": ERROR_INVALID_2FA_CODE}), 401
 
         if role == "student":
             final_role = "student"
@@ -487,7 +490,7 @@ def change_password():
                 if not code:
                     return jsonify({"error": "Code 2FA requis"}), 401
                 if not pyotp.TOTP(user["totp_secret"]).verify(code):
-                    return jsonify({"error": "Code 2FA invalide"}), 401
+                    return jsonify({"error": ERROR_INVALID_2FA_CODE}), 401
 
             hashed = bcrypt.hashpw(data["new_password"].encode('utf-8'), bcrypt.gensalt(14)).decode('utf-8')
             cursor.execute(f"UPDATE {table} SET password = %s WHERE {id_field} = %s", (hashed, data["user_id"]))

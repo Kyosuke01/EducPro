@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "educpro_secret_key_2026"
+app.secret_key = os.getenv("SESSION_SECRET_KEY", "educpro_secret_key_2026")
 app.permanent_session_lifetime = timedelta(minutes=30)
 API_URL = "http://backend:5000"
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
@@ -240,4 +240,6 @@ def privacy():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000, debug=True)
+    host = os.getenv("FRONTEND_HOST", "127.0.0.1")
+    debug_mode = os.getenv("DEBUG", "False").lower() == "true"
+    app.run(host=host, port=3000, debug=debug_mode)
