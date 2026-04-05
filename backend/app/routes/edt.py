@@ -14,6 +14,7 @@ from app.rbac import require_role
 
 edt_bp = Blueprint("edt", __name__)
 
+
 def _serialize_edt(edt_list):
     """Convertit les datetime en chaînes pour tous les créneaux."""
     for entry in edt_list:
@@ -24,6 +25,7 @@ def _serialize_edt(edt_list):
     return edt_list
 
 # GET /api/edt
+
 
 @edt_bp.route("/edt", methods=["GET"])
 def get_all_edt():
@@ -50,6 +52,7 @@ def get_all_edt():
             conn.close()
 
 # GET /api/edt/class/<class_name>
+
 
 @edt_bp.route("/edt/class/<string:class_name>", methods=["GET"])
 def get_edt_by_class(class_name):
@@ -78,6 +81,7 @@ def get_edt_by_class(class_name):
 
 # GET /api/edt/teacher/<teacher_l_name>
 
+
 @edt_bp.route("/edt/teacher/<string:teacher_l_name>", methods=["GET"])
 def get_edt_by_teacher(teacher_l_name):
     """Récupère l'emploi du temps d'un professeur (par son nom de famille)."""
@@ -104,6 +108,7 @@ def get_edt_by_teacher(teacher_l_name):
             conn.close()
 
 # POST /api/edt
+
 
 @edt_bp.route("/edt", methods=["POST"])
 @require_role('admin')

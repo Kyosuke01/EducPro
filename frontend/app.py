@@ -14,12 +14,14 @@ API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
 USER_AGENT = "educrpro/1.0"
 TWO_FACTOR_TEMPLATE = "two_factor.html"
 
+
 def get_secure_headers():
     return {
         "X-API-Key": API_SECRET_KEY,
         "User-Agent": USER_AGENT,
         "Content-Type": "application/json"
     }
+
 
 def persist_user_session(user: dict):
     session.permanent = True
@@ -34,9 +36,11 @@ def persist_user_session(user: dict):
     session["ip"] = request.remote_addr
     session["user_agent"] = request.headers.get("User-Agent")
 
+
 def clear_pending_2fa():
     session.pop("pending_2fa_token", None)
     session.pop("pending_user_preview", None)
+
 
 def start_pending_2fa(token, user_preview=None):
     session["pending_2fa_token"] = token
@@ -44,12 +48,14 @@ def start_pending_2fa(token, user_preview=None):
 
 # Page de connexion
 
+
 @app.route("/", methods=["GET"])
 def index():
     error = request.args.get("error")
     return render_template("index.html", error=error)
 
 # POST /login — Proxy vers le backend
+
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -83,6 +89,7 @@ def login():
 
     except requests.exceptions.RequestException:
         return redirect(url_for("index", error="Impossible de contacter le serveur. Réessayez."))
+
 
 @app.route("/verify-2fa", methods=["GET", "POST"])
 def two_factor():
@@ -118,6 +125,7 @@ def two_factor():
 
 # Dashboard — protégé par session
 
+
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if "user_id" not in session:
@@ -142,6 +150,7 @@ def dashboard():
 
 # Synchronisation de session — 2FA
 
+
 @app.route("/session/sync-2fa", methods=["POST"])
 def sync_2fa_session():
     """Met à jour l'état has_2fa dans la session Flask après activation/désactivation."""
@@ -152,10 +161,12 @@ def sync_2fa_session():
     session["has_2fa"] = bool(data.get("has_2fa", False))
     return jsonify({"ok": True, "has_2fa": session["has_2fa"]}), 200
 
+
 @app.route("/logout", methods=["GET"])
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
 
 def _check_rbac_permission(method, path, role):
     """Check if user has permission to execute this method on this resource."""
@@ -178,6 +189,7 @@ def _check_rbac_permission(method, path, role):
 
     return True, None, None
 
+
 def _make_api_request(method, url, headers):
     """Centralized API request maker."""
     timeout = 10
@@ -193,6 +205,7 @@ def _make_api_request(method, url, headers):
         raise ValueError(f"Unsupported method: {method}")
 
 # API Proxy — redirige les appels vers le backend
+
 
 @app.route("/api/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
 def api_proxy(path):
@@ -227,15 +240,18 @@ def api_proxy(path):
 
 # Pages Légales
 
+
 @app.route("/legal", methods=["GET"])
 def legal():
     """Page des Mentions Légales"""
     return render_template("legal.html")
 
+
 @app.route("/privacy", methods=["GET"])
 def privacy():
     """Page de la Politique de Confidentialité"""
     return render_template("privacy.html")
+
 
 if __name__ == "__main__":
     host = os.getenv("FRONTEND_HOST", "127.0.0.1")

@@ -5,6 +5,7 @@ import bcrypt
 
 users_bp = Blueprint("users", __name__)
 
+
 def _class_has_capacity(conn, class_name, exclude_student_id=None):
     if not class_name:
         return False
@@ -27,6 +28,7 @@ def _class_has_capacity(conn, class_name, exclude_student_id=None):
         return total < class_row["max_capacity"]
 
 # GET tous les utilisateurs (Étudiants + Professeurs)
+
 
 @users_bp.route("/", methods=["GET"])
 def get_users():
@@ -60,6 +62,7 @@ def get_users():
 
 # POST créer un utilisateur (Sécurisé par accès Admin)
 
+
 def _validate_user_data(data):
     """Validate required fields and return parsed data."""
     user_type = data.get("user_type")
@@ -79,6 +82,7 @@ def _validate_user_data(data):
         "email": email,
         "hashed_password": hashed_password
     }, None, None
+
 
 def _create_student(cursor, conn, user_data, data):
     """Create a student user."""
@@ -106,6 +110,7 @@ def _create_student(cursor, conn, user_data, data):
     ))
     return True, None, None
 
+
 def _create_teacher(cursor, user_data, data):
     """Create a teacher user."""
     topic_name = data.get("topic_name")
@@ -125,6 +130,7 @@ def _create_teacher(cursor, user_data, data):
         topic_name
     ))
     return True, None, None
+
 
 @users_bp.route("/", methods=["POST"])
 @require_role('admin')
@@ -165,6 +171,7 @@ def create_user():
             conn.close()
 
 # PUT modifier un utilisateur
+
 
 @users_bp.route("/<user_type>/<int:user_id>", methods=["PUT"])
 @require_role('admin')
@@ -218,6 +225,7 @@ def update_user(user_type, user_id):
             conn.close()
 
 # DELETE supprimer un utilisateur
+
 
 @users_bp.route("/<user_type>/<int:user_id>", methods=["DELETE"])
 @require_role('admin')

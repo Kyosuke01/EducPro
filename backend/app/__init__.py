@@ -9,6 +9,7 @@ import sys
 load_dotenv()
 db = SQLAlchemy()
 
+
 def _ensure_secret_key():
     """
     SECURITY: Ensure SECRET_KEY is properly configured from environment.
@@ -43,6 +44,7 @@ def _ensure_secret_key():
     # Reload environment variables
     load_dotenv()
     print("⚠️  Generated and saved BACKEND_SECRET_KEY to .env (development only)", file=sys.stderr)
+
 
 def create_app():
     # Ensure SECRET_KEY is properly configured from environment
@@ -82,43 +84,44 @@ def create_app():
     app.register_blueprint(grades_bp, url_prefix="/api")
     app.register_blueprint(messages_bp, url_prefix="/api")
 
-def _check_user_agent(user_agent):
-    """Validate User-Agent header."""
-    valid_agents = ["educrpro/1.0", "educpro-admin/1.0"]
-    if user_agent not in valid_agents:
-        return False, jsonify({"error": "Forbidden: Invalid User-Agent"}), 403
-    return True, None, None
-
-def _check_api_key(provided_key):
-    """Validate API key header."""
-    secret_key = os.getenv("API_SECRET_KEY")
-    if provided_key != secret_key:
-        return False, jsonify({"error": "Unauthorized: Invalid API Key"}), 401
-    return True, None, None
-
-def _validate_api_request():
-    """Validate API request (User-Agent + API Key + Session)."""
-    # Check User-Agent
-    user_agent = request.headers.get("User-Agent")
-    is_valid_ua, ua_response, ua_code = _check_user_agent(user_agent)
-    if not is_valid_ua:
-        return ua_response, ua_code
-
-    # Check API Key
-    api_key = request.headers.get("X-API-Key")
-    is_valid_key, key_response, key_code = _check_api_key(api_key)
-    if not is_valid_key:
-        return key_response, key_code
-
-    # Validate session security
-    from app.rbac import validate_session_security
-    is_valid_session, session_response = validate_session_security()
-    if not is_valid_session:
-        return session_response, 403
-
-    return None, None
-
+    # Import inside create_app for route-specific dependencies
     from flask import request, jsonify, render_template
+    from app.rbac import validate_session_security
+
+    def _check_user_agent(user_agent):
+        """Validate User-Agent header."""
+        valid_agents = ["educrpro/1.0", "educpro-admin/1.0"]
+        if user_agent not in valid_agents:
+            return False, jsonify({"error": "Forbidden: Invalid User-Agent"}), 403
+        return True, None, None
+
+    def _check_api_key(provided_key):
+        """Validate API key header."""
+        secret_key = os.getenv("API_SECRET_KEY")
+        if provided_key != secret_key:
+            return False, jsonify({"error": "Unauthorized: Invalid API Key"}), 401
+        return True, None, None
+
+    def _validate_api_request():
+        """Validate API request (User-Agent + API Key + Session)."""
+        # Check User-Agent
+        user_agent = request.headers.get("User-Agent")
+        is_valid_ua, ua_response, ua_code = _check_user_agent(user_agent)
+        if not is_valid_ua:
+            return ua_response, ua_code
+
+        # Check API Key
+        api_key = request.headers.get("X-API-Key")
+        is_valid_key, key_response, key_code = _check_api_key(api_key)
+        if not is_valid_key:
+            return key_response, key_code
+
+        # Validate session security
+        is_valid_session, session_response = validate_session_security()
+        if not is_valid_session:
+            return session_response, 403
+
+        return None, None
 
     @app.before_request
     def require_api_key_and_ua():
