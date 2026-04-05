@@ -10,20 +10,16 @@ ERROR_ROLE_USER_ID_REQUIRED = "Paramètres role et user_id requis."
 ERROR_TICKET_NOT_FOUND = "Ticket introuvable."
 ERROR_ACCESS_DENIED = "Accès refusé."
 
-
 def _serialize_dt(value):
     if value is None:
         return None
     return value.isoformat() if hasattr(value, "isoformat") else str(value)
 
-
 def _valid_role(role):
     return role in {"student", "teacher", "admin"}
 
-
-# ──────────────────────────────────────────────
 # GET /api/notifications
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/notifications", methods=["GET"])
 def get_notifications():
     """Renvoie une petite liste de notifications mockées pour l'UI."""
@@ -36,10 +32,8 @@ def get_notifications():
     ]
     return jsonify({"notifications": sample[:limit]}), 200
 
-
-# ──────────────────────────────────────────────
 # GET /api/messages/recipients
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/messages/recipients", methods=["GET"])
 def search_recipients():
     target = request.args.get("type", "all")
@@ -100,10 +94,8 @@ def search_recipients():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/messages/conversations
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/messages/conversations", methods=["GET"])
 def list_conversations():
     role = request.args.get("role")
@@ -171,10 +163,8 @@ def list_conversations():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/messages/conversations/<id>
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/messages/conversations/<int:ticket_id>", methods=["GET"])
 def get_conversation(ticket_id):
     role = request.args.get("role")
@@ -244,10 +234,8 @@ def get_conversation(ticket_id):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # POST /api/messages/conversations
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/messages/conversations", methods=["POST"])
 def create_conversation():
     data = request.get_json() or {}
@@ -309,10 +297,8 @@ def create_conversation():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # POST /api/messages/conversations/<id>/messages
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/messages/conversations/<int:ticket_id>/messages", methods=["POST"])
 def append_message(ticket_id):
     data = request.get_json() or {}
@@ -367,10 +353,8 @@ def append_message(ticket_id):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # DELETE /api/messages/conversations/<id>
-# ──────────────────────────────────────────────
+
 @messages_bp.route("/messages/conversations/<int:ticket_id>", methods=["DELETE"])
 def delete_conversation(ticket_id):
     """Supprime un ticket et tous ses messages (fermeture de la conversation)."""

@@ -4,7 +4,7 @@
 
   // sidebar submenu collapsible js
   $(".sidebar-menu .dropdown").on("click", function () {
-    var item = $(this);
+    const item = $(this);
     item.siblings(".dropdown").children(".sidebar-submenu").slideUp();
 
     item.siblings(".dropdown").removeClass("dropdown-open");
@@ -49,7 +49,7 @@
   //to keep the current page active
   $(function () {
     for (
-      var nk = globalThis.location,
+      let nk = globalThis.location,
         o = $("ul#sidebar-menu a")
           .filter(function () {
             return this.href == nk;
@@ -87,7 +87,7 @@
    * Utility function to update the theme setting on the html tag.
    */
   function updateThemeOnHtmlEl({ theme }) {
-    document.querySelector("html").setAttribute("data-theme", theme);
+    document.documentElement.dataset.theme = theme;
   }
 
   /**
@@ -130,18 +130,15 @@
       const prefersDark = globalThis.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
-      document.documentElement.setAttribute(
-        "data-theme",
-        prefersDark ? "dark" : "light"
-      );
+      document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
     } else {
-      document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.dataset.theme = theme;
     }
   }
 
   buttons.forEach((button) => {
     button.addEventListener("click", () => {
-      const theme = button.getAttribute("data-theme");
+      const theme = button.dataset.theme;
 
       // Apply theme
       applyTheme(theme);
@@ -162,7 +159,7 @@
   if (savedTheme) {
     applyTheme(savedTheme);
     buttons.forEach((btn) => {
-      if (btn.getAttribute("data-theme") === savedTheme) {
+      if (btn.dataset.theme === savedTheme) {
         btn.classList.add("active");
       }
     });
@@ -239,9 +236,9 @@
   }
 
   colorPickerButtons.forEach((btn, idx) => {
-    console.log("[color-picker] bind click", idx, btn?.getAttribute("data-color"));
+    console.log("[color-picker] bind click", idx, btn?.dataset.color);
     btn.addEventListener("click", () => {
-      const color = btn.getAttribute("data-color");
+      const color = btn.dataset.color;
 
       console.log("[color-picker] click", color);
 
@@ -280,7 +277,7 @@
   function initializePasswordToggle(toggleSelector) {
     $(toggleSelector).on("click", function () {
       $(this).toggleClass("ri-eye-off-line");
-      var input = $($(this).attr("data-toggle"));
+      const input = $($(this).attr("data-toggle"));
       if (input.attr("type") === "password") {
         input.attr("type", "text");
       } else {

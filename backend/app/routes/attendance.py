@@ -14,10 +14,8 @@ from app.rbac import require_role, check_idor_access
 
 attendance_bp = Blueprint("attendance", __name__)
 
-
-# ──────────────────────────────────────────────
 # GET /api/attendance/stats
-# ──────────────────────────────────────────────
+
 @attendance_bp.route("/attendance/stats", methods=["GET"])
 def get_attendance_stats():
     """Récupère les statistiques globales d'assiduité (tous les étudiants)."""
@@ -48,10 +46,8 @@ def get_attendance_stats():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/attendance/student/<int:student_id>
-# ──────────────────────────────────────────────
+
 @attendance_bp.route("/attendance/student/<int:student_id>", methods=["GET"])
 def get_attendance_by_student(student_id):
     """
@@ -82,10 +78,8 @@ def get_attendance_by_student(student_id):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/attendance/class/<string:class_name>
-# ──────────────────────────────────────────────
+
 @attendance_bp.route("/attendance/class/<string:class_name>", methods=["GET"])
 def get_attendance_by_class(class_name):
     """Récupère les absences/retards de tous les étudiants d'une classe."""
@@ -112,10 +106,8 @@ def get_attendance_by_class(class_name):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # POST /api/attendance
-# ──────────────────────────────────────────────
+
 @attendance_bp.route("/attendance", methods=["POST"])
 @require_role('admin', 'teacher')
 def create_or_update_attendance():

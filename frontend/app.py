@@ -12,7 +12,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 API_URL = "http://backend:5000"
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
 USER_AGENT = "educrpro/1.0"
-
+TWO_FACTOR_TEMPLATE = "two_factor.html"
 
 def get_secure_headers():
     return {
@@ -20,7 +20,6 @@ def get_secure_headers():
         "User-Agent": USER_AGENT,
         "Content-Type": "application/json"
     }
-
 
 def persist_user_session(user: dict):
     session.permanent = True
@@ -35,29 +34,23 @@ def persist_user_session(user: dict):
     session["ip"] = request.remote_addr
     session["user_agent"] = request.headers.get("User-Agent")
 
-
 def clear_pending_2fa():
     session.pop("pending_2fa_token", None)
     session.pop("pending_user_preview", None)
-
 
 def start_pending_2fa(token, user_preview=None):
     session["pending_2fa_token"] = token
     session["pending_user_preview"] = user_preview or {}
 
-
-# ──────────────────────────────────────────────
 # Page de connexion
-# ──────────────────────────────────────────────
-@app.route("/")
+
+@app.route("/", methods=["GET"])
 def index():
     error = request.args.get("error")
     return render_template("index.html", error=error)
 
-
-# ──────────────────────────────────────────────
 # POST /login — Proxy vers le backend
-# ──────────────────────────────────────────────
+
 @app.route("/login", methods=["POST"])
 def login():
     clear_pending_2fa()
@@ -91,7 +84,6 @@ def login():
     except requests.exceptions.RequestException:
         return redirect(url_for("index", error="Impossible de contacter le serveur. Réessayez."))
 
-
 @app.route("/verify-2fa", methods=["GET", "POST"])
 def two_factor():
     pending_token = session.get("pending_2fa_token")
@@ -102,11 +94,11 @@ def two_factor():
         return redirect(url_for("index", error="La vérification A2F a expiré. Veuillez vous reconnecter."))
 
     if request.method == "GET":
-        return render_template("two_factor.html", user=pending_user, error=None)
+        return render_template(TWO_FACTOR_TEMPLATE, user=pending_user, error=None)
 
     code = (request.form.get("code") or "").strip()
     if len(code) != 6 or not code.isdigit():
-        return render_template("two_factor.html", user=pending_user, error="Veuillez saisir un code à 6 chiffres.")
+        return render_template(TWO_FACTOR_TEMPLATE, user=pending_user, error="Veuillez saisir un code à 6 chiffres.")
 
     try:
         payload = {"token": pending_token, "code": code}
@@ -120,15 +112,13 @@ def two_factor():
             return redirect(url_for("dashboard"))
         else:
             error_msg = resp.json().get("error", "Code A2F invalide.")
-            return render_template("two_factor.html", user=pending_user, error=error_msg)
+            return render_template(TWO_FACTOR_TEMPLATE, user=pending_user, error=error_msg)
     except requests.exceptions.RequestException:
-        return render_template("two_factor.html", user=pending_user, error="Impossible de contacter le serveur. Réessayez.")
+        return render_template(TWO_FACTOR_TEMPLATE, user=pending_user, error="Impossible de contacter le serveur. Réessayez.")
 
-
-# ──────────────────────────────────────────────
 # Dashboard — protégé par session
-# ──────────────────────────────────────────────
-@app.route("/dashboard")
+
+@app.route("/dashboard", methods=["GET"])
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("index", error="Veuillez vous connecter."))
@@ -148,13 +138,10 @@ def dashboard():
                            has_2fa=session.get("has_2fa", False)
                            )
 
-
-# ──────────────────────────────────────────────
 # Logout
-# ──────────────────────────────────────────────
-# ──────────────────────────────────────────────
+
 # Synchronisation de session — 2FA
-# ──────────────────────────────────────────────
+
 @app.route("/session/sync-2fa", methods=["POST"])
 def sync_2fa_session():
     """Met à jour l'état has_2fa dans la session Flask après activation/désactivation."""
@@ -165,16 +152,48 @@ def sync_2fa_session():
     session["has_2fa"] = bool(data.get("has_2fa", False))
     return jsonify({"ok": True, "has_2fa": session["has_2fa"]}), 200
 
-
-@app.route("/logout")
+@app.route("/logout", methods=["GET"])
 def logout():
     session.clear()
     return redirect(url_for("index"))
 
+def _check_rbac_permission(method, path, role):
+    """Check if user has permission to execute this method on this resource."""
+    public_routes = ["auth/forgot-password", "auth/reset-password"]
 
-# ──────────────────────────────────────────────
+    if method not in ["POST", "PUT", "DELETE"] or path in public_routes:
+        return True, None  # No RBAC restrictions
+
+    first_segment = path.split("/")[0] if path else ""
+
+    if role == "student":
+        allowed = ["messages", "auth", "users"]
+        if first_segment not in allowed:
+            return False, jsonify({"error": "Action refusée. Accès administrateur requis."}), 403
+
+    elif role == "teacher":
+        allowed = ["attendance", "grades", "messages", "edt", "auth", "users"]
+        if first_segment not in allowed:
+            return False, jsonify({"error": "Action non autorisée pour un enseignant."}), 403
+
+    return True, None, None
+
+def _make_api_request(method, url, headers):
+    """Centralized API request maker."""
+    timeout = 10
+    if method == "GET":
+        return requests.get(url, headers=headers, params=request.args, timeout=timeout)
+    elif method == "POST":
+        return requests.post(url, headers=headers, json=request.get_json(), timeout=timeout)
+    elif method == "PUT":
+        return requests.put(url, headers=headers, json=request.get_json(), timeout=timeout)
+    elif method == "DELETE":
+        return requests.delete(url, headers=headers, timeout=timeout)
+    else:
+        raise ValueError(f"Unsupported method: {method}")
+
 # API Proxy — redirige les appels vers le backend
-# ──────────────────────────────────────────────
+
 @app.route("/api/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
 def api_proxy(path):
     public_routes = ["auth/forgot-password", "auth/reset-password"]
@@ -182,35 +201,18 @@ def api_proxy(path):
     if path not in public_routes and "user_id" not in session:
         return jsonify({"error": "Non authentifié"}), 401
 
+    # Check RBAC permission
+    role = session.get("role")
+    method = request.method
+    is_allowed, error_response, error_code = _check_rbac_permission(method, path, role)
+    if not is_allowed:
+        return error_response, error_code
+
     url = f"{API_URL}/api/{path}"
     headers = get_secure_headers()
 
-    # --- ROLE-BASED ACCESS CONTROL (RBAC) ---
-    role = session.get("role")
-    method = request.method
-    first_segment = path.split("/")[0] if path else ""
-
-    if method in ["POST", "PUT", "DELETE"] and path not in public_routes:
-        if role == "student":
-            if first_segment not in ["messages", "auth", "users"]:
-                return jsonify({"error": "Action refusée. Accès administrateur requis."}), 403
-        elif role == "teacher":
-            # Les professeurs ne peuvent écrire QUE les présences, notes, et messages
-            if first_segment not in ["attendance", "grades", "messages", "edt", "auth", "users"]:
-                return jsonify({"error": "Action non autorisée pour un enseignant."}), 403
-    # ----------------------------------------
-
     try:
-        if request.method == "GET":
-            resp = requests.get(url, headers=headers, params=request.args, timeout=10)
-        elif request.method == "POST":
-            resp = requests.post(url, headers=headers, json=request.get_json(), timeout=10)
-        elif request.method == "PUT":
-            resp = requests.put(url, headers=headers, json=request.get_json(), timeout=10)
-        elif request.method == "DELETE":
-            resp = requests.delete(url, headers=headers, timeout=10)
-        else:
-            return jsonify({"error": "Méthode non supportée"}), 405
+        resp = _make_api_request(method, url, headers)
 
         # Log minimal proxy info pour diagnostiquer les retours inattendus
         app.logger.info(f"[proxy] {request.method} /api/{path} -> {resp.status_code} {resp.headers.get('Content-Type')}")
@@ -223,21 +225,17 @@ def api_proxy(path):
         app.logger.error(f"[proxy] backend exception {e}")
         return jsonify({"error": f"Erreur de communication avec le backend : {str(e)}"}), 502
 
-
-# ──────────────────────────────────────────────
 # Pages Légales
-# ──────────────────────────────────────────────
-@app.route("/legal")
+
+@app.route("/legal", methods=["GET"])
 def legal():
     """Page des Mentions Légales"""
     return render_template("legal.html")
 
-
-@app.route("/privacy")
+@app.route("/privacy", methods=["GET"])
 def privacy():
     """Page de la Politique de Confidentialité"""
     return render_template("privacy.html")
-
 
 if __name__ == "__main__":
     host = os.getenv("FRONTEND_HOST", "127.0.0.1")

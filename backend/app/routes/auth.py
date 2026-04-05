@@ -20,7 +20,6 @@ auth_bp = Blueprint("auth", __name__)
 # Constants
 ERROR_INVALID_2FA_CODE = "Code 2FA invalide"
 
-
 def _format_user_payload(record, role):
     payload = {
         "id": record["student_id"] if role == "student" else record["teacher_id"],
@@ -39,22 +38,18 @@ def _format_user_payload(record, role):
 
     return payload
 
-
 def _login_success_response(payload):
     return jsonify({
         "message": "Connexion réussie.",
         "user": payload
     }), 200
 
-
 def _get_2fa_serializer():
     secret = current_app.config.get("SECRET_KEY")
     return URLSafeTimedSerializer(secret, salt="login-2fa")
 
-
 def _issue_pending_token(user_id, role):
     return _get_2fa_serializer().dumps({"user_id": user_id, "role": role})
-
 
 def _process_login_for_user(record, role, code):
     user_payload = _format_user_payload(record, role)
@@ -76,15 +71,12 @@ def _process_login_for_user(record, role, code):
         "user": user_payload
     }), 202
 
-
 def _load_pending_token(token):
     serializer = _get_2fa_serializer()
     return serializer.loads(token, max_age=300)
 
-
-# ──────────────────────────────────────────────
 # POST /api/auth/login
-# ──────────────────────────────────────────────
+
 @auth_bp.route("/auth/login", methods=["POST"])
 def login():
     """
@@ -143,7 +135,6 @@ def login():
     finally:
         if conn:
             conn.close()
-
 
 @auth_bp.route("/auth/login/2fa", methods=["POST"])
 def finalize_login_2fa():
@@ -204,10 +195,8 @@ def finalize_login_2fa():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/students
-# ──────────────────────────────────────────────
+
 @auth_bp.route("/students", methods=["GET"])
 def get_all_students():
     """Liste de tous les étudiants."""
@@ -234,10 +223,8 @@ def get_all_students():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/students/<int:id>
-# ──────────────────────────────────────────────
+
 @auth_bp.route("/students/<int:id>", methods=["GET"])
 def get_student(id):
     """Récupère les informations d'un étudiant par son identifiant."""
@@ -263,10 +250,8 @@ def get_student(id):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/teachers
-# ──────────────────────────────────────────────
+
 @auth_bp.route("/teachers", methods=["GET"])
 def get_all_teachers():
     """Liste de tous les professeurs."""
@@ -288,10 +273,8 @@ def get_all_teachers():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/teachers/<int:id>
-# ──────────────────────────────────────────────
+
 @auth_bp.route("/teachers/<int:id>", methods=["GET"])
 def get_teacher(id):
     """Récupère les informations d'un professeur par son identifiant."""
@@ -317,10 +300,7 @@ def get_teacher(id):
         if conn:
             conn.close()
 
-# ──────────────────────────────────────────────
 # 2FA & PASSWORD ENDPOINTS
-# ──────────────────────────────────────────────
-
 
 @auth_bp.route("/auth/2fa/generate", methods=["GET"])
 def generate_2fa():
@@ -333,7 +313,6 @@ def generate_2fa():
     email = request.args.get("email", "User")
     uri = pyotp.totp.TOTP(secret).provisioning_uri(name=email, issuer_name="EducPro")
     return jsonify({"secret": secret, "uri": uri}), 200
-
 
 @auth_bp.route("/auth/2fa/verify", methods=["POST"])
 def verify_2fa():
@@ -365,7 +344,6 @@ def verify_2fa():
     finally:
         if conn:
             conn.close()
-
 
 @auth_bp.route("/auth/forgot-password", methods=["POST"])
 def forgot_password():
@@ -406,7 +384,6 @@ def forgot_password():
     finally:
         if conn:
             conn.close()
-
 
 @auth_bp.route("/auth/reset-password", methods=["POST"])
 def reset_password():
@@ -459,7 +436,6 @@ def reset_password():
         if conn:
             conn.close()
 
-
 @auth_bp.route("/users/change-password", methods=["POST"])
 def change_password():
     """
@@ -502,7 +478,6 @@ def change_password():
     finally:
         if conn:
             conn.close()
-
 
 @auth_bp.route("/auth/2fa/disable", methods=["POST"])
 def disable_2fa():

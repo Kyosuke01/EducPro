@@ -13,10 +13,8 @@ from app.rbac import require_role
 
 classes_bp = Blueprint("classes", __name__)
 
-
-# ──────────────────────────────────────────────
 # GET /api/classes
-# ──────────────────────────────────────────────
+
 @classes_bp.route("/classes", methods=["GET"])
 def get_all_classes():
     """Liste de toutes les classes."""
@@ -48,10 +46,8 @@ def get_all_classes():
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/classes/<class_name>/students
-# ──────────────────────────────────────────────
+
 @classes_bp.route("/classes/<string:class_name>/students", methods=["GET"])
 def get_students_by_class(class_name):
     """Récupère la liste des étudiants inscrits dans une classe spécifique."""
@@ -101,10 +97,8 @@ def get_students_by_class(class_name):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/topics
-# ──────────────────────────────────────────────
+
 @classes_bp.route("/topics", methods=["GET"])
 def get_all_topics():
     """Récupère la liste de toutes les matières disponibles."""
@@ -123,7 +117,6 @@ def get_all_topics():
     finally:
         if conn:
             conn.close()
-
 
 @classes_bp.route("/classes/<int:class_id>/assign-teacher", methods=["PUT"])
 @require_role('admin')

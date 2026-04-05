@@ -5,7 +5,6 @@ import bcrypt
 
 users_bp = Blueprint("users", __name__)
 
-
 def _class_has_capacity(conn, class_name, exclude_student_id=None):
     if not class_name:
         return False
@@ -28,7 +27,6 @@ def _class_has_capacity(conn, class_name, exclude_student_id=None):
         return total < class_row["max_capacity"]
 
 # GET tous les utilisateurs (Étudiants + Professeurs)
-
 
 @users_bp.route("/", methods=["GET"])
 def get_users():
@@ -62,6 +60,71 @@ def get_users():
 
 # POST créer un utilisateur (Sécurisé par accès Admin)
 
+def _validate_user_data(data):
+    """Validate required fields and return parsed data."""
+    user_type = data.get("user_type")
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not all([user_type, first_name, last_name, email, password]):
+        return None, jsonify({"error": "Tous les champs (nom, prénom, email, mot de passe) sont requis."}), 400
+
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(14)).decode('utf-8')
+    return {
+        "user_type": user_type,
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "hashed_password": hashed_password
+    }, None, None
+
+def _create_student(cursor, conn, user_data, data):
+    """Create a student user."""
+    class_name = data.get("class_name")
+    if not class_name:
+        return False, jsonify({"error": "La classe est requise pour un étudiant."}), 400
+
+    try:
+        if not _class_has_capacity(conn, class_name):
+            return False, jsonify({"error": "Cette classe a atteint sa capacité maximale (35 élèves)."}), 400
+    except ValueError as err:
+        return False, jsonify({"error": str(err)}), 400
+
+    sql_insert = (
+        "INSERT INTO Student "
+        "(first_name, last_name, mail_student, password, class_name) "
+        "VALUES (%s, %s, %s, %s, %s)"
+    )
+    cursor.execute(sql_insert, (
+        user_data["first_name"],
+        user_data["last_name"],
+        user_data["email"],
+        user_data["hashed_password"],
+        class_name
+    ))
+    return True, None, None
+
+def _create_teacher(cursor, user_data, data):
+    """Create a teacher user."""
+    topic_name = data.get("topic_name")
+    if not topic_name:
+        return False, jsonify({"error": "La matière est requise pour un professeur."}), 400
+
+    sql_insert = (
+        "INSERT INTO Teacher "
+        "(first_name, last_name, mail_teacher, password, topic_name, is_admin) "
+        "VALUES (%s, %s, %s, %s, %s, 0)"
+    )
+    cursor.execute(sql_insert, (
+        user_data["first_name"],
+        user_data["last_name"],
+        user_data["email"],
+        user_data["hashed_password"],
+        topic_name
+    ))
+    return True, None, None
 
 @users_bp.route("/", methods=["POST"])
 @require_role('admin')
@@ -70,54 +133,23 @@ def create_user():
     if not data:
         return jsonify({"error": "Données invalides."}), 400
 
-    user_type = data.get("user_type")
-    first_name = data.get("first_name")
-    last_name = data.get("last_name")
-    email = data.get("email")
-    password = data.get("password")
+    user_data, error_resp, error_code = _validate_user_data(data)
+    if error_resp is not None:
+        return error_resp, error_code
 
-    if not all([user_type, first_name, last_name, email, password]):
-        return jsonify({"error": "Tous les champs (nom, prénom, email, mot de passe) sont requis."}), 400
-
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(14)).decode('utf-8')
-
+    user_type = user_data["user_type"]
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
             if user_type == "student":
-                class_name = data.get("class_name")
-                if not class_name:
-                    return jsonify({"error": "La classe est requise pour un étudiant."}), 400
-                try:
-                    if not _class_has_capacity(conn, class_name):
-                        return jsonify({"error": "Cette classe a atteint sa capacité maximale (35 élèves)."}), 400
-                except ValueError as err:
-                    return jsonify({"error": str(err)}), 400
-
-                sql_insert = (
-                    "INSERT INTO Student "
-                    "(first_name, last_name, mail_student, password, class_name) "
-                    "VALUES (%s, %s, %s, %s, %s)"
-                )
-                cursor.execute(
-                    sql_insert,
-                    (first_name, last_name, email, hashed_password, class_name)
-                )
+                is_ok, err_resp, err_code = _create_student(cursor, conn, user_data, data)
+                if not is_ok:
+                    return err_resp, err_code
             elif user_type == "teacher":
-                topic_name = data.get("topic_name")
-                if not topic_name:
-                    return jsonify({"error": "La matière est requise pour un professeur."}), 400
-
-                sql_insert = (
-                    "INSERT INTO Teacher "
-                    "(first_name, last_name, mail_teacher, password, topic_name, is_admin) "
-                    "VALUES (%s, %s, %s, %s, %s, 0)"
-                )
-                cursor.execute(
-                    sql_insert,
-                    (first_name, last_name, email, hashed_password, topic_name)
-                )
+                is_ok, err_resp, err_code = _create_teacher(cursor, user_data, data)
+                if not is_ok:
+                    return err_resp, err_code
             else:
                 return jsonify({"error": "Type d'utilisateur invalide."}), 400
 
@@ -133,7 +165,6 @@ def create_user():
             conn.close()
 
 # PUT modifier un utilisateur
-
 
 @users_bp.route("/<user_type>/<int:user_id>", methods=["PUT"])
 @require_role('admin')
@@ -187,7 +218,6 @@ def update_user(user_type, user_id):
             conn.close()
 
 # DELETE supprimer un utilisateur
-
 
 @users_bp.route("/<user_type>/<int:user_id>", methods=["DELETE"])
 @require_role('admin')

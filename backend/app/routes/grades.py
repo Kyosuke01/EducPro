@@ -14,10 +14,8 @@ from app.rbac import require_role, check_idor_access
 
 grades_bp = Blueprint("grades", __name__)
 
-
-# ──────────────────────────────────────────────
 # GET /api/grades/student/<int:student_id>
-# ──────────────────────────────────────────────
+
 @grades_bp.route("/grades/student/<int:student_id>", methods=["GET"])
 def get_grades_by_student(student_id):
     """
@@ -48,10 +46,8 @@ def get_grades_by_student(student_id):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/grades/topic/<string:topic_name>
-# ──────────────────────────────────────────────
+
 @grades_bp.route("/grades/topic/<string:topic_name>", methods=["GET"])
 @require_role('teacher', 'admin')
 def get_grades_by_topic(topic_name):
@@ -72,10 +68,8 @@ def get_grades_by_topic(topic_name):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # GET /api/grades/class/<string:class_name>
-# ──────────────────────────────────────────────
+
 @grades_bp.route("/grades/class/<string:class_name>", methods=["GET"])
 @require_role('teacher', 'admin')
 def get_grades_by_class(class_name):
@@ -103,10 +97,8 @@ def get_grades_by_class(class_name):
         if conn:
             conn.close()
 
-
-# ──────────────────────────────────────────────
 # POST /api/grades
-# ──────────────────────────────────────────────
+
 @grades_bp.route("/grades", methods=["POST"])
 @require_role('admin', 'teacher')
 def create_grade():
