@@ -45,9 +45,18 @@ function getMonProfilContent() {
   return loadTemplate('profile');
 }
 
-function initMonProfil() {
-  const roleText = USER.role === 'admin' ? 'Administrateur' : (USER.role === 'teacher' ? 'Professeur' : 'Étudiant');
-  
+// Helper: Get role display text
+function getRoleText() {
+  const roles = {
+    'admin': 'Administrateur',
+    'teacher': 'Professeur',
+    'student': 'Étudiant'
+  };
+  return roles[USER.role] || 'Utilisateur';
+}
+
+// Helper: Populate profile fields
+function populateProfileFields(roleText) {
   const fields = {
     profileLastName: USER.lastName || '-',
     profileFirstName: USER.firstName || '-',
@@ -57,21 +66,26 @@ function initMonProfil() {
     profileRoleBadge: roleText
   };
 
-  for (const [id, val] of Object.entries(fields)) {
+  Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
-  }
+  });
+}
 
-  // Ajouter les initiales
+// Helper: Set profile initials
+function setProfileInitials() {
   const initialsEl = document.getElementById('profileInitials');
-  if (initialsEl) {
-    const firstName = USER.firstName || '';
-    const lastName = USER.lastName || '';
-    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || '--';
-    initialsEl.textContent = initials;
-  }
+  if (!initialsEl) return;
+  
+  const firstName = USER.firstName || '';
+  const lastName = USER.lastName || '';
+  const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || '--';
+  initialsEl.textContent = initials;
+}
 
-  // Afficher classe pour les étudiants uniquement
+// Helper: Configure role-based visibility
+function configureRoleBasedVisibility() {
+  // Student class row
   const classRow = document.getElementById('classRow');
   if (classRow) {
     if (USER.role === 'student') {
@@ -83,7 +97,7 @@ function initMonProfil() {
     }
   }
 
-  // Afficher spécialité pour les professeurs uniquement
+  // Teacher specialty row
   const specialtyRow = document.getElementById('specialtyRow');
   if (specialtyRow) {
     if (USER.role === 'teacher') {
@@ -94,6 +108,14 @@ function initMonProfil() {
       specialtyRow.style.display = 'none';
     }
   }
+}
+
+// Main initialization
+function initMonProfil() {
+  const roleText = getRoleText();
+  populateProfileFields(roleText);
+  setProfileInitials();
+  configureRoleBasedVisibility();
 }
 
 // ============================================

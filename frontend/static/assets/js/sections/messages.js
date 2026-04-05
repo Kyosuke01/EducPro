@@ -85,61 +85,72 @@ async function initMessagingCenter() {
   }
 }
 
-// Fonction de polling pour vérifier les nouveaux messages
+// Helper: Extract contact name from ticket
+function getContactNameFromTicket(ticket) {
+  if (USER.role === 'teacher' || USER.role === 'admin') {
+    return `${ticket.student_first_name || ''} ${ticket.student_last_name || ''}`.trim() || 'Étudiant';
+  }
+  return `${ticket.teacher_first_name || ''} ${ticket.teacher_last_name || ''}`.trim() || 'Enseignant';
+}
+
+// Helper: Check and notify if message update
+function checkMessageUpdate(newTicket, oldTicket) {
+  if (!oldTicket || oldTicket.last_message_at === newTicket.last_message_at) return;
+  if (newTicket.ticket_id === messagingState.activeTicketId) return;
+  if (messagingState.notifiedTickets.has(newTicket.ticket_id)) return;
+  
+  const contact = getContactNameFromTicket(newTicket);
+  displayNotificationBadge(newTicket, contact);
+  messagingState.notifiedTickets.add(newTicket.ticket_id);
+}
+
+// Helper: Check and notify if new ticket
+function checkNewTicket(newTicket, oldTicket) {
+  if (oldTicket || newTicket.ticket_id === messagingState.activeTicketId) return;
+  
+  const contact = getContactNameFromTicket(newTicket);
+  displayNotificationBadge(newTicket, contact);
+  messagingState.notifiedTickets.add(newTicket.ticket_id);
+}
+
+// Helper: Refresh active ticket content
+async function refreshActiveTicketContent() {
+  if (!messagingState.activeTicketId) return;
+  
+  const details = await api(`messages/conversations/${messagingState.activeTicketId}?role=${USER.role}&user_id=${USER.id}`);
+  if (!details.error) {
+    renderConversationDetail(details.ticket, details.messages || []);
+  }
+}
+
+// Main polling function
 function startMessagePolling() {
   if (messagingState.pollingInterval) return;
   
   messagingState.pollingInterval = setInterval(async () => {
-    // Vérifier seulement si on est dans la page messaging
     const messagesContainer = document.getElementById('messagesContainer');
     if (!messagesContainer) return;
     
     try {
-      // Rafraîchir la liste des tickets
       const data = await api(`messages/conversations?role=${USER.role}&user_id=${USER.id}`);
       if (data.error) return;
 
       const newConversations = data.tickets || [];
       
-      // Vérifier s'il y a des nouveaux messages
-      for (let newTicket of newConversations) {
+      // Process each ticket for updates and new tickets
+      newConversations.forEach(newTicket => {
         const oldTicket = messagingState.conversations.find(t => t.ticket_id === newTicket.ticket_id);
-        
-        // Nouveau message détecté si last_message_at a changé
-        if (oldTicket && oldTicket.last_message_at !== newTicket.last_message_at) {
-          // Notification seulement si c'est pas le ticket actif
-          if (newTicket.ticket_id !== messagingState.activeTicketId && !messagingState.notifiedTickets.has(newTicket.ticket_id)) {
-            const contact = USER.role === 'teacher' || USER.role === 'admin'
-              ? `${newTicket.student_first_name || ''} ${newTicket.student_last_name || ''}`.trim() || 'Étudiant'
-              : `${newTicket.teacher_first_name || ''} ${newTicket.teacher_last_name || ''}`.trim() || 'Enseignant';
-            displayNotificationBadge(newTicket, contact);
-            messagingState.notifiedTickets.add(newTicket.ticket_id);
-          }
-        }
-        // Aussi ajouter les nouveaux tickets à la liste
-        if (!oldTicket && newTicket.ticket_id !== messagingState.activeTicketId) {
-          const contact = USER.role === 'teacher' || USER.role === 'admin'
-            ? `${newTicket.student_first_name || ''} ${newTicket.student_last_name || ''}`.trim() || 'Étudiant'
-            : `${newTicket.teacher_first_name || ''} ${newTicket.teacher_last_name || ''}`.trim() || 'Enseignant';
-          displayNotificationBadge(newTicket, contact);
-          messagingState.notifiedTickets.add(newTicket.ticket_id);
-        }
-      }
+        checkMessageUpdate(newTicket, oldTicket);
+        checkNewTicket(newTicket, oldTicket);
+      });
       
       messagingState.conversations = newConversations;
       renderConversationList();
-      
-      // Si un ticket est ouvert, rafraîchir le contenu
-      if (messagingState.activeTicketId) {
-        const details = await api(`messages/conversations/${messagingState.activeTicketId}?role=${USER.role}&user_id=${USER.id}`);
-        if (!details.error) {
-          renderConversationDetail(details.ticket, details.messages || []);
-        }
-      }
+      await refreshActiveTicketContent();
     } catch (e) {
       console.error('Polling error:', e);
     }
-  }, 3000); // Vérifier toutes les 3 secondes (plus rapide)
+  }, 3000);
 }
 
 // Arrêter le polling quand on quitte la page

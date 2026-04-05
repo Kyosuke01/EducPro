@@ -15115,7 +15115,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 [data-theme=dark] .btn-primary {
   background-color: #12664f !important;
-  border-color: #a4b0f5 !important;
   border: 2px solid #a4b0f5 !important;
 }
 
