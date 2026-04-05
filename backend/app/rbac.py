@@ -32,13 +32,13 @@ def get_user_role_from_request():
 def require_role(*allowed_roles):
     """
     Décorateur pour vérifier que l'utilisateur a l'un des rôles autorisés.
-    
+
     Usage:
         @app.route('/api/admin/users', methods=['GET'])
         @require_role('admin')
         def list_all_users():
             ...
-        
+
         @app.route('/api/grades/class/<class_name>', methods=['GET'])
         @require_role('teacher', 'admin')
         def get_class_grades(class_name):
@@ -49,7 +49,7 @@ def require_role(*allowed_roles):
         def decorated_function(*args, **kwargs):
             user_role = get_user_role_from_request()
             user_id = request.headers.get('X-User-ID', 'Unknown')
-            
+
             # Vérification du rôle
             if user_role not in allowed_roles:
                 # Logging de la tentative d'accès non autorisé
@@ -58,7 +58,7 @@ def require_role(*allowed_roles):
                     f"Required: {allowed_roles} | Path: {request.path} | "
                     f"Method: {request.method} | IP: {request.remote_addr}"
                 )
-                
+
                 # Retourner une réponse JSON pour les API
                 if request.path.startswith('/api/'):
                     return jsonify({
@@ -68,13 +68,13 @@ def require_role(*allowed_roles):
                         "status": 403,
                         "timestamp": datetime.now().isoformat()
                     }), 403
-                
+
                 # Retourner la page HTML 403 pour les routes web
                 return render_template_string(open('app/templates/403.html').read()), 403
-            
+
             # Accès autorisé
             return f(*args, **kwargs)
-        
+
         return decorated_function
     return decorator
 
@@ -82,7 +82,7 @@ def require_role(*allowed_roles):
 def log_access_attempt(action, resource, status, user_id='Unknown', role='Unknown'):
     """
     Enregistre les tentatives d'accès (autorisées ou non).
-    
+
     Args:
         action: Type d'action (GET, POST, DELETE, etc.)
         resource: Ressource accédée
@@ -91,7 +91,7 @@ def log_access_attempt(action, resource, status, user_id='Unknown', role='Unknow
         role: Rôle de l'utilisateur
     """
     log_message = f"{status} - User: {user_id} | Role: {role} | Action: {action} | Resource: {resource}"
-    
+
     if status == "DENIED":
         security_logger.warning(log_message)
     else:

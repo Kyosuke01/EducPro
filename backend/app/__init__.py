@@ -70,7 +70,7 @@ def create_app():
             }), 403
         try:
             return render_template("403.html"), 403
-        except:
+        except Exception:
             return "403 - Forbidden", 403
 
     return app

@@ -95,8 +95,13 @@ def create_user():
                 except ValueError as err:
                     return jsonify({"error": str(err)}), 400
 
+                sql_insert = (
+                    "INSERT INTO Student "
+                    "(first_name, last_name, mail_student, password, class_name) "
+                    "VALUES (%s, %s, %s, %s, %s)"
+                )
                 cursor.execute(
-                    "INSERT INTO Student (first_name, last_name, mail_student, password, class_name) VALUES (%s, %s, %s, %s, %s)",
+                    sql_insert,
                     (first_name, last_name, email, hashed_password, class_name)
                 )
             elif user_type == "teacher":
@@ -104,8 +109,13 @@ def create_user():
                 if not topic_name:
                     return jsonify({"error": "La matière est requise pour un professeur."}), 400
 
+                sql_insert = (
+                    "INSERT INTO Teacher "
+                    "(first_name, last_name, mail_teacher, password, topic_name, is_admin) "
+                    "VALUES (%s, %s, %s, %s, %s, 0)"
+                )
                 cursor.execute(
-                    "INSERT INTO Teacher (first_name, last_name, mail_teacher, password, topic_name, is_admin) VALUES (%s, %s, %s, %s, %s, 0)",
+                    sql_insert,
                     (first_name, last_name, email, hashed_password, topic_name)
                 )
             else:
@@ -142,17 +152,26 @@ def update_user(user_type, user_id):
                 if class_name:
                     try:
                         if not _class_has_capacity(conn, class_name, exclude_student_id=user_id):
-                            return jsonify({"error": "Impossible de déplacer l'étudiant : classe complète."}), 400
+                            msg = "Impossible de déplacer l'étudiant : classe complète."
+                            return jsonify({"error": msg}), 400
                     except ValueError as err:
                         return jsonify({"error": str(err)}), 400
+                sql_update = (
+                    "UPDATE Student SET first_name=%s, last_name=%s, "
+                    "mail_student=%s, class_name=%s WHERE student_id=%s"
+                )
                 cursor.execute(
-                    "UPDATE Student SET first_name=%s, last_name=%s, mail_student=%s, class_name=%s WHERE student_id=%s",
+                    sql_update,
                     (first_name, last_name, email, class_name, user_id)
                 )
             elif user_type == "teacher":
                 topic_name = data.get("topic_name")
+                sql_update = (
+                    "UPDATE Teacher SET first_name=%s, last_name=%s, "
+                    "mail_teacher=%s, topic_name=%s WHERE teacher_id=%s"
+                )
                 cursor.execute(
-                    "UPDATE Teacher SET first_name=%s, last_name=%s, mail_teacher=%s, topic_name=%s WHERE teacher_id=%s",
+                    sql_update,
                     (first_name, last_name, email, topic_name, user_id)
                 )
             else:
