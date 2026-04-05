@@ -271,7 +271,7 @@ async function getScheduleContent() {
 async function initSchedule() {
   const data = await api('edt');
   const edtList = data.edt || [];
-  window.scheduleData = edtList;
+  globalThis.scheduleData = edtList;
 
   const tabsContainer = document.getElementById('scheduleTabs');
   const gridContainer = document.getElementById('scheduleGridContainer');
@@ -291,31 +291,31 @@ async function initSchedule() {
     return;
   }
 
-  window.currentClass = uniqueClasses[0];
+  globalThis.currentClass = uniqueClasses[0];
 
   tabsContainer.innerHTML = uniqueClasses.map(cls => `
     <button
-      id="tab-${cls.replace(/\s+/g, '-')}"
-      class="edt-tab-btn ${cls === window.currentClass ? 'edt-tab-btn--active' : ''}"
+      id="tab-${cls.replaceAll(/\s+/g, '-')}"
+      class="edt-tab-btn ${cls === globalThis.currentClass ? 'edt-tab-btn--active' : ''}"
       onclick="changeScheduleClass('${cls}')">
       ${cls}
     </button>
   `).join('');
 
-  if (currentClassSpan) currentClassSpan.textContent = window.currentClass;
-  gridContainer.innerHTML = renderScheduleGrid(window.currentClass, edtList.filter(e => e.class_name === window.currentClass));
+  if (currentClassSpan) currentClassSpan.textContent = globalThis.currentClass;
+  gridContainer.innerHTML = renderScheduleGrid(globalThis.currentClass, edtList.filter(e => e.class_name === globalThis.currentClass));
 }
 
 function changeScheduleClass(cls) {
-  window.currentClass = cls;
+  globalThis.currentClass = cls;
   document.querySelectorAll('.edt-tab-btn').forEach(btn => btn.classList.remove('edt-tab-btn--active'));
-  const activeBtn = document.getElementById(`tab-${cls.replace(/\s+/g, '-')}`);
+  const activeBtn = document.getElementById(`tab-${cls.replaceAll(/\s+/g, '-')}`);
   if (activeBtn) activeBtn.classList.add('edt-tab-btn--active');
   const titleSpan = document.getElementById('scheduleCurrentClass');
   if (titleSpan) titleSpan.textContent = cls;
   const container = document.getElementById('scheduleGridContainer');
   if (!container) return;
-  const filtered = (window.scheduleData || []).filter(e => e.class_name === cls);
+  const filtered = (globalThis.scheduleData || []).filter(e => e.class_name === cls);
   container.innerHTML = renderScheduleGrid(cls, filtered);
 }
 

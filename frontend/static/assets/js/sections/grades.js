@@ -98,9 +98,9 @@ async function submitGrades() {
   let count = 0;
 
   for (const input of inputs) {
-    const val = parseFloat(input.value);
-    if (!isNaN(val)) {
-      const studentId = parseInt(input.dataset.studentId);
+    const val = Number.parseFloat(input.value);
+    if (!Number.isNaN(val)) {
+      const studentId = Number.parseInt(input.dataset.studentId);
       await api('grades', {
         method: 'POST',
         body: JSON.stringify({ grade: val, student_id: studentId, topic_name: topicName })

@@ -24,7 +24,7 @@ async function initDashboard() {
       const nbTeachers = (teachersData && teachersData.teachers) ? teachersData.teachers.length : 0;
       const nbClasses = (classesData && classesData.classes) ? classesData.classes.length : 0;
 
-      window.dashboardChartData = {
+      globalThis.dashboardChartData = {
         role: 'admin',
         categories: ['Étudiants', 'Professeurs', 'Classes'],
         series: [{ name: 'Total', data: [nbStudents, nbTeachers, nbClasses] }],
@@ -48,7 +48,7 @@ async function initDashboard() {
       const nbSlots = edtList.length;
       const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].length;
 
-      window.dashboardChartData = {
+      globalThis.dashboardChartData = {
         role: 'teacher',
         categories: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
         series: [{ name: 'Heures de cours', data: [4, 6, 2, 8, 4] }],
@@ -75,7 +75,7 @@ async function initDashboard() {
         ? attendanceData.attendance[0]
         : { late: 0, absent: 0 };
 
-      window.dashboardChartData = {
+      globalThis.dashboardChartData = {
         role: 'student',
         categories: grades.map(g => g.topic_name.substring(0, 6)),
         series: [{ name: 'Mes Notes', data: grades.map(g => g.grade) }],
@@ -166,7 +166,7 @@ function setChartTitle(title) {
 }
 
 function renderDashboardCharts() {
-  const data = window.dashboardChartData;
+  const data = globalThis.dashboardChartData;
   if (!data) return;
 
   const options = {
@@ -207,7 +207,7 @@ function renderAttendanceChart() {
   if (!chartEl) return;
 
   // Récupère les vraies données d'attendance depuis le dashboard
-  const stats = window.dashboardChartData?.attendanceStats || { late: 0, onTime: 100, absent: 0, total: 100 };
+  const stats = globalThis.dashboardChartData?.attendanceStats || { late: 0, onTime: 100, absent: 0, total: 100 };
   
   // Calcul des valeurs en fonction du rôle
   let lateCount = stats.late || 0;

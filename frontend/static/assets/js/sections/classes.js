@@ -41,7 +41,7 @@ async function initClassesList() {
         <td><div class="text-sm fw-semibold">${cls.current_size || 0}</div></td>
         <td>${capacityBadge}</td>
         <td>
-          <button onclick="showClassDetail('${cls.name.replace(/'/g, "\\'")}')"
+          <button onclick="showClassDetail('${cls.name.replaceAll("'", "\\'")}' )"
             class="btn btn-sm btn-light radius-8 d-flex align-items-center gap-2">
             <i class="ri-eye-line"></i> Voir
           </button>
@@ -92,7 +92,7 @@ async function showClassDetail(className) {
           ${teachers}
         </select>
         <button class="btn btn-sm btn-outline-primary"
-          onclick="assignTeacherToClass(${classInfo.class_id}, '${className.replace(/'/g, "\\'")}')">
+          onclick="assignTeacherToClass(${classInfo.class_id}, '${className.replaceAll("'", "\\'")}')">
           Enregistrer
         </button>
       `;
@@ -117,7 +117,7 @@ async function showClassDetail(className) {
 async function assignTeacherToClass(classId, className) {
   const select = document.getElementById('classTeacherSelect');
   if (!select) return;
-  const teacherId = parseInt(select.value || '0', 10);
+  const teacherId = Number.parseInt(select.value || '0', 10);
   if (!teacherId) { alert('Veuillez sélectionner un professeur.'); return; }
 
   const res = await api(`classes/${classId}/assign-teacher`, {

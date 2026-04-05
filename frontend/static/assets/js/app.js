@@ -49,7 +49,7 @@
   //to keep the current page active
   $(function () {
     for (
-      var nk = window.location,
+      var nk = globalThis.location,
         o = $("ul#sidebar-menu a")
           .filter(function () {
             return this.href == nk;
@@ -127,7 +127,7 @@
 
   function applyTheme(theme) {
     if (theme === "system") {
-      const prefersDark = window.matchMedia(
+      const prefersDark = globalThis.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
       document.documentElement.setAttribute(

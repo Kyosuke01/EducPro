@@ -536,7 +536,7 @@ async function submitNewTicket() {
 
   const subject = (document.getElementById('ticketSubject')?.value || '').trim();
   const message = (document.getElementById('ticketMessageInput')?.value || '').trim();
-  const recipientId = parseInt(document.getElementById('ticketRecipientId')?.value || '0', 10);
+  const recipientId = Number.parseInt(document.getElementById('ticketRecipientId')?.value || '0', 10);
 
   if (!subject || !message || !recipientId) {
     notifyTicketForm('error', 'Veuillez renseigner un sujet, un destinataire et un message.');

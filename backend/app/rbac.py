@@ -52,11 +52,14 @@ def require_role(*allowed_roles):
 
             # Vérification du rôle
             if user_role not in allowed_roles:
-                # Logging de la tentative d'accès non autorisé
+                # Logging de la tentative d'accès non autorisé (safe user-controlled data)
+                safe_path = request.path[:100] if request.path else 'unknown'
+                safe_method = request.method[:20] if request.method else 'unknown'
+                safe_ip = str(request.remote_addr)[:20] if request.remote_addr else 'unknown'
                 security_logger.warning(
                     f"403 FORBIDDEN - User ID: {user_id} | Role: {user_role} | "
-                    f"Required: {allowed_roles} | Path: {request.path} | "
-                    f"Method: {request.method} | IP: {request.remote_addr}"
+                    f"Required: {allowed_roles} | Path: {safe_path} | "
+                    f"Method: {safe_method} | IP: {safe_ip}"
                 )
 
                 # Retourner une réponse JSON pour les API

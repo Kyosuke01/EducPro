@@ -26,7 +26,7 @@ function setupOtpInputs(containerId) {
 
       input.addEventListener('paste', (e) => {
         e.preventDefault();
-        const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        const pasteData = e.clipboardData.getData('text').replaceAll(/\D/g, '').slice(0, 6);
         pasteData.split('').forEach((char, i) => {
           if (inputs[i]) {
             inputs[i].value = char;

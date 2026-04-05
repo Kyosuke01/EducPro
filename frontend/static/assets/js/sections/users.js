@@ -190,7 +190,7 @@ async function initStudentsList() {
   const colors = ['primary', 'success', 'warning', 'info', 'danger'];
   // Helper function to deterministically select color based on user ID
   const getColorFromId = (id) => {
-    const hash = id.toString().charCodeAt(0) + id.toString().length;
+    const hash = id.toString().codePointAt(0) + id.toString().length;
     return colors[hash % colors.length];
   };
 
@@ -201,7 +201,7 @@ async function initStudentsList() {
       <td>
         <div class="d-flex align-items-center gap-2">
           <button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px"
-            onclick='showEditUserForm("student", ${JSON.stringify(s).replace(/'/g, "&apos;")})'>
+            onclick='showEditUserForm("student", ${JSON.stringify(s).replaceAll("'", "&apos;")})'>
             <i class="ri-edit-2-line text-primary"></i>
           </button>
           <button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px"
@@ -264,7 +264,7 @@ async function initTeachersList() {
       <td>
         <div class="d-flex align-items-center gap-2">
           <button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px"
-            onclick='showEditUserForm("teacher", ${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+            onclick='showEditUserForm("teacher", ${JSON.stringify(t).replaceAll("'", "&apos;")})'>
             <i class="ri-edit-2-line text-primary"></i>
           </button>
           ${!t.is_admin ? `<button class="btn btn-sm btn-light radius-8 d-flex align-items-center justify-content-center w-32-px h-32-px" onclick="deleteUser('teacher', ${t.teacher_id})"><i class="ri-delete-bin-line text-danger"></i></button>` : ''}
