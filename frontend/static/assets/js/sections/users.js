@@ -188,9 +188,15 @@ async function initStudentsList() {
   }
 
   const colors = ['primary', 'success', 'warning', 'info', 'danger'];
+  // Helper function to deterministically select color based on user ID
+  const getColorFromId = (id) => {
+    const hash = id.toString().charCodeAt(0) + id.toString().length;
+    return colors[hash % colors.length];
+  };
+
   tbody.innerHTML = students.map(s => {
     const initial = s.first_name ? s.first_name.charAt(0).toUpperCase() : '?';
-    const colorClass = colors[Math.floor(Math.random() * colors.length)];
+    const colorClass = getColorFromId(s.student_id);
     const adminActions = USER.role === 'admin' ? `
       <td>
         <div class="d-flex align-items-center gap-2">
