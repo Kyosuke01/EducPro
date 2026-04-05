@@ -10,26 +10,54 @@ load_dotenv()
 db = SQLAlchemy()
 
 
+def _ensure_secret_key():
+    """
+    SECURITY: Ensure SECRET_KEY is properly configured from environment.
+    For production: SECRET_KEY MUST be set via environment variables (from cloud provider).
+    For development: If missing, generate once and save to .env file.
+    This avoids hard-coded credentials (S2068) by ensuring all values come from env.
+    """
+    # Check if SECRET_KEY already exists in environment
+    if os.getenv("BACKEND_SECRET_KEY") or os.getenv("API_SECRET_KEY"):
+        return  # Already configured
+
+    # Production: fail immediately if SECRET_KEY is not set
+    if os.getenv("FLASK_ENV") == "production" or os.getenv("ENVIRONMENT") == "production":
+        print("CRITICAL ERROR: SECRET_KEY is not configured!", file=sys.stderr)
+        print("Set BACKEND_SECRET_KEY or API_SECRET_KEY environment variable", file=sys.stderr)
+        sys.exit(1)
+
+    # Development only: Generate key and save to .env if not present
+    env_file = ".env"
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            env_content = f.read()
+            if "BACKEND_SECRET_KEY=" in env_content:
+                return  # Already in .env, just reload
+
+    # Generate new key and append to .env
+    new_key = secrets.token_hex(32)
+    with open(env_file, 'a') as f:
+        f.write("\n# Auto-generated for development (change for production)\n")
+        f.write(f"BACKEND_SECRET_KEY={new_key}\n")
+
+    # Reload environment variables
+    load_dotenv()
+    print("⚠️  Generated and saved BACKEND_SECRET_KEY to .env (development only)", file=sys.stderr)
+
+
 def create_app():
+    # Ensure SECRET_KEY is properly configured from environment
+    _ensure_secret_key()
+
     app = Flask(__name__)
     CORS(app)
     app.json.ensure_ascii = False
 
-    # SECURITY: Avoid hard-coded credentials (S2068)
-    # Secret key should ALWAYS come from environment variables in production
+    # SECURITY: Secret key ALWAYS from environment variables (S2068 - no hard-coded credentials)
     secret_key = os.getenv("BACKEND_SECRET_KEY") or os.getenv("API_SECRET_KEY")
 
-    if not secret_key:
-        # In production, SECRET_KEY MUST be set. Fail loudly and immediately.
-        if os.getenv("FLASK_ENV") == "production" or os.getenv("ENVIRONMENT") == "production":
-            print("CRITICAL ERROR: SECRET_KEY is not configured!", file=sys.stderr)
-            print("Set BACKEND_SECRET_KEY or API_SECRET_KEY environment variable", file=sys.stderr)
-            sys.exit(1)
-        # For development only: generate a secure random key (NOT hardcoded)
-        secret_key = secrets.token_hex(32)
-        print("⚠️  WARNING: Using auto-generated SECRET_KEY for development only!", file=sys.stderr)
-        print("⚠️  Set BACKEND_SECRET_KEY in .env for production!", file=sys.stderr)
-
+    # At this point, secret_key is guaranteed to exist and come from environment
     app.config["SECRET_KEY"] = secret_key
 
     app.config["SQLALCHEMY_DATABASE_URI"] = (
