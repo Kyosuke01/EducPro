@@ -269,6 +269,7 @@ def test_403_page():
     from flask import abort
     abort(403)
 
+
 @app.route("/legal", methods=["GET"])
 def legal():
     """Page des Mentions Légales"""
