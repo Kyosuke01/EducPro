@@ -11,12 +11,82 @@ async function getMyAttendanceContent() {
 async function initMyAttendance() {
   const data = await api(`attendance/student/${USER.id}`);
   const records = data.attendance || [];
-  const att = records.length > 0 ? records[0] : { late: 0, absent: 0 };
+  const att = records.reduce((acc, row) => {
+    if (row.status === 'absent') acc.absent += 1;
+    if (row.status === 'late') acc.late += 1;
+    return acc;
+  }, { late: 0, absent: 0 });
 
   const abEl = document.getElementById('attendanceAbsent');
   const ltEl = document.getElementById('attendanceLate');
   if (abEl) abEl.textContent = att.absent;
   if (ltEl) ltEl.textContent = att.late;
+
+  await renderAttendanceCourseDetails(records);
+}
+
+function formatAttendanceDate(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('fr-FR');
+}
+
+async function renderAttendanceCourseDetails(records) {
+  const box = document.getElementById('attendanceCourseDetailsBox');
+  if (!box) return;
+
+  const eventRows = records.filter(r => r.status === 'absent' || r.status === 'late');
+  if (!eventRows.length) {
+    box.innerHTML = '<div class="text-center text-muted py-3">Aucune absence ni retard enregistré.</div>';
+    return;
+  }
+
+  const edtIds = [...new Set(eventRows.map(r => r.edt_id).filter(Boolean))];
+  const [edtData, myScheduleData] = await Promise.all([
+    api('edt'),
+    api(`edt/class/${encodeURIComponent(USER.className || '')}`)
+  ]);
+
+  const allEdt = edtData?.edt || [];
+  const classEdt = myScheduleData?.edt || [];
+  const edtMap = new Map();
+  allEdt.forEach(row => { if (row.edt_id) edtMap.set(row.edt_id, row); });
+  classEdt.forEach(row => { if (row.edt_id) edtMap.set(row.edt_id, row); });
+
+  const detailsRows = eventRows.map(row => {
+    const course = row.edt_id ? edtMap.get(row.edt_id) : null;
+    const topic = course?.topic_name || 'Cours non trouvé';
+    const teacher = course ? `${course.teacher_f_name || ''} ${course.teacher_l_name || ''}`.trim() : '-';
+    const statusBadge = row.status === 'absent'
+      ? '<span class="badge bg-danger-100 text-danger-700">Absence</span>'
+      : '<span class="badge bg-warning-100 text-warning-700">Retard</span>';
+
+    return `
+      <tr>
+        <td>${statusBadge}</td>
+        <td>${topic}</td>
+        <td>${teacher || '-'}</td>
+        <td>${formatAttendanceDate(row.date_attendance)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Cours</th>
+            <th>Professeur</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>${detailsRows}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 async function getTeacherAttendanceContent() {
@@ -62,15 +132,39 @@ async function loadAttendanceStudents() {
         <tbody>${rows || '<tr><td colspan="2" class="text-center text-muted">Aucun étudiant trouvé</td></tr>'}</tbody>
       </table>
     </div>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <button class="btn btn-primary btn-sm" onclick="saveAttendanceChanges()">Sauvegarder</button>
+      <small class="text-muted">Les actions +1 sont enregistrées immédiatement.</small>
+    </div>
     <div id="attMessage" class="mt-2"></div>
   `;
 }
 
+function saveAttendanceChanges() {
+  const msgEl = document.getElementById('attMessage');
+  if (msgEl) {
+    msgEl.innerHTML = '<div class="alert alert-info">Toutes les actions ont déjà été sauvegardées.</div>';
+    setTimeout(() => { msgEl.innerHTML = ''; }, 2000);
+  }
+}
+
 async function markAttendance(studentId, late, absent, btn) {
   btn.disabled = true;
+  const className = document.getElementById('attClassSelect')?.value || '';
+  const edtData = className ? await api(`edt/class/${encodeURIComponent(className)}`) : { edt: [] };
+  const classEdt = edtData.edt || [];
+  const matchedEdt = classEdt.find(e =>
+    (e.teacher_l_name || '').toLowerCase() === (USER.lastName || '').toLowerCase()
+  );
+
   const res = await api('attendance', {
     method: 'POST',
-    body: JSON.stringify({ student_id: studentId, late, absent })
+    body: JSON.stringify({
+      student_id: studentId,
+      late,
+      absent,
+      date_attendance: matchedEdt?.start_time ? matchedEdt.start_time.slice(0, 10) : undefined
+    })
   });
 
   if (!res.error) {

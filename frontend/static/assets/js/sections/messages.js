@@ -15,14 +15,25 @@ const messagingState = {
   notificationCount: 0,
   notifiedTickets: new Set(),
   lastSubmitTime: 0,
-  submitDebounceMs: 1000 // Prévenir les doubles soumissions
+  submitDebounceMs: 1000, // Prévenir les doubles soumissions
+  draftByTicket: {}
 };
+
+function scrollConversationToBottom(force = false) {
+  const panel = document.getElementById('ticketMessagesPanel');
+  if (!panel) return;
+  const nearBottom = (panel.scrollHeight - panel.scrollTop - panel.clientHeight) < 120;
+  if (force || nearBottom) {
+    panel.scrollTop = panel.scrollHeight;
+  }
+}
 
 // Fonction utilitaire pour afficher une notification
 function showNotification(type, message) {
   const notif = document.createElement('div');
-  const bgColor = type === 'error' ? '#dc3545' : '#12664f';
-  const textColor = '#f0ebd8';
+  const bgColor = type === 'error' ? '#fee2e2' : '#ecfdf3';
+  const textColor = '#111827';
+  const borderColor = type === 'error' ? '#fecaca' : '#bbf7d0';
   
   notif.style.cssText = `
     position: fixed;
@@ -33,9 +44,9 @@ function showNotification(type, message) {
     padding: 1rem 1.5rem;
     background-color: ${bgColor};
     color: ${textColor};
-    border-radius: 0px;
-    border: 2px solid #a4b0f5;
-    box-shadow: 3px 3px 0px #a4b0f5;
+    border-radius: 12px;
+    border: 1px solid ${borderColor};
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
     font-size: 0.875rem;
     animation: slideIn 0.3s ease-in-out;
     word-wrap: break-word;
@@ -116,9 +127,14 @@ function checkNewTicket(newTicket, oldTicket) {
 // Helper: Refresh active ticket content
 async function refreshActiveTicketContent() {
   if (!messagingState.activeTicketId) return;
-  
+  const textarea = document.getElementById('ticketReplyInput');
+  const currentDraft = textarea ? textarea.value : '';
+
   const details = await api(`messages/conversations/${messagingState.activeTicketId}?role=${USER.role}&user_id=${USER.id}`);
   if (!details.error) {
+    if (currentDraft && currentDraft.trim()) {
+      messagingState.draftByTicket[messagingState.activeTicketId] = currentDraft;
+    }
     renderConversationDetail(details.ticket, details.messages || []);
   }
 }
@@ -185,7 +201,7 @@ function renderConversationList() {
     const time = ticket.last_message_at ? new Date(ticket.last_message_at).toLocaleString() : '';
 
     return `
-      <button type="button" class="list-group-item list-group-item-action ${active}"
+      <button type="button" class="list-group-item list-group-item-action ${active} ticket-list-item"
         onclick="openConversation(${ticket.ticket_id})">
         <div class="d-flex justify-content-between align-items-start mb-1">
           <div>
@@ -295,10 +311,12 @@ function renderConversationDetail(ticket, messages) {
   }).join('');
 
   panel.innerHTML = timeline || '<div class="text-center text-muted py-5">Aucun message pour le moment.</div>';
+  requestAnimationFrame(() => scrollConversationToBottom(true));
 
   textarea.disabled = isClosed;
   button.disabled = isClosed;
-  textarea.value = '';
+  const draft = messagingState.draftByTicket[ticket.ticket_id] || '';
+  textarea.value = isClosed ? '' : draft;
 }
 
 async function sendConversationReply() {
@@ -317,8 +335,10 @@ async function sendConversationReply() {
   });
 
   if (resp && !resp.error) {
+    delete messagingState.draftByTicket[messagingState.activeTicketId];
     await initMessagingCenter();
     await openConversation(messagingState.activeTicketId);
+    requestAnimationFrame(() => scrollConversationToBottom(true));
   } else {
     showNotification('error', resp?.error || "Erreur lors de l'envoi");
     textarea.disabled = false;
@@ -390,6 +410,11 @@ async function closeCurrentTicket() {
   const ticketId = messagingState.activeTicketId;
   const role = USER?.role;
   const userId = USER?.id;
+
+  if (role !== 'admin' && role !== 'teacher') {
+    showNotification('error', 'Seuls les administrateurs et professeurs peuvent supprimer un ticket.');
+    return;
+  }
   
   if (!role || !userId) {
     showNotification('error', 'Erreur : utilisateur non identifié.');
@@ -405,6 +430,7 @@ async function closeCurrentTicket() {
     });
     
     if (resp && !resp.error) {
+      delete messagingState.draftByTicket[ticketId];
       messagingState.activeTicketId = null;
       messagingState.activeTicket = null;
       messagingState.notifiedTickets.delete(ticketId); // Retirer la notif si elle existait
@@ -432,12 +458,12 @@ function displayNotificationBadge(ticket, contactName) {
     position: fixed;
     top: 80px;
     right: 20px;
-    background-color: #12664f;
-    color: #f0ebd8;
+    background-color: #ffffff;
+    color: #111827;
     padding: 1rem 1.5rem;
-    border-radius: 0px;
-    border: 2px solid #a4b0f5;
-    box-shadow: 3px 3px 0px #a4b0f5;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
     cursor: pointer;
     z-index: 9999;
     animation: slideIn 0.3s ease-in-out;
@@ -445,7 +471,7 @@ function displayNotificationBadge(ticket, contactName) {
     font-family: Inter, sans-serif;
     font-size: 0.875rem;
   `;
-  notif.innerHTML = `📧 ${contactName}<br><small>${ticket.subject}</small>`;
+  notif.innerHTML = `<strong style="display:block; margin-bottom:4px;">📧 ${contactName}</strong><small style="color:#4b5563;">${ticket.subject}</small>`;
   
   // Clic = ouvre le ticket
   notif.onclick = () => {
@@ -516,7 +542,7 @@ function renderRecipientSuggestions() {
     <button type="button" class="list-group-item list-group-item-action"
       onclick="selectRecipient('${item.role}', ${item.id})">
       <div class="fw-semibold text-sm">${item.first_name} ${item.last_name}</div>
-      <div class="text-xs text-neutral-500">${item.email || ''}${item.meta ? ' · ' + item.meta : ''}</div>
+      <div class="text-xs text-neutral-500">${item.meta ? item.meta : item.role}</div>
     </button>
   `).join('');
 }

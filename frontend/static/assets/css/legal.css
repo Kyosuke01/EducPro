@@ -38,8 +38,8 @@ html, body {
     min-height: 100vh;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 16px;
-    background: linear-gradient(135deg, #0D1321 0%, #1D2D44 100%);
-    color: #F0EBD8;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    color: var(--text-dark);
 }
 
 /* ======================================
@@ -51,6 +51,8 @@ html, body {
     flex-direction: column;
     min-height: 100vh;
     width: 100%;
+    padding: 24px;
+    gap: 20px;
 }
 
 /* ======================================
@@ -61,11 +63,14 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, #1D2D44 0%, #0D1321 100%);
+    background: var(--bg-white);
     padding: 30px 50px;
-    box-shadow: var(--shadow-lg), 0 0 40px rgba(164, 176, 245, 0.2);
+    box-shadow: var(--shadow-md);
     flex-wrap: wrap;
     gap: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    position: relative;
 }
 
 /* Subtle pattern overlay */
@@ -76,8 +81,7 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
-        repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px);
+    background: none;
     pointer-events: none;
 }
 
@@ -93,8 +97,7 @@ html, body {
     font-family: 'Poppins', sans-serif;
     font-size: 32px;
     font-weight: 700;
-    color: white;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    color: var(--text-dark);
     letter-spacing: -0.5px;
     margin: 0;
 }
@@ -102,7 +105,7 @@ html, body {
 .header-subtitle {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text-muted);
     font-weight: 300;
     letter-spacing: 0.5px;
     margin: 0;
@@ -124,6 +127,7 @@ html, body {
     letter-spacing: 0.5px;
     position: relative;
     z-index: 2;
+    border-radius: 12px;
 }
 
 .btn-home:hover {
@@ -142,8 +146,8 @@ html, body {
 
 .legal-content {
     flex: 1;
-    background-color: #1D2D44;
-    padding: 50px;
+    background-color: transparent;
+    padding: 8px 0;
     max-width: 1100px;
     margin: 0 auto;
     width: 100%;
@@ -154,27 +158,28 @@ html, body {
    ====================================== */
 
 .legal-section {
-    background-color: #F0EBD8;
-    border: 1px solid #12664F;
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
     padding: 30px;
     margin-bottom: 25px;
     box-shadow: var(--shadow-md);
+    border-radius: 16px;
 }
 
 .legal-section.retro-box {
-    border: 3px solid #0D1321;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
-    transition: all 0.05s;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s ease;
 }
 
 .section-title {
     font-family: 'Poppins', sans-serif;
     font-size: 18px;
     font-weight: 700;
-    color: #0D1321;
+    color: var(--text-dark);
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 2px solid #12664F;
+    border-bottom: 2px solid #e0e7ff;
     letter-spacing: -0.5px;
 }
 
@@ -182,7 +187,7 @@ html, body {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     line-height: 1.8;
-    color: #000000;
+    color: var(--text-dark);
 }
 
 .section-body p {
@@ -191,7 +196,7 @@ html, body {
 
 .section-body strong {
     font-weight: 600;
-    color: #0D1321;
+    color: var(--text-dark);
 }
 
 .legal-list {
@@ -211,7 +216,7 @@ html, body {
     content: '▸';
     position: absolute;
     left: 0;
-    color: #0D1321;
+    color: var(--primary-color);
     font-weight: bold;
 }
 
@@ -220,11 +225,12 @@ html, body {
    ====================================== */
 
 .legal-footer {
-    background: linear-gradient(135deg, #0D1321 0%, #1D2D44 100%);
+    background: var(--bg-white);
     padding: 40px 50px;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-md);
     margin-top: auto;
-    border-top: 1px solid #12664F;
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
 }
 
 .footer-content {
@@ -245,8 +251,7 @@ html, body {
     font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 700;
-    color: #F0EBD8;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    color: var(--text-dark);
     letter-spacing: 0.5px;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -255,7 +260,7 @@ html, body {
 .footer-section a {
     font-family: 'Inter', sans-serif;
     font-size: 13px;
-    color: #B8B8D4;
+    color: var(--primary-color);
     text-decoration: none;
     transition: all 0.2s ease;
     display: inline-block;
@@ -263,14 +268,14 @@ html, body {
 }
 
 .footer-section a:hover {
-    color: #D4CFC0;
+    color: var(--secondary-color);
     text-decoration: underline;
 }
 
 .footer-section p {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
-    color: #B8B8D4;
+    color: var(--text-muted);
     line-height: 1.6;
     margin: 0;
 }
@@ -285,7 +290,7 @@ html, body {
     }
 
     .legal-content {
-        padding: 40px 35px;
+        padding: 8px 0;
     }
 
     .legal-footer {
@@ -318,7 +323,7 @@ html, body {
     }
 
     .legal-content {
-        padding: 25px;
+        padding: 8px 0;
     }
 
     .legal-section {
@@ -353,8 +358,14 @@ html, body {
 }
 
 @media (max-width: 600px) {
+    .legal-container {
+        padding: 12px;
+        gap: 12px;
+    }
+
     .legal-header {
         padding: 15px 16px;
+        border-radius: 14px;
     }
 
     .header-title {
@@ -371,7 +382,7 @@ html, body {
     }
 
     .legal-content {
-        padding: 16px;
+        padding: 4px 0;
     }
 
     .section-title {
@@ -389,6 +400,7 @@ html, body {
         padding: 16px;
         margin-bottom: 16px;
         border: 1px solid var(--border-color);
+        border-radius: 12px;
     }
 
     .legal-list {
@@ -397,6 +409,7 @@ html, body {
 
     .legal-footer {
         padding: 16px;
+        border-radius: 14px;
     }
 
     .footer-section h3 {
@@ -429,7 +442,7 @@ html, body {
     }
 
     .legal-content {
-        padding: 12px;
+        padding: 2px 0;
     }
 
     .section-title {
@@ -444,6 +457,7 @@ html, body {
         padding: 12px;
         margin-bottom: 12px;
         border: 1px solid var(--border-color);
+        border-radius: 10px;
     }
 }
 
@@ -504,27 +518,28 @@ button:focus {
    ====================================== */
 
 .retro-box {
-    border: 3px solid var(--text-dark);
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
     background: var(--bg-white);
-    transition: all 0.05s;
+    transition: all 0.2s ease;
+    border-radius: 16px;
 }
 
 .retro-box:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
+    transform: none;
+    box-shadow: var(--shadow-md);
 }
 
 .retro-box:active,
 .retro-box.active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
-    border-style: inset;
+    transform: none;
+    box-shadow: var(--shadow-md);
+    border-style: solid;
 }
 
 .retro-btn {
-    border: 3px solid var(--text-dark);
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+    border: none;
+    box-shadow: var(--shadow-sm);
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     color: white;
     padding: 12px 24px;
@@ -533,18 +548,19 @@ button:focus {
     text-transform: uppercase;
     font-family: 'Inter', sans-serif;
     font-size: 13px;
-    transition: all 0.05s;
+    transition: all 0.2s ease;
     letter-spacing: 0.5px;
+    border-radius: 12px;
 }
 
 .retro-btn:hover {
     filter: brightness(1.1);
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
+    transform: none;
+    box-shadow: var(--shadow-md);
 }
 
 .retro-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
-    border-style: inset;
+    transform: none;
+    box-shadow: var(--shadow-sm);
+    border-style: none;
 }

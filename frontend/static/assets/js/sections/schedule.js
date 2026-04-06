@@ -79,8 +79,8 @@ function openCourseModal(courseJson) {
         <div class="edt-modal-header">
           <button class="edt-modal-close" onclick="closeCourseModal()"><i class="ri-close-line"></i></button>
           <div id="edtModalBadge" style="display:inline-flex; align-items:center; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:10px;"></div>
-          <div id="edtModalTitle" style="font-size:22px; font-weight:800; color:#f0ebd8; line-height:1.2;"></div>
-          <div id="edtModalDay" style="font-size:13px; color:#a4b0f5; margin-top:4px; font-weight:500;"></div>
+          <div id="edtModalTitle" style="font-size:22px; font-weight:800; color:#111827; line-height:1.2;"></div>
+          <div id="edtModalDay" style="font-size:13px; color:#4b5563; margin-top:4px; font-weight:500;"></div>
         </div>
         <div class="edt-modal-body">
           <div class="edt-modal-row">

@@ -1,7 +1,7 @@
 <!-- Template : Détail d'une Classe -->
 <div class="row">
   <div class="col-12 mb-3">
-    <button class="btn btn-sm btn-outline-primary" onclick="loadSection('classes', event)">
+    <button class="btn btn-sm btn-outline-primary" onclick="loadSection(USER.role === 'teacher' ? 'myClasses' : 'classes', event)">
       ← Retour
     </button>
   </div>

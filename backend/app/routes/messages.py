@@ -373,6 +373,10 @@ def delete_conversation(ticket_id):
     if not _valid_role(role) or not user_id:
         return jsonify({"error": ERROR_ROLE_USER_ID_REQUIRED}), 400
 
+    # Restriction métier: seuls admin et teacher peuvent supprimer un ticket.
+    if role not in {"admin", "teacher"}:
+        return jsonify({"error": ERROR_ACCESS_DENIED}), 403
+
     conn = None
     try:
         conn = get_db_connection()
@@ -386,19 +390,14 @@ def delete_conversation(ticket_id):
             if not ticket:
                 return jsonify({"error": ERROR_TICKET_NOT_FOUND}), 404
 
-            # Contrôle d'accès : vérifier que l'utilisateur est propriétaire ou admin
-            is_student_owner = (
-                ticket.get("student_id") == user_id
-                or (ticket.get("created_by_role") == "student" and ticket.get("created_by_id") == user_id)
-            )
+            # Contrôle d'accès : teacher propriétaire ou admin global.
             is_teacher_owner = (
                 ticket.get("teacher_id") == user_id
                 or (ticket.get("created_by_role") == "teacher" and ticket.get("created_by_id") == user_id)
             )
             is_admin = role == "admin"
 
-            # Seuls les propriétaires et les admins peuvent supprimer
-            if not (is_admin or (role == "student" and is_student_owner) or (role == "teacher" and is_teacher_owner)):
+            if not (is_admin or (role == "teacher" and is_teacher_owner)):
                 return jsonify({"error": ERROR_ACCESS_DENIED}), 403
 
             # Supprimer tous les messages du ticket

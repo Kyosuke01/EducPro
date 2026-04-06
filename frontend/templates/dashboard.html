@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="dark">
+<html lang="fr" data-theme="light">
 
 <head>
   <meta charset="UTF-8">
@@ -64,18 +64,18 @@
 
 <body>
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" style="background-color: #ffffff; border-right: 1px solid #e5e7eb;">
     <button type="button" class="sidebar-close-btn">
       <i class="ri-close-2-line"></i>
     </button>
 
-    <div class="sidebar-logo d-flex align-items-center gap-12" style="background-color: #0D1321; padding: 16px;">
+    <div class="sidebar-logo d-flex align-items-center gap-12" style="background-color: #ffffff; padding: 16px;">
       <div class="logo-box d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: white; border-radius: 8px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(13, 19, 33, 0.3);">
         <img src="/static/assets/img/edu.png" alt="EducPro" style="max-height: 40px; width: auto;">
       </div>
-      <span class="fw-bold d-none d-md-block" style="color: #f0ebd8; font-size: 1.1rem; letter-spacing: -0.5px;">EducPro</span>
+      <span class="fw-bold d-none d-md-block" style="color: #1f2937; font-size: 1.1rem; letter-spacing: -0.5px;">EducPro</span>
     </div>
-    <div style="border-bottom: 2px solid #1d2d44;"></div>
+    <div style="border-bottom: 1px solid #e5e7eb;"></div>
 
     <!-- User Profile -->
     <div class="mx-16 py-12">
@@ -133,33 +133,36 @@
   <!-- Main Dashboard -->
   <main class="dashboard-main">
     <!-- Topbar -->
-    <div class="navbar-header shadow-1">
+    <div class="navbar-header shadow-1" style="background-color: #fdfdff; border-bottom: 1px solid #eceff5;">
       <div class="row align-items-center justify-content-between">
         <div class="col-auto">
           <div class="d-flex flex-wrap align-items-center gap-4">
-            <button type="button" class="sidebar-mobile-toggle" aria-label="Sidebar Toggle" style="color: #a4b0f5;">
+            <button type="button" class="sidebar-mobile-toggle" aria-label="Sidebar Toggle" style="color: #4f46e5;">
               <iconify-icon icon="heroicons:bars-3-solid" class="icon"></iconify-icon>
             </button>
-            <form class="navbar-search" id="searchForm" style="position: relative; display: flex; align-items: center;">
-              <input type="text" class="bg-transparent" id="searchInput" name="search" placeholder="Rechercher une personne..." style="color: #f0ebd8; border: 1px solid #a4b0f5; padding: 8px 12px; width: 200px; padding-right: 36px; border-radius: 0px; transition: border 0.2s ease;">
-              <iconify-icon icon="ion:search-outline" style="color: #a4b0f5; position: absolute; right: 8px; cursor: pointer;"></iconify-icon>
-              <div id="searchResults" style="position: absolute; top: 100%; left: 0; background: #1d2d44; border: 1px solid #a4b0f5; border-radius: 0px; width: 100%; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; margin-top: 4px;"></div>
+            <form class="navbar-search" id="searchForm" style="position: relative; display: flex; align-items: center; background: #F4F7FE; border-radius: 12px; padding: 2px; min-width: 360px; z-index: 1200; overflow: visible;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 512 512" style="position:absolute; left:12px; color:#6b7280; pointer-events:none;">
+                <path fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32" d="M221.09 64a157.09 157.09 0 1 0 157.09 157.09A157.1 157.1 0 0 0 221.09 64Z"></path>
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32" d="M338.29 338.29L448 448"></path>
+              </svg>
+              <input type="text" class="bg-transparent" id="searchInput" name="search" placeholder="Rechercher un utilisateur ou une classe..." style="color: #1f2937; background: #F4F7FE; border: none; padding: 8px 12px 8px 36px; width: 340px; border-radius: 12px; transition: box-shadow 0.2s ease;">
+              <div id="searchResults" style="position: absolute; top: calc(100% + 6px); left: 0; background: #ffffff; border: 1px solid #c7d2fe; border-radius: 10px; width: 100%; max-height: 300px; overflow-y: auto; display: none; z-index: 20000; margin-top: 0; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);"></div>
             </form>
           </div>
         </div>
         <div class="col-auto">
           <div class="d-flex flex-wrap align-items-center gap-3">
-            <div style="color: #a4b0f5; font-size: 0.9rem; font-weight: 500;" id="currentDate"></div>
+            <div style="color: #000000; font-size: 0.9rem; font-weight: 500;" id="currentDate"></div>
             <div class="dropdown">
               <button
                 class="has-indicator w-40-px h-40-px rounded-circle d-flex justify-content-center align-items-center position-relative"
-                type="button" data-bs-toggle="dropdown" style="background-color: #1d2d44; color: #a4b0f5;">
+                type="button" data-bs-toggle="dropdown" style="background-color: #EBECEF; color: #000000; border: 1px solid #d1d5db;">
                 <iconify-icon icon="iconoir:bell" class="text-xl"></iconify-icon>
                 <span class="w-8-px h-8-px bg-danger-600 position-absolute end-0 top-0 rounded-circle mt-2 me-2"></span>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0" id="notificationDropdown" style="width: 300px; background-color: #0D1321; border: 2px solid #a4b0f5; border-radius: 0px;">
+              <ul class="dropdown-menu dropdown-menu-end p-0 shadow-sm border-0" id="notificationDropdown" style="width: 300px; background-color: #ffffff; border: 1px solid #c7d2fe; border-radius: 12px;">
                 <div class="p-16 border-bottom">
-                  <h6 class="text-md fw-semibold mb-0">Notifications</h6>
+                  <h6 class="text-md fw-semibold mb-0" style="color: #1f2937;">Notifications</h6>
                 </div>
                 <div class="p-16" id="notificationContainer">
                   <!-- Injected by JS -->
@@ -188,8 +191,8 @@
   </main>
 
   <!-- Footer -->
-  <footer style="background-color: #0D1321; padding: 16px; text-align: right; border-top: 2px solid #1d2d44;">
-    <p class="mb-0" style="color: #a4b0f5; font-size: 0.85rem;">© 2026 EducPro - Tous droits réservés | v1.0</p>
+  <footer style="background-color: #fdfdff; padding: 16px; text-align: right; border-top: 1px solid #eceff5;">
+    <p class="mb-0" style="color: #6b7280; font-size: 0.85rem;">© 2026 EducPro - Tous droits réservés | v1.0</p>
   </footer>
 
   <!-- Password confirmation modal (2FA) -->

@@ -6,12 +6,70 @@ async function getEvaluationsContent() {
   return await loadTemplate('grades_evaluations');
 }
 
+function normalizeTopicName(value) {
+  return (value || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\uFFFD/g, '')
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .toLowerCase()
+    .trim();
+}
+
+function topicAlphaKey(value) {
+  return normalizeTopicName(value)
+    .split('(')[0]
+    .trim()
+    .replace(/[^a-z]/g, '');
+}
+
+function topicConsonantKey(value) {
+  return topicAlphaKey(value).replace(/[aeiouy]/g, '');
+}
+
+function topicMatchesTeacher(gradeTopic, teacherTopic) {
+  const gradeBase = topicAlphaKey(gradeTopic);
+  const teacherBase = topicAlphaKey(teacherTopic);
+  if (!teacherBase) return true;
+
+  if (!gradeBase) return false;
+  if (gradeBase === teacherBase) return true;
+  if (gradeBase.startsWith(teacherBase) || teacherBase.startsWith(gradeBase)) return true;
+
+  const gradeCons = topicConsonantKey(gradeTopic);
+  const teacherCons = topicConsonantKey(teacherTopic);
+  if (!gradeCons || !teacherCons) return false;
+  return gradeCons.startsWith(teacherCons) || teacherCons.startsWith(gradeCons);
+}
+
 async function initEvaluations() {
   const titleEl = document.getElementById('evaluationsTitle');
   if (titleEl) titleEl.textContent = `Évaluations — ${USER.topicName || 'Toutes matières'}`;
 
-  const data = await api(`grades/topic/${encodeURIComponent(USER.topicName || '')}`);
-  const grades = data.grades || [];
+  let grades = [];
+
+  if (USER.role === 'teacher') {
+    // Le prof ne voit que les notes de ses classes + sa matière (même avec suffixe "(Classe)").
+    const edtData = await api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`);
+
+    const edtList = edtData?.edt || [];
+    const classScope = new Set(edtList.map(e => e.class_name).filter(Boolean));
+    const teacherTopic = USER.topicName || '';
+    const scopedClassPromises = Array.from(classScope).map(async className => {
+      const classGradesData = await api(`grades/class/${encodeURIComponent(className)}`);
+      const classGrades = classGradesData?.grades || [];
+      return classGrades.filter(g => {
+        return topicMatchesTeacher(g.topic_name, teacherTopic);
+      });
+    });
+    const scopedResults = await Promise.all(scopedClassPromises);
+    grades = scopedResults.flat();
+  } else {
+    const data = await api(`grades/topic/${encodeURIComponent(USER.topicName || '')}`);
+    grades = data.grades || [];
+  }
 
   // Récupérer les noms des étudiants en parallèle
   const studentIds = [...new Set(grades.map(g => g.student_id))];
@@ -58,7 +116,10 @@ async function initGradesInput() {
   }
 
   const topicInput = document.getElementById('gradeTopicInput');
-  if (topicInput) topicInput.value = USER.topicName || '';
+  if (topicInput) {
+    const className = document.getElementById('gradeClassSelect')?.value;
+    topicInput.value = className ? `${USER.topicName || ''} (${className})` : (USER.topicName || '');
+  }
 }
 
 async function loadGradeStudents() {
@@ -68,6 +129,9 @@ async function loadGradeStudents() {
 
   const data = await api(`classes/${encodeURIComponent(className)}/students`);
   const students = data.students || [];
+
+  const topicInput = document.getElementById('gradeTopicInput');
+  if (topicInput) topicInput.value = `${USER.topicName || ''} (${className})`;
 
   const rows = students.map(s => `
     <tr>
@@ -198,7 +262,7 @@ function renderRadarChart(byTopic) {
       toolbar: { show: false },
       fontFamily: 'Inter, sans-serif'
     },
-    colors: ['#f0ebd8'],
+    colors: ['#6962E9'],
     stroke: {
       width: 2
     },
@@ -207,8 +271,8 @@ function renderRadarChart(byTopic) {
     },
     markers: {
       size: 5,
-      colors: ['#f0ebd8'],
-      strokeColors: '#fff',
+      colors: ['#6962E9'],
+      strokeColors: '#ffffff',
       strokeWidth: 2
     },
     xaxis: {
@@ -216,7 +280,7 @@ function renderRadarChart(byTopic) {
       labels: {
         show: true,
         style: {
-          colors: '#a4b0f5',
+          colors: '#111827',
           fontSize: '12px'
         }
       }
@@ -227,13 +291,13 @@ function renderRadarChart(byTopic) {
       tickAmount: 4,
       labels: {
         style: {
-          colors: '#a4b0f5',
+          colors: '#111827',
           fontSize: '12px'
         }
       }
     },
     tooltip: {
-      theme: 'dark',
+      theme: 'light',
       y: {
         formatter: function(val) {
           return val.toFixed(1) + '/20';
@@ -241,7 +305,7 @@ function renderRadarChart(byTopic) {
       }
     },
     grid: {
-      borderColor: 'rgba(164, 176, 245, 0.1)'
+      borderColor: 'rgba(17, 24, 39, 0.2)'
     }
   };
 

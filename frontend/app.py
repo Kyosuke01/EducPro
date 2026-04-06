@@ -23,6 +23,16 @@ def get_secure_headers():
     }
 
 
+def get_proxy_headers():
+    """Headers backend + contexte utilisateur pour RBAC/IDOR."""
+    headers = get_secure_headers()
+    if session.get("user_id") is not None:
+        headers["X-User-ID"] = str(session.get("user_id"))
+    if session.get("role"):
+        headers["X-User-Role"] = session.get("role")
+    return headers
+
+
 def persist_user_session(user: dict):
     session.permanent = True
     session["user_id"] = user.get("id")
@@ -173,7 +183,7 @@ def _check_rbac_permission(method, path, role):
     public_routes = ["auth/forgot-password", "auth/reset-password"]
 
     if method not in ["POST", "PUT", "DELETE"] or path in public_routes:
-        return True, None  # No RBAC restrictions
+        return True, None, None  # No RBAC restrictions
 
     first_segment = path.split("/")[0] if path else ""
 
@@ -200,7 +210,7 @@ def _make_api_request(method, url, headers):
     elif method == "PUT":
         return requests.put(url, headers=headers, json=request.get_json(), timeout=timeout)
     elif method == "DELETE":
-        return requests.delete(url, headers=headers, timeout=timeout)
+        return requests.delete(url, headers=headers, params=request.args, timeout=timeout)
     else:
         raise ValueError(f"Unsupported method: {method}")
 
@@ -222,7 +232,7 @@ def api_proxy(path):
         return error_response, error_code
 
     url = f"{API_URL}/api/{path}"
-    headers = get_secure_headers()
+    headers = get_proxy_headers()
 
     try:
         resp = _make_api_request(method, url, headers)

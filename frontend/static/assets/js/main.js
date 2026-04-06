@@ -8,11 +8,15 @@ const userDataElement = document.getElementById('user-data');
 const USER = userDataElement && userDataElement.textContent.trim() !== ''
   ? JSON.parse(userDataElement.textContent)
   : {};
+const SKELETON_MODE = new URLSearchParams(window.location.search).get('skeleton') === '1';
 
 // ============================================
 // API Helper
 // ============================================
 async function api(path, options = {}) {
+  if (SKELETON_MODE) {
+    return {};
+  }
   try {
     const resp = await fetch(`/api/${path}`, {
       headers: { 'Content-Type': 'application/json' },
@@ -49,9 +53,9 @@ function generateSidebarMenu(role) {
       { icon: 'ri-home-4-line',         label: 'Tableau de Bord',      id: 'dashboard' },
       { icon: 'ri-book-2-line',         label: 'Mes Classes',          id: 'myClasses' },
       { icon: 'ri-file-list-line',      label: 'Évaluations',          id: 'evaluations' },
+      { icon: 'ri-pencil-line',         label: 'Saisir les Notes',     id: 'grades' },
       { icon: 'ri-user-follow-line',    label: 'Saisir les Absences',  id: 'teacherAttendance' },
       { icon: 'ri-calendar-check-line', label: 'Mon Emploi du Temps',  id: 'mySchedule' },
-      { icon: 'ri-pencil-line',         label: 'Saisir les Notes',     id: 'grades' },
       { icon: 'ri-chat-3-line',         label: 'Messagerie',           id: 'messages' }
     ],
     student: [
@@ -80,6 +84,11 @@ function generateSidebarMenu(role) {
 // ============================================
 async function loadSection(sectionId, event) {
   event?.preventDefault?.();
+
+  // Garde-fou RBAC frontend : un professeur n'accède jamais à la vue globale des classes.
+  if (USER.role === 'teacher' && sectionId === 'classes') {
+    sectionId = 'myClasses';
+  }
   
   // Arrêter le polling des messages si on quitte cette section
   if (typeof stopMessagePolling === 'function') {
@@ -245,34 +254,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     notifContainer.innerHTML = notifications.map(notif => {
       let icon = 'ri-notification-3-line';
-      let bgColor = '#1d2d44';
-      let iconColor = '#a4b0f5';
+      let bgColor = '#eef2ff';
+      let iconColor = '#1f2937';
       
       if (notif.type === 'message') { 
         icon = 'ri-message-3-line'; 
-        bgColor = '#1a4d6d';
-        iconColor = '#60d5ff';
+        bgColor = '#dbeafe';
+        iconColor = '#1d4ed8';
       }
       else if (notif.type === 'system' || notif.type === 'alert') { 
         icon = 'ri-error-warning-line'; 
-        bgColor = '#6d4d1a';
-        iconColor = '#ffb84d';
+        bgColor = '#fef3c7';
+        iconColor = '#92400e';
       }
       else if (notif.type === 'grade') { 
         icon = 'ri-star-line'; 
-        bgColor = '#1a6d3f';
-        iconColor = '#48d597';
+        bgColor = '#dcfce7';
+        iconColor = '#166534';
       }
 
       return `
         <a href="javascript:void(0)" onclick="loadSection('messages')"
-          class="d-flex align-items-start gap-3 text-decoration-none mb-3" style="padding: 12px; border-radius: 0px; transition: all 0.2s ease; cursor: pointer;">
+          class="d-flex align-items-start gap-3 text-decoration-none mb-3" style="padding: 12px; border-radius: 10px; transition: all 0.2s ease; cursor: pointer;">
           <div class="rounded-circle d-flex justify-content-center align-items-center flex-shrink-0" style="width: 40px; height: 40px; background-color: ${bgColor}; border-radius: 50%;">
             <i class="${icon} text-xl" style="color: ${iconColor};"></i>
           </div>
           <div>
-            <h6 class="text-sm fw-medium mb-1" style="color: #f0ebd8;">${notif.title}</h6>
-            <p class="text-xs mb-0" style="color: #a4b0f5;">${notif.body}</p>
+            <h6 class="text-sm fw-medium mb-1" style="color: #1f2937;">${notif.title}</h6>
+            <p class="text-xs mb-0" style="color: #6b7280;">${notif.body}</p>
           </div>
         </a>
       `;
@@ -292,6 +301,243 @@ document.addEventListener('DOMContentLoaded', async () => {
 // SEARCH USERS
 // ============================================
 let allUsers = [];
+let allClasses = [];
+let activeSearchResults = [];
+
+function normalizeSearchValue(value) {
+  return (value || '').toString().toLowerCase().trim();
+}
+
+function escapeHtml(value) {
+  return (value || '')
+    .toString()
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function hideSearchDropdown() {
+  const searchResults = document.getElementById('searchResults');
+  if (searchResults) {
+    searchResults.style.display = 'none';
+  }
+}
+
+function normalizeSearchDropdownPosition(searchResults) {
+  if (!searchResults) return;
+  searchResults.style.position = 'absolute';
+  searchResults.style.top = 'calc(100% + 6px)';
+  searchResults.style.left = '0';
+  searchResults.style.width = '100%';
+  searchResults.style.zIndex = '20000';
+}
+
+function buildSearchableItems(query) {
+  const q = normalizeSearchValue(query);
+  if (!q) return [];
+
+  const userItems = allUsers
+    .filter(item => {
+      if (USER.role === 'teacher') {
+        return item.role === 'student';
+      }
+      return true;
+    })
+    .filter(item => {
+      const fullName = normalizeSearchValue(item.displayName);
+      const email = normalizeSearchValue(item.email);
+      const role = normalizeSearchValue(item.roleLabel);
+      const classOrTopic = normalizeSearchValue(item.classOrTopic);
+      return fullName.includes(q) || email.includes(q) || role.includes(q) || classOrTopic.includes(q);
+    })
+    .map(item => ({ type: 'user', ...item }));
+
+  if (USER.role !== 'admin') {
+    return userItems;
+  }
+
+  const classItems = allClasses
+    .filter(cls => {
+      const className = normalizeSearchValue(cls.name);
+      const teacherName = normalizeSearchValue(cls.teacherName);
+      return className.includes(q) || teacherName.includes(q);
+    })
+    .map(cls => ({ type: 'class', ...cls }));
+
+  return [...userItems, ...classItems].slice(0, 30);
+}
+
+function renderSearchResults(results, searchResults) {
+  activeSearchResults = results;
+  normalizeSearchDropdownPosition(searchResults);
+
+  if (!results.length) {
+    searchResults.innerHTML = '<div style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 0.9rem;">Aucun résultat</div>';
+    searchResults.style.display = 'block';
+    return;
+  }
+
+  searchResults.innerHTML = results.map((item, index) => {
+    if (item.type === 'class') {
+      return `
+        <div class="search-result-item" data-result-index="${index}" style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; cursor: pointer; color: #1f2937;">
+          <div style="font-size: 0.9rem; font-weight: 500;"><i class="ri-book-2-line me-1"></i>${escapeHtml(item.name)}</div>
+          <div style="font-size: 0.8rem; color: #6b7280;">Classe <span style="margin-left: 8px; opacity: 0.7;">(${escapeHtml(item.teacherName || 'Non assigné')})</span></div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="search-result-item" data-result-index="${index}" style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; cursor: pointer; color: #1f2937;">
+        <div style="font-size: 0.9rem; font-weight: 500;">${escapeHtml(item.displayName)}</div>
+        <div style="font-size: 0.8rem; color: #6b7280;">${escapeHtml(item.email)} <span style="margin-left: 8px; opacity: 0.7;">(${escapeHtml(item.roleLabel)})</span></div>
+      </div>
+    `;
+  }).join('');
+
+  searchResults.querySelectorAll('.search-result-item').forEach(node => {
+    node.addEventListener('mouseover', () => { node.style.backgroundColor = '#f3f4f6'; });
+    node.addEventListener('mouseout', () => { node.style.backgroundColor = 'transparent'; });
+    node.addEventListener('click', (event) => {
+      const idx = Number.parseInt(node.dataset.resultIndex || '-1', 10);
+      handleSearchResultClick(idx, event);
+    });
+  });
+
+  searchResults.style.display = 'block';
+}
+
+async function handleSearchResultClick(index, event) {
+  event?.stopPropagation?.();
+  const item = activeSearchResults[index];
+  if (!item) return;
+
+  hideSearchDropdown();
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) searchInput.value = '';
+
+  if (item.type === 'class') {
+    if (typeof showClassDetail === 'function') {
+      if (document.getElementById('classesTableBody')) {
+        await showClassDetail(item.name);
+      } else {
+        await loadSection('classes', { preventDefault: () => {} });
+        await showClassDetail(item.name);
+      }
+    }
+    return;
+  }
+
+  if (USER.role === 'admin') {
+    const userType = item.role === 'student' ? 'student' : 'teacher';
+    if (typeof showEditUserForm === 'function') {
+      await showEditUserForm(userType, item.rawData);
+      return;
+    }
+  }
+
+  if (USER.role === 'teacher' && item.role === 'student') {
+    await showTeacherStudentModal(item.rawData);
+    return;
+  }
+
+  await showSearchResultProfile(item.displayName, item.email, item.role, event);
+}
+
+function ensureTeacherStudentModal() {
+  let modalEl = document.getElementById('teacherStudentModal');
+  if (modalEl) return modalEl;
+
+  const html = `
+    <div class="modal fade" id="teacherStudentModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="ri-user-3-line me-2"></i>Détail étudiant</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="teacherStudentModalBody">
+            <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  return document.getElementById('teacherStudentModal');
+}
+
+async function showTeacherStudentModal(student) {
+  const modalEl = ensureTeacherStudentModal();
+  const bodyEl = document.getElementById('teacherStudentModalBody');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+  bodyEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+  modal.show();
+
+  try {
+    const [attendanceData, edtData] = await Promise.all([
+      api(`attendance/student/${student.student_id}`),
+      api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`)
+    ]);
+
+    const teacherEdt = edtData?.edt || [];
+    const teacherEdtIds = new Set(teacherEdt.map(e => e.edt_id));
+    const scopedEvents = (attendanceData?.attendance || []).filter(a => teacherEdtIds.has(a.edt_id));
+    const absentCount = scopedEvents.filter(a => a.status === 'absent').length;
+    const lateCount = scopedEvents.filter(a => a.status === 'late').length;
+
+    const rows = scopedEvents.slice(0, 10).map(a => `
+      <tr>
+        <td>${a.status === 'absent' ? 'Absence' : 'Retard'}</td>
+        <td>${a.date_attendance ? new Date(a.date_attendance).toLocaleDateString('fr-FR') : '-'}</td>
+      </tr>
+    `).join('');
+
+    bodyEl.innerHTML = `
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Nom</label>
+          <input class="form-control bg-neutral-100 border-0" value="${escapeHtml(student.last_name || '')}" disabled>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Prénom</label>
+          <input class="form-control bg-neutral-100 border-0" value="${escapeHtml(student.first_name || '')}" disabled>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Email</label>
+          <input class="form-control bg-neutral-100 border-0" value="${escapeHtml(student.mail_student || '')}" disabled>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-medium">Classe</label>
+          <input class="form-control bg-neutral-100 border-0" value="${escapeHtml(student.class_name || '-')}" disabled>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <h6 class="fw-semibold mb-2">Assiduité dans mes cours</h6>
+        <div class="d-flex gap-3 mb-3">
+          <span class="badge bg-danger-100 text-danger-700">Absences: ${absentCount}</span>
+          <span class="badge bg-warning-100 text-warning-700">Retards: ${lateCount}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>Type</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="2" class="text-center text-muted">Aucun événement dans vos cours</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    bodyEl.innerHTML = '<div class="alert alert-danger">Impossible de charger les informations de l’étudiant.</div>';
+  }
+}
 
 async function initSearch() {
   const searchInput = document.getElementById('searchInput');
@@ -299,6 +545,7 @@ async function initSearch() {
   const searchResults = document.getElementById('searchResults');
   
   if (!searchInput || !searchForm) return;
+  normalizeSearchDropdownPosition(searchResults);
 
   // Désactiver complètement la recherche pour les étudiants
   if (USER.role === 'student') {
@@ -306,12 +553,85 @@ async function initSearch() {
     return;
   }
 
-  // Récupérer tous les utilisateurs au chargement
+  // Récupérer les sources de recherche
   try {
-    allUsers = await api('users') || [];
-    // Si c'est un objet avec une propriété 'users', l'extraire
-    if (allUsers.users) {
-      allUsers = allUsers.users;
+    allUsers = [];
+    allClasses = [];
+
+    if (USER.role === 'admin') {
+      const [studentsResponse, teachersResponse, classesResponse] = await Promise.all([
+        api('students'),
+        api('teachers'),
+        api('classes')
+      ]);
+
+      const students = Array.isArray(studentsResponse)
+        ? studentsResponse
+        : (studentsResponse?.students || []);
+      const teachers = Array.isArray(teachersResponse)
+        ? teachersResponse
+        : (teachersResponse?.teachers || []);
+      const classes = classesResponse?.classes || [];
+
+      allUsers = [
+        ...students.map(student => ({
+          role: 'student',
+          roleLabel: 'student',
+          displayName: `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Étudiant',
+          email: student.mail_student || '',
+          classOrTopic: student.class_name || '',
+          rawData: student
+        })),
+        ...teachers.map(teacher => ({
+          role: 'teacher',
+          roleLabel: 'teacher',
+          displayName: `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Professeur',
+          email: teacher.mail_teacher || '',
+          classOrTopic: teacher.topic_name || '',
+          rawData: teacher
+        }))
+      ];
+
+      allClasses = classes.map(cls => ({
+        name: cls.name || '',
+        teacherName: cls.teacher_first_name
+          ? `${cls.teacher_first_name} ${cls.teacher_last_name || ''}`.trim()
+          : 'Non assigné'
+      }));
+    } else {
+      if (USER.role === 'teacher') {
+        const [edtResponse, studentsResponse] = await Promise.all([
+          api(`edt/teacher/${encodeURIComponent(USER.lastName || '')}`),
+          api('students')
+        ]);
+        const teacherEdt = edtResponse?.edt || [];
+        const classScope = new Set(teacherEdt.map(row => row.class_name).filter(Boolean));
+        const allStudents = studentsResponse?.students || [];
+        const scopedStudents = allStudents.filter(student => classScope.has(student.class_name));
+
+        allUsers = scopedStudents.map(student => ({
+          role: 'student',
+          roleLabel: 'student',
+          displayName: `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Étudiant',
+          email: student.mail_student || '',
+          classOrTopic: student.class_name || '',
+          rawData: student
+        }));
+      } else {
+        let usersResponse = await api('users');
+        if (usersResponse && usersResponse.users) {
+          usersResponse = usersResponse.users;
+        }
+        const rawUsers = Array.isArray(usersResponse) ? usersResponse : [];
+        allUsers = rawUsers.map(user => ({
+          role: user.role,
+          roleLabel: user.role,
+          displayName: user.username || '',
+          email: user.email || '',
+          classOrTopic: '',
+          rawData: user
+        }));
+      }
     }
   } catch (e) {
     console.error('Error loading users for search:', e);
@@ -325,46 +645,14 @@ async function initSearch() {
       searchResults.style.display = 'none';
       return;
     }
-
-    // Filtrer les utilisateurs selon le rôle
-    let filtered = allUsers.filter(user => {
-      const username = (user.username || '').toLowerCase();
-      const email = (user.email || '').toLowerCase();
-      const matchQuery = username.includes(query) || email.includes(query);
-      
-      if (!matchQuery) return false;
-
-      // Admin peut voir tout le monde
-      if (USER.role === 'admin') return true;
-
-      // Teacher peut voir seulement les étudiants
-      if (USER.role === 'teacher') return user.role === 'student';
-
-      return false;
-    });
-
-    // Afficher les résultats
-    if (filtered.length > 0) {
-      searchResults.innerHTML = filtered.map(user => `
-        <div style="padding: 8px 12px; border-bottom: 1px solid #a4b0f5; cursor: pointer; color: #f0ebd8;" 
-           onmouseover="this.style.backgroundColor='#12664f'" 
-           onmouseout="this.style.backgroundColor='transparent'"
-           onclick="showSearchResultProfile('${user.username}', '${user.email}', '${user.role}', event)">
-          <div style="font-size: 0.9rem; font-weight: 500;">${user.username}</div>
-          <div style="font-size: 0.8rem; color: #a4b0f5;">${user.email} <span style="margin-left: 8px; opacity: 0.7;">(${user.role})</span></div>
-        </div>
-      `).join('');
-      searchResults.style.display = 'block';
-    } else {
-      searchResults.innerHTML = '<div style="padding: 12px; color: #a4b0f5; text-align: center; font-size: 0.9rem;">Aucun résultat</div>';
-      searchResults.style.display = 'block';
-    }
+    const filtered = buildSearchableItems(query);
+    renderSearchResults(filtered, searchResults);
   });
 
   // Fermer on click outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#searchForm')) {
-      searchResults.style.display = 'none';
+      hideSearchDropdown();
     }
   });
 }
@@ -501,6 +789,14 @@ async function deleteSearchUser(type, id) {
 // ============================================
 function init() {
   if (!USER.firstName) return;
+
+  if (SKELETON_MODE) {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.body.classList.add('skeleton-mode');
+    generateSidebarMenu(USER.role);
+    loadSection('dashboard', { preventDefault: () => {} });
+    return;
+  }
 
   document.getElementById('userName').textContent = `${USER.firstName} ${USER.lastName}`;
   document.getElementById('userRole').textContent =

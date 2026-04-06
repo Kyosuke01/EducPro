@@ -298,12 +298,12 @@
 #edtCourseModal .edt-modal-card {
   position: relative;
   z-index: 1;
-  background: #0D1321;
-  border: 1px solid #1d2d44;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5), 6px 6px 0 rgba(0, 0, 0, 0.3), 0 20px 50px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
   overflow: hidden;
   animation: edtSlideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -314,8 +314,8 @@
 #edtCourseModal .edt-modal-header {
   padding: 24px 24px 20px;
   position: relative;
-  background: rgba(29, 45, 68, 0.5);
-  border-bottom: 1px solid rgba(164, 176, 245, 0.1);
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
 }
 #edtCourseModal .edt-modal-close {
   position: absolute;
@@ -325,17 +325,17 @@
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(164, 176, 245, 0.1);
+  background: #eef2ff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #a4b0f5;
+  color: #4f46e5;
   transition: background 0.15s;
 }
 #edtCourseModal .edt-modal-close:hover {
-  background: rgba(164, 176, 245, 0.2);
+  background: #e0e7ff;
 }
 #edtCourseModal .edt-modal-accent {
   height: 5px;
@@ -349,7 +349,7 @@
   align-items: flex-start;
   gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(164, 176, 245, 0.1);
+  border-bottom: 1px solid #eef2f7;
 }
 #edtCourseModal .edt-modal-row:last-child {
   border-bottom: none;
@@ -369,11 +369,64 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #a4b0f5;
+  color: #6b7280;
   margin-bottom: 2px;
 }
 #edtCourseModal .edt-modal-value {
   font-size: 15px;
   font-weight: 700;
-  color: #f0ebd8;
+  color: #111827;
+}
+
+/* Messagerie - lisibilité renforcée */
+#ticketListPanel .ticket-list-item {
+  background-color: #1f2937;
+  color: #ffffff;
+  border-radius: 12px;
+  margin: 8px 10px;
+  border: 1px solid #374151;
+}
+
+#ticketListPanel .ticket-list-item .text-neutral-500,
+#ticketListPanel .ticket-list-item .text-neutral-400,
+#ticketListPanel .ticket-list-item .text-xs,
+#ticketListPanel .ticket-list-item .text-xxs,
+#ticketListPanel .ticket-list-item .fw-semibold {
+  color: #ffffff !important;
+}
+
+#ticketListPanel .ticket-list-item.active {
+  background-color: #4f46e5;
+  border-color: #6366f1;
+}
+
+#ticketListPanel .ticket-list-item .badge,
+#ticketListPanel .ticket-list-item .badge.bg-primary-100,
+#ticketListPanel .ticket-list-item .badge.text-primary-600 {
+  color: #111827 !important;
+}
+
+/* Messagerie - forcer le scroll dans le panneau messages, pas sur la page entière */
+#messagesContainer {
+  height: calc(100vh - 220px);
+  min-height: 520px;
+}
+
+#messagesContainer > .col-lg-3,
+#messagesContainer > .col-lg-9 {
+  height: 100%;
+}
+
+#messagesContainer .card {
+  height: 100%;
+}
+
+#conversationPanel .card-body {
+  min-height: 0 !important;
+}
+
+#ticketMessagesPanel {
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }

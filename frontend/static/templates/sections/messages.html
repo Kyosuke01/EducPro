@@ -3,7 +3,7 @@
 
   <!-- Panneau gauche : liste des tickets -->
   <div class="col-lg-3">
-    <div class="card shadow-1 h-100">
+      <div class="card shadow-1 h-100">
       <div class="card-header border-bottom bg-white">
         <div class="d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
@@ -30,7 +30,7 @@
 
   <!-- Panneau central : conversation -->
   <div class="col-lg-9 mt-4 mt-lg-0" id="conversationPanel">
-    <div class="card shadow-1 h-100">
+      <div class="card shadow-1 h-100">
       <div class="card-header border-bottom bg-white">
         <div class="d-flex justify-content-between align-items-start">
           <div id="ticketThreadHeader">
@@ -42,13 +42,13 @@
           </button>
         </div>
       </div>
-      <div class="card-body d-flex flex-column p-0" style="min-height: 500px; overflow: hidden;">
+      <div class="card-body d-flex flex-column p-0" style="min-height: 0; height: 100%; overflow: hidden;">
         <div id="ticketMessagesPanel" class="flex-grow-1" style="overflow-y: auto; padding: 1.5rem; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #a4b0f5 rgba(45,65,105,0.2);">
           <div class="text-center text-muted py-5">Aucune conversation sélectionnée.</div>
         </div>
         <div class="border-top p-16" id="ticketComposer">
           <textarea id="ticketReplyInput" class="form-control radius-8 bg-neutral-50 border-0 mb-2"
-            rows="5" placeholder="Écrire une réponse..." style="resize: vertical; max-height: 150px;" disabled></textarea>
+            rows="2" placeholder="Écrire une réponse..." style="resize: none; min-height: 64px; max-height: 92px;" disabled></textarea>
           <button class="btn btn-primary" onclick="sendConversationReply()" disabled>Envoyer</button>
         </div>
       </div>
@@ -96,4 +96,3 @@
     </div>
   </div>
 </div>
-

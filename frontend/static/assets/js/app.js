@@ -69,9 +69,8 @@
   /**
    * Utility function to calculate the current theme setting based on localStorage.
    */
-  function calculateSettingAsThemeString({ localStorageTheme }) {
-    // Force dark mode only
-    return "dark";
+  function calculateSettingAsThemeString() {
+    return "light";
   }
 
   /**
@@ -99,9 +98,8 @@
   /**
    * 2. Work out the current site settings.
    */
-  let currentThemeSetting = calculateSettingAsThemeString({
-    localStorageTheme,
-  });
+  let currentThemeSetting = calculateSettingAsThemeString({ localStorageTheme });
+  localStorage.setItem("theme", "light");
 
   /**
    * 3. If the button exists, update the theme setting and button text according to current settings.
@@ -113,9 +111,12 @@
     /**
      * 4. Add an event listener to toggle the theme.
      */
-    button.addEventListener("click", (event) => {
-      // Dark mode only - prevent theme toggle
-      event.preventDefault();
+    button.addEventListener("click", () => {
+      const newTheme = "light";
+      currentThemeSetting = newTheme;
+      localStorage.setItem("theme", newTheme);
+      updateThemeOnHtmlEl({ theme: newTheme });
+      updateButton({ buttonEl: button, isDark: newTheme === "dark" });
     });
   } else {
     // If no button is found, just apply the current theme to the page
@@ -126,14 +127,8 @@
   const buttons = document.querySelectorAll(".dark-light-mode .theme-btn");
 
   function applyTheme(theme) {
-    if (theme === "system") {
-      const prefersDark = globalThis.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
-    } else {
-      document.documentElement.dataset.theme = theme;
-    }
+    document.documentElement.dataset.theme = "light";
+    localStorage.setItem("theme", "light");
   }
 
   buttons.forEach((button) => {
@@ -157,9 +152,9 @@
   // Load theme on page refresh
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme) {
-    applyTheme(savedTheme);
+    applyTheme("light");
     buttons.forEach((btn) => {
-      if (btn.dataset.theme === savedTheme) {
+      if (btn.dataset.theme === "light") {
         btn.classList.add("active");
       }
     });

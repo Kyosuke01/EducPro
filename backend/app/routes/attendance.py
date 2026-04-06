@@ -25,18 +25,23 @@ def get_attendance_stats():
         conn = get_db_connection()
         with conn.cursor() as cursor:
             sql = """
-                SELECT COUNT(*) as total,
-                       SUM(CASE WHEN late > 0 THEN 1 ELSE 0 END) as late_count,
-                       SUM(CASE WHEN late = 0 THEN 1 ELSE 0 END) as on_time_count
-                FROM Attendance
+                SELECT
+                    COUNT(*) AS total_events,
+                    SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late_count,
+                    SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent_count
+                FROM ATTENDANCE
             """
             cursor.execute(sql)
             result = cursor.fetchone()
 
+        late_count = result['late_count'] or 0
+        absent_count = result['absent_count'] or 0
+        total_events = result['total_events'] or 0
         stats = {
-            'total': result['total'] or 0,
-            'late': result['late_count'] or 0,
-            'onTime': result['on_time_count'] or 0
+            'total': total_events,
+            'late': late_count,
+            'absent': absent_count,
+            'onTime': max(0, total_events - late_count - absent_count)
         }
 
         return jsonify({"stats": stats}), 200
@@ -68,7 +73,12 @@ def get_attendance_by_student(student_id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = "SELECT attendance_id, late, absent, student_id FROM Attendance WHERE student_id = %s"
+            sql = """
+                SELECT attendance_id, student_id, edt_id, date_attendance, status, justified
+                FROM ATTENDANCE
+                WHERE student_id = %s
+                ORDER BY date_attendance DESC, attendance_id DESC
+            """
             cursor.execute(sql, (student_id,))
             attendance = cursor.fetchall()
 
@@ -91,12 +101,12 @@ def get_attendance_by_class(class_name):
         conn = get_db_connection()
         with conn.cursor() as cursor:
             sql = """
-                SELECT a.attendance_id, a.late, a.absent, a.student_id,
-                       s.first_name, s.last_name
-                FROM Attendance a
+                SELECT a.attendance_id, a.student_id, a.edt_id, a.date_attendance, a.status, a.justified,
+                       s.first_name, s.last_name, s.class_name
+                FROM ATTENDANCE a
                 JOIN Student s ON a.student_id = s.student_id
                 WHERE s.class_name = %s
-                ORDER BY s.last_name, s.first_name
+                ORDER BY a.date_attendance DESC, s.last_name, s.first_name
             """
             cursor.execute(sql, (class_name,))
             attendance = cursor.fetchall()
@@ -124,30 +134,52 @@ def create_or_update_attendance():
         return jsonify({"error": f"Champs manquants : {', '.join(missing)}"}), 400
 
     student_id = data["student_id"]
-    late = data["late"]
-    absent = data["absent"]
+    late = int(data["late"] or 0)
+    absent = int(data["absent"] or 0)
+    if late < 0 or absent < 0:
+        return jsonify({"error": "Les valeurs late/absent doivent être positives."}), 400
+    if late == 0 and absent == 0:
+        return jsonify({"error": "Aucune action à enregistrer."}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM Attendance WHERE student_id = %s", (student_id,))
-            existing = cursor.fetchone()
-
-            if existing:
-                sql = """
-                    UPDATE Attendance
-                    SET late = late + %s, absent = absent + %s
-                    WHERE student_id = %s
+            cursor.execute(
                 """
-                cursor.execute(sql, (late, absent, student_id))
-                conn.commit()
-                return jsonify({"message": "Assiduité mise à jour avec succès."}), 200
-            else:
-                sql = "INSERT INTO Attendance (late, absent, student_id) VALUES (%s, %s, %s)"
-                cursor.execute(sql, (late, absent, student_id))
-                conn.commit()
-                return jsonify({"message": "Entrée d'assiduité créée avec succès."}), 201
+                SELECT e.edt_id
+                FROM EDT e
+                JOIN Student s ON s.class_name = e.class_name
+                WHERE s.student_id = %s
+                ORDER BY e.start_time DESC
+                LIMIT 1
+                """,
+                (student_id,)
+            )
+            edt_row = cursor.fetchone()
+            linked_edt_id = edt_row["edt_id"] if edt_row else None
+            attendance_date = data.get("date_attendance")
+
+            for _ in range(late):
+                cursor.execute(
+                    """
+                    INSERT INTO ATTENDANCE (student_id, edt_id, date_attendance, status, justified)
+                    VALUES (%s, %s, COALESCE(%s, CURDATE()), 'late', 0)
+                    """,
+                    (student_id, linked_edt_id, attendance_date)
+                )
+
+            for _ in range(absent):
+                cursor.execute(
+                    """
+                    INSERT INTO ATTENDANCE (student_id, edt_id, date_attendance, status, justified)
+                    VALUES (%s, %s, COALESCE(%s, CURDATE()), 'absent', 0)
+                    """,
+                    (student_id, linked_edt_id, attendance_date)
+                )
+
+        conn.commit()
+        return jsonify({"message": "Assiduité enregistrée avec succès."}), 201
 
     except Exception as e:
         return jsonify({"error": f"Erreur serveur : {str(e)}"}), 500
