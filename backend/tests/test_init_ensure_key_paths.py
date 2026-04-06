@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import patch
 
 import app
@@ -10,7 +9,7 @@ def test_ensure_secret_key_returns_when_present():
 
 
 def test_ensure_secret_key_generates_in_dev(tmp_path):
-    env_file = tmp_path / '.env'
+    _ = tmp_path / '.env'
 
     def fake_getenv(key):
         if key in {'BACKEND_SECRET_KEY', 'API_SECRET_KEY', 'FLASK_ENV', 'ENVIRONMENT'}:
