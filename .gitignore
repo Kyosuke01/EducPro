@@ -25,6 +25,8 @@ admin/.env
 
 .env
 
+security_audit.log
+
 # ─────────────────────────────────────────
 # ⚛️ (plus de Next.js)
 # ─────────────────────────────────────────
@@ -55,4 +57,3 @@ rapport_base_de_donnees.md
 
 .coverage
 backend/coverage.xml
-backend/tests/
