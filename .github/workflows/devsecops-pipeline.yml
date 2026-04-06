@@ -35,6 +35,16 @@ jobs:
       - name: Install backend test deps
         run: pip install -r backend/requirements.txt
       - name: Run backend tests with coverage
+        env:
+          DB_USER: test
+          DB_PASSWORD: test
+          DB_HOST: localhost
+          DB_PORT: "3306"
+          DB_NAME: testdb
+          API_SECRET_KEY: test-api-key
+          BACKEND_SECRET_KEY: test-backend-secret
+          FLASK_ENV: test
+          ENVIRONMENT: test
         run: |
           if [ -d backend/tests ]; then
             cd backend
