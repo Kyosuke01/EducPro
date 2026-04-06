@@ -98,7 +98,7 @@
   /**
    * 2. Work out the current site settings.
    */
-  let currentThemeSetting = calculateSettingAsThemeString({ localStorageTheme });
+  let currentThemeSetting = calculateSettingAsThemeString();
   localStorage.setItem("theme", "light");
 
   /**

@@ -196,8 +196,12 @@
   </footer>
 
   <!-- Password confirmation modal (2FA) -->
-  <div id="password2faModal" class="param-modal" onclick="closePassword2FAModal(true)">
-    <div class="param-modal__card" onclick="event.stopPropagation();">
+  <div id="password2faModal" class="param-modal" role="button" tabindex="0"
+    onclick="closePassword2FAModal(true)"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closePassword2FAModal(true);}">
+    <div class="param-modal__card" role="button" tabindex="0"
+      onclick="event.stopPropagation();"
+      onkeydown="event.stopPropagation();">
       <h6 class="fw-semibold mb-2">Confirmer avec le code A2F</h6>
       <p class="text-sm text-neutral-500 mb-3">Entrez le code à 6 chiffres depuis votre application d'authentification.
       </p>

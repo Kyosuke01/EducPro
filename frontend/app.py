@@ -190,11 +190,19 @@ def _check_rbac_permission(method, path, role):
     if role == "student":
         allowed = ["messages", "auth", "users"]
         if first_segment not in allowed:
+            app.logger.warning(
+                "[403] RBAC denied | role=%s user_id=%s method=%s path=/api/%s ip=%s",
+                role, session.get("user_id"), method, path, request.remote_addr
+            )
             return False, jsonify({"error": "Action refusée. Accès administrateur requis."}), 403
 
     elif role == "teacher":
         allowed = ["attendance", "grades", "messages", "edt", "auth", "users"]
         if first_segment not in allowed:
+            app.logger.warning(
+                "[403] RBAC denied | role=%s user_id=%s method=%s path=/api/%s ip=%s",
+                role, session.get("user_id"), method, path, request.remote_addr
+            )
             return False, jsonify({"error": "Action non autorisée pour un enseignant."}), 403
 
     return True, None, None
@@ -239,6 +247,11 @@ def api_proxy(path):
 
         # Log minimal proxy info pour diagnostiquer les retours inattendus
         app.logger.info(f"[proxy] {request.method} /api/{path} -> {resp.status_code} {resp.headers.get('Content-Type')}")
+        if resp.status_code == 403:
+            app.logger.warning(
+                "[403] Backend denied | role=%s user_id=%s method=%s path=/api/%s ip=%s",
+                session.get("role"), session.get("user_id"), request.method, path, request.remote_addr
+            )
 
         # Propager le Content-Type réel pour éviter de forcer du JSON sur des réponses 404/HTML
         content_type = resp.headers.get("Content-Type", "application/json")
@@ -251,6 +264,11 @@ def api_proxy(path):
 # Pages Légales
 
 
+@app.route("/__test403", methods=["GET"])
+def test_403_page():
+    from flask import abort
+    abort(403)
+
 @app.route("/legal", methods=["GET"])
 def legal():
     """Page des Mentions Légales"""
@@ -261,6 +279,28 @@ def legal():
 def privacy():
     """Page de la Politique de Confidentialité"""
     return render_template("privacy.html")
+
+
+@app.errorhandler(403)
+def forbidden_page(error):
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "error": "Forbidden",
+            "message": "Vous n'avez pas les permissions pour accéder à cette ressource.",
+            "status": 403
+        }), 403
+    return render_template("403.html"), 403
+
+
+@app.errorhandler(404)
+def not_found_page(error):
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "error": "Not Found",
+            "message": "La ressource demandée est introuvable.",
+            "status": 404
+        }), 404
+    return render_template("404.html"), 404
 
 
 if __name__ == "__main__":

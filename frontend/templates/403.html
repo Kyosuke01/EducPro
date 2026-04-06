@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Forbidden</title>
+    <style>
+        :root{
+            --red:#CF352C;--dark-red:#9C0502;--light-beige:#F3F2EE;--beige:#EEE8E0;--dark-beige:#DAD2C9;
+            --black:#1D2528;--gray:#38434A;--lighter-gray:#49555B;--white:#FFF;--skin:#FFB482;
+            --pole:#F5AE4E;--pole-shadow:#DF9D41;
+        }
+        *{box-sizing:border-box}
+        html,body{width:100%;height:100%;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--gray);background:#fff}
+        body{display:flex;align-items:center;justify-content:center;overflow:hidden}
+        .hover{position:relative;width:720px;height:560px}
+        .background{position:absolute;left:50%;bottom:0;transform:translateX(-50%)}
+        .background::before{content:"";position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:450px;height:450px;background:var(--beige);border-radius:50%;z-index:-1}
+        .background::after{content:"";position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:550px;height:550px;background:var(--light-beige);border-radius:50%;z-index:-2}
+        .door{position:relative;width:180px;height:300px;margin:0 auto -10px;background:var(--light-beige);border:10px solid var(--dark-beige);border-radius:3px;font-size:52px;line-height:280px;text-align:center;text-shadow:0 2px var(--pole)}
+        .door::before{content:"";position:absolute;top:140px;right:10px;width:25px;height:25px;background:var(--black);border-radius:50%}
+        .door::after{content:"";position:absolute;top:148px;right:18px;width:35px;height:10px;background:var(--lighter-gray);border-radius:5px}
+        .rug{width:180px;border-bottom:120px solid var(--red);border-left:50px solid transparent;border-right:50px solid transparent}
+        .rug::before{content:"";display:block;width:100%;height:10px;background:var(--dark-red)}
+        .foreground{position:absolute;left:50%;bottom:0;transform:translateX(-50%)}
+        .bouncer{position:relative;left:-130px;transition:left 1.2s}
+        .head{position:relative;left:10px;margin-bottom:10px;width:65px;height:90px;background:var(--skin);border-radius:30px 30px 15px 15px}
+        .neck{position:absolute;bottom:-15px;width:48px;height:30px;background:var(--skin)}
+        .eye{position:absolute;top:40px;width:5px;height:5px;background:var(--black);border-radius:50%}
+        .eye.left{right:5px}.eye.right{right:30px}
+        .ear{position:relative;top:40px;left:-10px;width:20px;height:20px;background:var(--skin);border-radius:50%}
+        .body{position:relative;width:110px;height:270px;background:var(--black);border-top-right-radius:45px;border-top-left-radius:15px}
+        .body::before{content:"";position:relative;display:block;top:5px;width:104px;height:110px;background:var(--white);border-top-right-radius:42px}
+        .body::after{content:"";position:absolute;top:0;width:75px;height:180px;background:var(--gray);border-radius:15px 42px 100px 10px}
+        .arm{position:absolute;top:105px;left:-20px;width:60px;height:230px;background:var(--lighter-gray);border-radius:30px;transform:rotate(-30deg);transform-origin:top center;transition:transform 1s}
+        .arm::before{content:"";position:absolute;bottom:0;width:60px;height:60px;background:var(--skin);border-radius:50%}
+        .poles{position:absolute;left:50%;bottom:0;transform:translateX(-25%)}
+        .pole{position:absolute;bottom:0;width:15px;height:135px;background:var(--pole)}
+        .pole.left{left:200px}.pole.right{right:200px}
+        .pole::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:25px;height:25px;background:var(--pole);border-radius:50%;box-shadow:inset 0 -2px var(--pole-shadow)}
+        .pole::after{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);width:25px;height:4px;background:var(--pole);border-radius:4px;box-shadow:0 2px var(--pole-shadow)}
+        .rope{position:absolute;top:-110px;left:-218px;width:150px;height:75px;border:20px solid var(--red);border-top:0;border-bottom-left-radius:150px;border-bottom-right-radius:150px;box-shadow:0 2px var(--dark-red);transition:width 1.2s}
+        .hover:hover .bouncer{left:130px}
+        .hover:hover .arm{transform:rotate(-42deg)}
+        .hover:hover .rope{width:435px}
+        .cta{position:absolute;top:24px;left:50%;transform:translateX(-50%);text-align:center}
+        .cta h1{margin:0;font-size:34px;color:#1f2937}
+        .cta p{margin:8px 0 14px;color:#4b5563}
+        .cta a{display:inline-block;background:#1f2937;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px}
+    </style>
+</head>
+<body>
+    <div class="hover">
+        <div class="cta">
+            <h1>Accès interdit (403)</h1>
+            <p>Vous n'avez pas les droits nécessaires pour cette ressource.</p>
+            <a href="/">Retour accueil</a>
+        </div>
+        <div class="background">
+            <div class="door">403</div>
+            <div class="rug"></div>
+        </div>
+        <div class="foreground">
+            <div class="bouncer">
+                <div class="head">
+                    <div class="neck"></div>
+                    <div class="eye left"></div>
+                    <div class="eye right"></div>
+                    <div class="ear"></div>
+                </div>
+                <div class="body"></div>
+                <div class="arm"></div>
+            </div>
+            <div class="poles">
+                <div class="pole left"></div>
+                <div class="pole right"></div>
+                <div class="rope"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

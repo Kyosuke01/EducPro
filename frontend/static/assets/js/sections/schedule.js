@@ -250,7 +250,7 @@ function renderScheduleGrid(className, dataList) {
 }
 
 function buildScheduleLegend(dataList) {
-  const topics = [...new Set(dataList.map(e => e.topic_name).filter(Boolean))].sort();
+  const topics = [...new Set(dataList.map(e => e.topic_name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   if (!topics.length) return '';
 
   const items = topics.map(topic => {
@@ -279,7 +279,7 @@ async function initSchedule() {
 
   if (!tabsContainer || !gridContainer) return;
 
-  const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].sort();
+  const uniqueClasses = [...new Set(edtList.map(e => e.class_name))].sort((a, b) => a.localeCompare(b));
 
   if (uniqueClasses.length === 0) {
     gridContainer.innerHTML = `

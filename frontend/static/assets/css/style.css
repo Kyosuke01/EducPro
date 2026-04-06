@@ -12376,7 +12376,7 @@ textarea:active {
 .form-check.style-check .form-check-input::after {
   position: absolute;
   content: "\eb7a";
-  font-family: "remixicon";
+  font-family: "remixicon", sans-serif;
   display: inline-block;
   left: 50%;
   top: 50%;
@@ -12942,7 +12942,6 @@ input[type=date] {
 /* === apex-chart css start === */
 .apexcharts-tooltip-style-1 .apexcharts-tooltip {
   padding: 0.75rem 0.5rem;
-  background-color: var();
   border: 1px solid var(--input-bg);
   background-color: var(--white);
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
@@ -12963,7 +12962,6 @@ input[type=date] {
 }
 
 .apexcharts-tooltip-style-1 .apexcharts-tooltip-series-group {
-  padding: 0;
   display: flex;
   align-items: center;
   padding: 0 !important;
@@ -13123,7 +13121,7 @@ body.skeleton-mode #gradesRadarChart {
 .check-marker .apexcharts-legend-marker::after {
   position: absolute;
   content: "\eb7a";
-  font-family: remixicon;
+  font-family: remixicon, sans-serif;
   display: inline-block;
   left: 50%;
   top: 50%;
@@ -13376,7 +13374,7 @@ html[data-theme=dark] .text-style .apexcharts-text.apexcharts-yaxis-label {
   content: "\ea64" !important;
   vertical-align: middle !important;
   border: 0 !important;
-  font-family: remixicon;
+  font-family: remixicon, sans-serif;
   font-size: 24px;
   line-height: 0;
   color: inherit;
@@ -13386,7 +13384,7 @@ html[data-theme=dark] .text-style .apexcharts-text.apexcharts-yaxis-label {
   vertical-align: middle !important;
   border: 0 !important;
   content: "\ea4e" !important;
-  font-family: remixicon;
+  font-family: remixicon, sans-serif;
   font-size: 24px;
   line-height: 0;
   color: inherit;
@@ -14032,7 +14030,6 @@ td.fc-header-center {
 
 .radial-progress circle {
   fill: rgba(0, 0, 0, 0);
-  stroke: #fff;
   stroke-dashoffset: 219.9114857513;
   stroke-width: 4;
   stroke: var(--primary-600);
@@ -14167,7 +14164,7 @@ td.fc-header-center {
 .color-picker-btn__box::before {
   position: absolute;
   content: "\eb7b";
-  font-family: "remixicon";
+  font-family: "remixicon", sans-serif;
   font-weight: 400;
   inset-inline-start: 50%;
   inset-block-start: 50%;
@@ -14538,7 +14535,7 @@ table.dataTable td.dt-type-date {
 [data-theme-toggle]::after {
   position: absolute;
   content: "\f1bf";
-  font-family: remixicon;
+  font-family: remixicon, sans-serif;
   font-style: normal;
   font-size: 1.25rem;
   color: var(--text-primary-light);
@@ -14769,7 +14766,7 @@ table.dataTable td.dt-type-date {
 .sidebar-menu li.dropdown > a::after {
   position: absolute;
   content: "\ea6e";
-  font-family: remixicon;
+  font-family: remixicon, sans-serif;
   font-style: normal;
   inset-block-start: 50%;
   inset-inline-end: 0.75rem;
@@ -14918,7 +14915,6 @@ table.dataTable td.dt-type-date {
   position: absolute;
   content: "";
   width: 0;
-  height: 100%;
   border: 1px solid rgba(37, 161, 148, 0.2117647059);
   inset-inline-start: 3px;
   z-index: -1;
@@ -14963,8 +14959,7 @@ table.dataTable td.dt-type-date {
 .dashboard-main {
   margin-inline-start: 0;
   display: flex;
-  flex-wrap: wrap;
-  flex-flow: column;
+  flex-flow: column nowrap;
   min-height: 100vh;
   transition: all 0.3s;
 }

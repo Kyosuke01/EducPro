@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Not Found</title>
+    <style>
+        :root{
+            --black:#13242C;--white:#fff;--red1:#D13433;--red2:#932422;--skin1:#EAB08C;--skin2:#D9766C;--skin3:#B2524D;
+            --hair:#13242C;--wood1:#601513;
+        }
+        *{box-sizing:border-box}
+        body{background:#FF7F2E;font-family:'Trebuchet MS',system-ui,sans-serif;margin:0;overflow:hidden}
+        .text{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);color:rgba(19,36,44,.12);font-size:min(28vw,320px);font-weight:700}
+        .container{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);height:300px;width:500px}
+        .container:after{content:"";position:absolute;background:rgba(19,36,44,.1);border-radius:12px;bottom:40px;height:12px;left:80px;width:350px;z-index:-1;animation:shadow 1.2s infinite cubic-bezier(.55,.01,.16,1.34)}
+        .caveman{height:300px;position:absolute;width:250px}
+        .caveman:nth-child(1){right:20px}
+        .caveman:nth-child(2){left:20px;transform:rotateY(180deg)}
+        .head{position:absolute;background:var(--hair);border-radius:50px;height:140px;left:60px;top:25px;width:65px;animation:head 1.2s infinite cubic-bezier(.55,.01,.16,1.34)}
+        .caveman:nth-child(1) .head{animation-delay:.6s}
+        .eye{left:45%;position:absolute;transform:translateX(-50%);background:var(--skin1);border-radius:50px;height:16px;top:40px;width:48px}
+        .eye:after,.eye:before{content:"";position:absolute;top:50%;transform:translateY(-50%);background:var(--black);border-radius:50%;height:5px;width:5px;animation:eye 1.2s infinite cubic-bezier(.55,.01,.16,1.34)}
+        .caveman:nth-child(1) .eye:after,.caveman:nth-child(1) .eye:before{animation-delay:.6s}
+        .eye:after{left:5px}.eye:before{right:9px}
+        .nose{position:absolute;left:45%;top:12px;transform:translateX(-50%);background:var(--skin2);border-left:8px solid rgba(0,0,0,.1);border-radius:10px;height:35px;width:15px}
+        .shape{left:50%;position:absolute;transform:translateX(-50%);border-radius:50%;height:140px;overflow:hidden;top:70px;width:140px}
+        .caveman:nth-child(1) .shape{background:var(--red1)}
+        .caveman:nth-child(2) .shape{background:var(--red2)}
+        .arm-right{position:absolute;background:var(--skin1);border-left:8px solid rgba(0,0,0,.1);border-radius:50px;height:180px;left:135px;top:80px;transform-origin:30px 30px;width:60px;animation:arm 1.2s infinite cubic-bezier(.55,.01,.16,1.34)}
+        .caveman:nth-child(2) .arm-right{animation-delay:.6s}
+        .club{position:absolute;border-bottom:110px solid var(--wood1);border-left:10px solid transparent;border-right:10px solid transparent;height:0;left:-60px;top:120px;transform:rotate(70deg);width:20px}
+        .leg{position:absolute;border-radius:10px;height:55px;top:200px;width:10px}
+        .leg:nth-child(1){background:var(--skin3);left:95px}
+        .leg:nth-child(2){background:var(--skin2);left:115px}
+        .foot{position:absolute;border-radius:25px 25px 0 0;height:25px;left:-38px;top:30px;width:50px;background:var(--skin2)}
+        .leg:nth-child(1) .foot{background:var(--skin3)}
+        .cta{position:absolute;left:50%;top:14%;transform:translateX(-50%);text-align:center;color:#13242C}
+        .cta a{display:inline-block;margin-top:8px;background:#13242C;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px}
+        @keyframes arm{0%{transform:rotate(0)}100%{transform:rotate(-360deg)}}
+        @keyframes head{0%,42%,100%{top:25px}45%{top:50px}}
+        @keyframes eye{0%,42%,100%{height:5px}45%{height:1px}}
+        @keyframes shadow{0%,50%,100%{width:350px;left:80px}25%{width:450px;left:80px}75%{width:450px;left:0}}
+    </style>
+</head>
+<body>
+    <div class="cta">
+        <h1>Page introuvable</h1>
+        <a href="/">Retour accueil</a>
+    </div>
+    <div class="text"><p>404</p></div>
+    <div class="container">
+        <div class="caveman">
+            <div class="leg"><div class="foot"></div></div>
+            <div class="leg"><div class="foot"></div></div>
+            <div class="shape"></div>
+            <div class="head"><div class="eye"><div class="nose"></div></div></div>
+            <div class="arm-right"><div class="club"></div></div>
+        </div>
+        <div class="caveman">
+            <div class="leg"><div class="foot"></div></div>
+            <div class="leg"><div class="foot"></div></div>
+            <div class="shape"></div>
+            <div class="head"><div class="eye"><div class="nose"></div></div></div>
+            <div class="arm-right"><div class="club"></div></div>
+        </div>
+    </div>
+</body>
+</html>

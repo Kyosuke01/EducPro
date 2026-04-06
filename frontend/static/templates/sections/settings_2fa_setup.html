@@ -6,8 +6,10 @@
   <p class="text-xs text-neutral-500 mt-2 d-flex align-items-center justify-content-center gap-2">
     Clé manuelle :
     <span id="manual-key-text"
+      role="button" tabindex="0"
       style="filter: blur(5px); cursor: pointer; transition: 0.3s;"
-      onclick="this.style.filter='none'">Génération...</span>
+      onclick="this.style.filter='none'"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.style.filter='none';}">Génération...</span>
     <button type="button"
       class="btn btn-sm btn-light py-0 px-2 border-0 shadow-sm"
       style="border-radius:20px;"
