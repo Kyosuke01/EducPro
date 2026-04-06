@@ -8,6 +8,7 @@
     <meta name="description"
         content="EducPro - Plateforme de gestion scolaire et académique pour écoles, collèges et universités">
     <meta name="keywords" content="EducPro, Education, Admin Dashboard, Gestion Scolaire">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>EducPro - Connexion</title>
     <link rel="icon" type="image/png" href="static/assets/img/edu.png">
     <link rel="stylesheet" href="static/assets/css/login.css">
@@ -41,6 +42,7 @@
                 {% endif %}
 
                 <form action="/login" method="POST" class="login-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <div class="form-group">
                         <label for="email" class="form-label">Adresse Email</label>
@@ -170,7 +172,10 @@
             try {
                 const res = await fetch('/api/auth/forgot-password', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                    headers: {
+                        'Content-Type': 'application/json; charset=UTF-8',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
                     body: JSON.stringify({ email: email })
                 });
 
@@ -212,7 +217,10 @@
             try {
                 const res = await fetch('/api/auth/reset-password', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                    headers: {
+                        'Content-Type': 'application/json; charset=UTF-8',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
                     body: JSON.stringify({
                         email: resetEmailState,
                         code_a2f: resetCodeState,

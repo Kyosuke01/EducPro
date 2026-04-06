@@ -1,4 +1,5 @@
 import os
+import secrets
 import requests
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from datetime import timedelta
@@ -13,6 +14,58 @@ API_URL = os.getenv("API_URL", "http://localhost:5000")
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
 USER_AGENT = "educrpro/1.0"
 TWO_FACTOR_TEMPLATE = "two_factor.html"
+
+
+def get_csrf_token():
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+def validate_csrf_token():
+    session_token = session.get("csrf_token")
+    provided_token = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token")
+    return bool(session_token and provided_token and secrets.compare_digest(session_token, provided_token))
+
+
+@app.context_processor
+def inject_csrf_token():
+    return {"csrf_token": get_csrf_token}
+
+
+@app.before_request
+def enforce_csrf_for_frontend_posts():
+    protected_paths = {"/login", "/verify-2fa", "/session/sync-2fa"}
+    if request.method in {"POST", "PUT", "DELETE"} and request.path in protected_paths:
+        if not validate_csrf_token():
+            return jsonify({"error": "Invalid CSRF token"}), 403
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+        "font-src 'self' fonts.gstatic.com data:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https:; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    if os.getenv("ENVIRONMENT") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 
 def get_secure_headers():

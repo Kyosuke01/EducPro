@@ -113,6 +113,7 @@
             <div class="twofa-alert">{{ error }}</div>
             {% endif %}
             <form method="POST" autocomplete="off">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="code">Code de vérification</label>
                 <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="●●●●●●" autofocus>
                 <button type="submit">Valider et continuer</button>

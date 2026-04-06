@@ -10,6 +10,10 @@ const USER = userDataElement && userDataElement.textContent.trim() !== ''
   : {};
 const SKELETON_MODE = new URLSearchParams(window.location.search).get('skeleton') === '1';
 
+function getCsrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 // ============================================
 // API Helper
 // ============================================
@@ -18,8 +22,16 @@ async function api(path, options = {}) {
     return {};
   }
   try {
+    const method = (options.method || 'GET').toUpperCase();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    };
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+      headers['X-CSRF-Token'] = getCsrfToken();
+    }
     const resp = await fetch(`/api/${path}`, {
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       ...options
     });
 
@@ -770,7 +782,10 @@ async function deleteSearchUser(type, id) {
   try {
     const resp = await fetch(`/api/users/${type}/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCsrfToken()
+      }
     });
     if (resp.ok) {
       alert('Utilisateur supprimé');

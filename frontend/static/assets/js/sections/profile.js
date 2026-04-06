@@ -5,6 +5,10 @@
 let current2FASecret = "";
 let passwordChangeContext = null;
 
+function getCsrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 function setupOtpInputs(containerId) {
   setTimeout(() => {
     const container = document.getElementById(containerId);
@@ -175,7 +179,10 @@ async function toggle2FASection() {
       try {
         const res = await fetch('/api/auth/2fa/disable', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
           body: JSON.stringify({ user_id: USER.id, role: USER.role })
         });
         if (res.ok) {
@@ -183,7 +190,10 @@ async function toggle2FASection() {
           // Synchroniser la session Flask
           await fetch('/session/sync-2fa', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': getCsrfToken()
+            },
             body: JSON.stringify({ has_2fa: false })
           });
           // Recharger la vue paramètres
@@ -234,7 +244,10 @@ async function submitPasswordChange(payload, code, formRef) {
   try {
     const res = await fetch('/api/users/change-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCsrfToken()
+      },
       body: JSON.stringify({ ...payload, code: code || undefined })
     });
     if (res.ok) {
@@ -269,7 +282,10 @@ async function validate2FA() {
     try {
       const res = await fetch('/api/auth/2fa/verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken()
+        },
         body: JSON.stringify({ user_id: USER.id, role: USER.role, secret: current2FASecret, code })
       });
       if (res.ok) {
@@ -277,7 +293,10 @@ async function validate2FA() {
         // Synchroniser la session Flask
         await fetch('/session/sync-2fa', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
           body: JSON.stringify({ has_2fa: true })
         });
         const contentArea = document.getElementById('contentArea');
