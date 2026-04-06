@@ -13,12 +13,13 @@ import re
 
 # Configuration du logging pour les tentatives d'accès non autorisé
 security_logger = logging.getLogger('security_audit')
-security_handler = logging.FileHandler('security_audit.log')
-security_handler.setFormatter(logging.Formatter(
-    '[%(asctime)s] %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-))
-security_logger.addHandler(security_handler)
+if not security_logger.handlers:
+    security_handler = logging.StreamHandler()
+    security_handler.setFormatter(logging.Formatter(
+        '[%(asctime)s] %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    ))
+    security_logger.addHandler(security_handler)
 security_logger.setLevel(logging.WARNING)
 
 

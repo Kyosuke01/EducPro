@@ -37,8 +37,9 @@ jobs:
       - name: Run backend tests with coverage
         run: |
           if [ -d backend/tests ]; then
-            coverage run --source=backend/app -m pytest backend/tests
-            coverage xml -o backend/coverage.xml
+            cd backend
+            coverage run --source=app -m pytest tests
+            coverage xml -o coverage.xml
           else
             echo "backend/tests not found, generating empty-safe coverage file"
             mkdir -p backend
