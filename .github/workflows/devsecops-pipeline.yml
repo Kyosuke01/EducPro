@@ -47,9 +47,9 @@ jobs:
           ENVIRONMENT: test
         run: |
           if [ -d backend/tests ]; then
-            cd backend
-            coverage run --source=app -m pytest tests
-            coverage xml -o coverage.xml
+            PYTHONPATH=backend coverage run --source=backend/app -m pytest backend/tests
+            coverage xml -o backend/coverage.xml --include="backend/app/*"
+            test -f backend/coverage.xml && head -n 20 backend/coverage.xml
           else
             echo "backend/tests not found, generating empty-safe coverage file"
             mkdir -p backend
