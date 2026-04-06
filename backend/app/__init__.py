@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 import os
 import secrets
 import sys
+import re
 
 load_dotenv()
-db = SQLAlchemy()
+sqlalchemy_db = SQLAlchemy()
+db = sqlalchemy_db
 
 
 def _ensure_secret_key():
@@ -96,6 +98,11 @@ def _validate_api_request(validate_session_security):
 def _register_request_hooks(app):
     from app.rbac import validate_session_security
 
+    def _sanitize_log_value(value, max_len=120):
+        text = str(value) if value is not None else "UNKNOWN"
+        safe = re.sub(r"[^a-zA-Z0-9._/@:-]", "", text)
+        return safe[:max_len] or "UNKNOWN"
+
     @app.before_request
     def require_api_key_and_ua():
         if request.path.startswith("/api/"):
@@ -128,10 +135,10 @@ def _register_request_hooks(app):
         if response.status_code == 403:
             app.logger.warning(
                 "403 FORBIDDEN | method=%s | path=%s | ip=%s | ua=%s",
-                request.method,
-                request.path,
-                request.remote_addr,
-                request.headers.get("User-Agent", "UNKNOWN")[:120]
+                _sanitize_log_value(request.method, 16),
+                _sanitize_log_value(request.path, 200),
+                _sanitize_log_value(request.remote_addr, 45),
+                _sanitize_log_value(request.headers.get("User-Agent", "UNKNOWN"), 120)
             )
 
         return response
@@ -175,7 +182,7 @@ def create_app():
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    db.init_app(app)
+    sqlalchemy_db.init_app(app)
     _register_blueprints(app)
     _register_request_hooks(app)
     _register_routes_and_errors(app)

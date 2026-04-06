@@ -65,30 +65,29 @@ def search_recipients():
             else:
                 table_conf = {
                     "teacher": {
-                        "table": "Teacher",
-                        "fields": "teacher_id AS id, first_name, last_name, mail_teacher AS email, topic_name AS meta, 'teacher' AS role",
-                        "email_column": "mail_teacher"
+                        "query": """
+                            SELECT teacher_id AS id, first_name, last_name, mail_teacher AS email, topic_name AS meta, 'teacher' AS role
+                            FROM Teacher
+                            WHERE %s = '' OR first_name LIKE %s OR last_name LIKE %s OR mail_teacher LIKE %s
+                            ORDER BY last_name ASC, first_name ASC
+                            LIMIT %s
+                        """
                     },
                     "student": {
-                        "table": "Student",
-                        "fields": "student_id AS id, first_name, last_name, mail_student AS email, class_name AS meta, 'student' AS role",
-                        "email_column": "mail_student"
+                        "query": """
+                            SELECT student_id AS id, first_name, last_name, mail_student AS email, class_name AS meta, 'student' AS role
+                            FROM Student
+                            WHERE %s = '' OR first_name LIKE %s OR last_name LIKE %s OR mail_student LIKE %s
+                            ORDER BY last_name ASC, first_name ASC
+                            LIMIT %s
+                        """
                     }
                 }
                 if target not in table_conf:
                     return jsonify({"error": "Type de recherche invalide."}), 400
 
                 cfg = table_conf[target]
-                cursor.execute(
-                    f"""
-                    SELECT {cfg['fields']}
-                    FROM {cfg['table']}
-                    WHERE %s = '' OR first_name LIKE %s OR last_name LIKE %s OR {cfg['email_column']} LIKE %s
-                    ORDER BY last_name ASC, first_name ASC
-                    LIMIT %s
-                    """,
-                    (query, like_query, like_query, like_query, limit)
-                )
+                cursor.execute(cfg["query"], (query, like_query, like_query, like_query, limit))
             results = cursor.fetchall()
 
         return jsonify({"results": results}), 200

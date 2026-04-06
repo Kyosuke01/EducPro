@@ -7,3 +7,5 @@ cryptography
 bcrypt
 pyotp
 itsdangerous
+pytest
+coverage

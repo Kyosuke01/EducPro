@@ -27,27 +27,27 @@
                 id="newUserFirstName" required>
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label text-sm fw-medium">Nom</label>
+              <label class="form-label text-sm fw-medium" for="newUserLastName">Nom</label>
               <input type="text" class="form-control radius-8 bg-neutral-50 border-0 p-12"
                 id="newUserLastName" required>
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label text-sm fw-medium">Email</label>
+            <label class="form-label text-sm fw-medium" for="newUserEmail">Email</label>
             <input type="email" class="form-control radius-8 bg-neutral-50 border-0 p-12"
               id="newUserEmail" required>
           </div>
 
           <div class="mb-3">
-            <label class="form-label text-sm fw-medium">Mot de passe provisoire</label>
+            <label class="form-label text-sm fw-medium" for="newUserPassword">Mot de passe provisoire</label>
             <input type="password" class="form-control radius-8 bg-neutral-50 border-0 p-12"
               id="newUserPassword" required minlength="6">
           </div>
 
           <!-- Champ étudiant : Classe -->
           <div class="mb-3" id="studentFields">
-            <label class="form-label text-sm fw-medium">Classe</label>
+            <label class="form-label text-sm fw-medium" for="newUserClass">Classe</label>
             <select class="form-select radius-8 bg-neutral-50 border-0 p-12"
               id="newUserClass" required>
               <!-- Options injectées par users.js -->

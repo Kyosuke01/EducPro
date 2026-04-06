@@ -21,6 +21,12 @@ auth_bp = Blueprint("auth", __name__)
 ERROR_INVALID_2FA_CODE = "Code 2FA invalide"
 
 
+def _resolve_user_table(role):
+    table = "Teacher" if role in ["teacher", "admin"] else "Student"
+    id_field = "teacher_id" if table == "Teacher" else "student_id"
+    return table, id_field
+
+
 def _format_user_payload(record, role):
     payload = {
         "id": record["student_id"] if role == "student" else record["teacher_id"],
@@ -342,15 +348,22 @@ def verify_2fa():
     if not totp.verify(data["code"]):
         return jsonify({"error": "Code TOTP invalide"}), 400
 
-    table = "Teacher" if data["role"] in ["teacher", "admin"] else "Student"
-    id_field = "teacher_id" if table == "Teacher" else "student_id"
+    table, id_field = _resolve_user_table(data["role"])
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            query = f"UPDATE {table} SET totp_secret = %s WHERE {id_field} = %s"
-            cursor.execute(query, (data["secret"], data["user_id"]))
+            if table == "Teacher":
+                cursor.execute(
+                    "UPDATE Teacher SET totp_secret = %s WHERE teacher_id = %s",
+                    (data["secret"], data["user_id"])
+                )
+            else:
+                cursor.execute(
+                    "UPDATE Student SET totp_secret = %s WHERE student_id = %s",
+                    (data["secret"], data["user_id"])
+                )
             conn.commit()
         return jsonify({"message": "2FA activé avec succès"}), 200
     except Exception as e:
@@ -422,12 +435,10 @@ def reset_password():
             cursor.execute(
                 "SELECT student_id as id, 'Student' as tbl, totp_secret FROM Student WHERE mail_student = %s", (email,))
             user = cursor.fetchone()
-            id_field = "student_id"
             if not user:
                 cursor.execute(
                     "SELECT teacher_id as id, 'Teacher' as tbl, totp_secret FROM Teacher WHERE mail_teacher = %s", (email,))
                 user = cursor.fetchone()
-                id_field = "teacher_id"
 
         if not user or not user.get("totp_secret"):
             return jsonify({"error": "Compte introuvable ou A2F non configuré."}), 400
@@ -440,8 +451,16 @@ def reset_password():
         # Update mot de passe
         hashed = bcrypt.hashpw(new_pwd.encode('utf-8'), bcrypt.gensalt(14)).decode('utf-8')
         with conn.cursor() as cursor:
-            query = f"UPDATE {user['tbl']} SET password = %s WHERE {id_field} = %s"
-            cursor.execute(query, (hashed, user['id']))
+            if user["tbl"] == "Teacher":
+                cursor.execute(
+                    "UPDATE Teacher SET password = %s WHERE teacher_id = %s",
+                    (hashed, user["id"])
+                )
+            else:
+                cursor.execute(
+                    "UPDATE Student SET password = %s WHERE student_id = %s",
+                    (hashed, user["id"])
+                )
             conn.commit()
 
         return jsonify({"message": "Mot de passe réinitialisé avec succès."}), 200
@@ -465,14 +484,22 @@ def change_password():
 
     code = data.get("code")
 
-    table = "Teacher" if data["role"] in ["teacher", "admin"] else "Student"
-    id_field = "teacher_id" if table == "Teacher" else "student_id"
+    table, id_field = _resolve_user_table(data["role"])
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute(f"SELECT password, totp_secret FROM {table} WHERE {id_field} = %s", (data["user_id"],))
+            if table == "Teacher":
+                cursor.execute(
+                    "SELECT password, totp_secret FROM Teacher WHERE teacher_id = %s",
+                    (data["user_id"],)
+                )
+            else:
+                cursor.execute(
+                    "SELECT password, totp_secret FROM Student WHERE student_id = %s",
+                    (data["user_id"],)
+                )
             user = cursor.fetchone()
 
             if not user or not bcrypt.checkpw(data["old_password"].encode('utf-8'), user["password"].encode('utf-8')):
@@ -486,7 +513,16 @@ def change_password():
                     return jsonify({"error": ERROR_INVALID_2FA_CODE}), 401
 
             hashed = bcrypt.hashpw(data["new_password"].encode('utf-8'), bcrypt.gensalt(14)).decode('utf-8')
-            cursor.execute(f"UPDATE {table} SET password = %s WHERE {id_field} = %s", (hashed, data["user_id"]))
+            if table == "Teacher":
+                cursor.execute(
+                    "UPDATE Teacher SET password = %s WHERE teacher_id = %s",
+                    (hashed, data["user_id"])
+                )
+            else:
+                cursor.execute(
+                    "UPDATE Student SET password = %s WHERE student_id = %s",
+                    (hashed, data["user_id"])
+                )
             conn.commit()
 
         return jsonify({"message": "Mot de passe modifié avec succès."}), 200
@@ -504,15 +540,22 @@ def disable_2fa():
     if not data or not all(k in data for k in ("user_id", "role")):
         return jsonify({"error": "Champs user_id et role requis"}), 400
 
-    table = "Teacher" if data["role"] in ["teacher", "admin"] else "Student"
-    id_field = "teacher_id" if table == "Teacher" else "student_id"
+    table, id_field = _resolve_user_table(data["role"])
 
     conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            query = f"UPDATE {table} SET totp_secret = NULL WHERE {id_field} = %s"
-            cursor.execute(query, (data["user_id"],))
+            if table == "Teacher":
+                cursor.execute(
+                    "UPDATE Teacher SET totp_secret = NULL WHERE teacher_id = %s",
+                    (data["user_id"],)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE Student SET totp_secret = NULL WHERE student_id = %s",
+                    (data["user_id"],)
+                )
             conn.commit()
         return jsonify({"message": "A2F désactivée avec succès."}), 200
     except Exception as e:

@@ -10,10 +10,10 @@ function normalizeTopicName(value) {
   return (value || '')
     .toString()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\uFFFD/g, '')
-    .replace(/œ/g, 'oe')
-    .replace(/æ/g, 'ae')
+    .replaceAll(/[\u0300-\u036f]/g, '')
+    .replaceAll(/\uFFFD/g, '')
+    .replaceAll(/œ/g, 'oe')
+    .replaceAll(/æ/g, 'ae')
     .toLowerCase()
     .trim();
 }
@@ -22,11 +22,11 @@ function topicAlphaKey(value) {
   return normalizeTopicName(value)
     .split('(')[0]
     .trim()
-    .replace(/[^a-z]/g, '');
+    .replaceAll(/[^a-z]/g, '');
 }
 
 function topicConsonantKey(value) {
-  return topicAlphaKey(value).replace(/[aeiouy]/g, '');
+  return topicAlphaKey(value).replaceAll(/[aeiouy]/g, '');
 }
 
 function topicMatchesTeacher(gradeTopic, teacherTopic) {

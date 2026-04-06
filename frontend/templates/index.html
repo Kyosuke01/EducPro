@@ -78,7 +78,10 @@
                             <input type="checkbox" name="remember" id="remember">
                             <span>Se souvenir de moi</span>
                         </label>
-                        <a href="#" onclick="document.getElementById('password-reset-modal').classList.add('active'); return false;" class="forgot-password">Mot de passe oublié?</a>
+                        <button type="button" onclick="document.getElementById('password-reset-modal').classList.add('active');"
+                            class="forgot-password" style="background: none; border: none; padding: 0;">
+                            Mot de passe oublié?
+                        </button>
                     </div>
 
                     <button type="submit" class="submit-button">Se connecter</button>

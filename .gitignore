@@ -53,3 +53,6 @@ Thumbs.db
 # ─────────────────────────────────────────
 rapport_base_de_donnees.md
 
+.coverage
+backend/coverage.xml
+backend/tests/

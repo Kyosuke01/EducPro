@@ -20,7 +20,7 @@
           </div>
           <div class="cursor-pointer d-flex align-items-center mb-0">
             <input class="custom-switch-clean" type="checkbox" role="switch"
-              id="switch2FA" onchange="toggle2FASection()">
+              id="switch2FA" aria-checked="false" onchange="toggle2FASection()">
           </div>
         </div>
 
@@ -37,13 +37,13 @@
           <h6 class="text-md fw-medium mb-3">Changer le mot de passe</h6>
           <form onsubmit="changePassword(event)">
             <div class="mb-3">
-              <label class="form-label text-sm fw-medium">Mot de passe actuel</label>
+              <label class="form-label text-sm fw-medium" for="current_password">Mot de passe actuel</label>
               <input type="password" name="current_password" id="current_password"
                 autocomplete="current-password"
                 class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
             </div>
             <div class="mb-4">
-              <label class="form-label text-sm fw-medium">Nouveau mot de passe</label>
+              <label class="form-label text-sm fw-medium" for="new_password">Nouveau mot de passe</label>
               <input type="password" name="new_password" id="new_password"
                 autocomplete="new-password"
                 class="form-control radius-8 bg-neutral-50 border-0 p-12" required>
