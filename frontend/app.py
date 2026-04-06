@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SESSION_SECRET_KEY", "educpro_secret_key_2026")
 app.permanent_session_lifetime = timedelta(minutes=30)
-API_URL = "http://backend:5000"
+API_URL = os.getenv("API_URL", "http://localhost:5000")
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "")
 USER_AGENT = "educrpro/1.0"
 TWO_FACTOR_TEMPLATE = "two_factor.html"
