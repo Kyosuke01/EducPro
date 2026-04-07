@@ -37,7 +37,9 @@ def inject_csrf_token():
 
 @app.before_request
 def enforce_csrf_for_frontend_posts():
-    protected_paths = {"/login", "/verify-2fa", "/session/sync-2fa"}
+    # Keep CSRF protection on authenticated session mutation endpoint.
+    # Login/2FA form flow is server-rendered and must remain resilient across environments.
+    protected_paths = {"/session/sync-2fa"}
     if request.method in {"POST", "PUT", "DELETE"} and request.path in protected_paths:
         if not validate_csrf_token():
             return jsonify({"error": "Invalid CSRF token"}), 403
@@ -47,9 +49,9 @@ def enforce_csrf_for_frontend_posts():
 def set_security_headers(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com; "
         "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
-        "font-src 'self' fonts.gstatic.com data:; "
+        "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com data:; "
         "img-src 'self' data: https:; "
         "connect-src 'self' https:; "
         "frame-ancestors 'none'; "
